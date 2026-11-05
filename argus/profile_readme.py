@@ -10,6 +10,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from argus.config_loader import load_yaml
 from argus.models import RepoPlan
 from argus.paths import CONFIG_DIR, TEMPLATES_DIR
+from argus.profile_featured import select_featured
 
 MARKER = "<!-- argus:profile-readme -->"
 
@@ -39,25 +40,6 @@ def _lang_counts(plans: list[RepoPlan]) -> list[str]:
     return [k for k, _ in ranked]
 
 
-def _featured(plans: list[RepoPlan], limit: int) -> list[dict[str, str]]:
-    cands = [
-        p
-        for p in plans
-        if not p.repo.private and not p.repo.archived and not p.repo.fork and p.repo.owner != p.repo.name
-    ]
-    cands.sort(key=lambda p: (-p.score.attention, p.repo.name.lower()))
-    out = []
-    for p in cands[:limit]:
-        out.append(
-            {
-                "name": p.repo.full_name,
-                "html_url": p.repo.html_url or f"https://github.com/{p.repo.full_name}",
-                "description": (p.repo.description or "")[:160],
-            }
-        )
-    return out
-
-
 def compose_profile_readme(
     *,
     user: dict[str, Any],
@@ -68,8 +50,7 @@ def compose_profile_readme(
     max_lang = int(cfg.get("max_languages") or 8)
     max_feat = int(cfg.get("max_featured_repos") or 6)
     languages = _lang_counts(plans)[:max_lang]
-    # Prefer GitHub language field if present on user payload extensions later
-    featured = _featured(plans, max_feat)
+    featured = select_featured(plans, max_feat)
     topics = []
     seen = set()
     for plan in plans:
@@ -100,7 +81,6 @@ def compose_profile_readme(
         languages=languages,
         topics=topics[:12],
         featured=featured,
-        suggested_pins=[f["name"].split("/")[-1] for f in featured[:4]],
     )
 
 

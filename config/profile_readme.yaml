@@ -23,5 +23,7 @@ principles: >
   Keep interfaces understandable. Prefer maintainable solutions.
 open_to: "Software development, internal tools, automation, and technical collaborations."
 max_languages: 8
+# Featured = public non-fork repos ranked by stars, then traffic (views+clones). Not attention score.
 max_featured_repos: 6
 include_badges: true
+# App icons: Argus looks for icon.png / logo.png / fastlane icon / etc.; else Open Graph image.

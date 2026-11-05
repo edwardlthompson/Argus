@@ -44,7 +44,7 @@ argus doctor
 
 ## Profile Overview
 
-When enabled, Argus opens a PR on public `YOU/YOU` with a text-first README (About, capabilities, stack from live languages/topics, featured repos). Suggested pins stay a human UI step. Marker: `<!-- argus:profile-readme -->`.
+When enabled, Argus opens a PR on public `YOU/YOU` with a text-first README (About, capabilities, stack from live languages/topics). **Featured projects** are public non-fork repos ranked by **stars, then traffic** (views + clones), with **app icons** (repo `icon.png` / `logo.png` / fastlane icon when present, else Open Graph). GitHub pin choices stay private/operator-only — never published on the Overview README. Marker: `<!-- argus:profile-readme -->`.
 
 ## Notifications
 

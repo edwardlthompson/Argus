@@ -51,22 +51,21 @@ _{{ bio }}_
 
 ## Featured projects
 
+<!-- Featured by stars, then GitHub traffic (views + clones). Icons from repo assets when present. -->
 {% if featured %}
+<p>
 {% for repo in featured %}
-- [{{ repo.name }}]({{ repo.html_url }}){% if repo.description %} — {{ repo.description }}{% endif %}
+<a href="{{ repo.html_url }}" title="{{ repo.short }} · ★{{ repo.stars }} · traffic {{ repo.traffic }}">
+<img src="{{ repo.icon_url }}" alt="{{ repo.short }}" width="72" height="72" />
+</a>
+{% endfor %}
+</p>
+
+{% for repo in featured %}
+- [{{ repo.short }}]({{ repo.html_url }}) · ★{{ repo.stars }}{% if repo.traffic != "0" %} · traffic {{ repo.traffic }}{% endif %}{% if repo.description %} — {{ repo.description }}{% endif %}
 {% endfor %}
 {% else %}
 - Featured public repositories will appear here after a portfolio scan.
-{% endif %}
-
-{% if suggested_pins %}
-### Suggested pins (human step)
-
-GitHub pins are set in the UI. Consider pinning:
-
-{% for name in suggested_pins %}
-- `{{ name }}`
-{% endfor %}
 {% endif %}
 
 ## Development principles
