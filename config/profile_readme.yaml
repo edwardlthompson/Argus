@@ -13,19 +13,7 @@ principles: >
   Build for real users. Protect data integrity. Automate repetitive work.
   Prefer FOSS, local-first, and maintainable solutions.
 # Curated flagships (short name or owner/name). Empty → stars then traffic only.
-featured_repos:
-  - DevPulse
-  - point-and-shoot
-  - HermesLauncher
-  - AstroAlarm
-  - QRaft
-  - trendalgo-bot
-  - OpenShouter
-  - ExpeditionGauge
-  - OBDForge
-  - continuum-calendar
-  - screen-wakelock-detector
-  - MultiAppShare-
+featured_repos: []
 # Optional https icon URLs when repos lack icon.png / logo.png / fastlane icon.
 icon_overrides:
   continuum-calendar: https://raw.githubusercontent.com/edwardlthompson/continuum-calendar/main/docs/brand/logo-official.png
