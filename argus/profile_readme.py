@@ -118,6 +118,10 @@ def compose_profile_readme(
         show_featured_stats=bool(cfg.get("show_featured_stats", True)),
         show_profile_views=bool(cfg.get("show_profile_views", True)),
         profile_views=profile_repo_views(plans, login),
+        argus_repo=str(
+            cfg.get("argus_repo")
+            or (f"{login}/Argus" if login else "YOUR_LOGIN/Argus")
+        ).strip("/"),
         **{
             k: str(cfg.get(k) or v)
             for k, v in default_octicon_urls().items()

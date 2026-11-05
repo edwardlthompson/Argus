@@ -44,6 +44,11 @@ def watches_of(repo: RepoRecord) -> int:
     return int((repo.raw or {}).get("subscribers_count") or 0)
 
 
+def popularity_of(repo: RepoRecord) -> int:
+    """Raw sum: Insights views + stars + watches + forks."""
+    return views_of(repo) + stars_of(repo) + watches_of(repo) + forks_of(repo)
+
+
 def _row(p: RepoPlan) -> dict[str, str]:
     return {
         "name": p.repo.full_name,
@@ -54,6 +59,7 @@ def _row(p: RepoPlan) -> dict[str, str]:
         "forks": str(forks_of(p.repo)),
         "watches": str(watches_of(p.repo)),
         "views": str(views_of(p.repo)),
+        "popularity": str(popularity_of(p.repo)),
         "traffic": str(traffic_of(p.repo)),
         "icon_url": icon_of(p.repo),
         "visual": "icon" if has_app_icon(p.repo) else "og",
@@ -66,7 +72,7 @@ def select_featured(
     *,
     curated: list[str] | None = None,
 ) -> list[dict[str, str]]:
-    """Curated names first; fill by Insights views then stars. limit<=0 = all eligible."""
+    """Curated names first; fill by popularity sum. limit<=0 = all eligible."""
     by_full = {p.repo.full_name.lower(): p for p in plans if _eligible(p.repo)}
     by_short = {p.repo.name.lower(): p for p in by_full.values()}
     chosen: list[RepoPlan] = []
@@ -81,7 +87,7 @@ def select_featured(
         if not unlimited and len(chosen) >= limit:
             break
     rest = [p for p in by_full.values() if p.repo.full_name not in seen]
-    rest.sort(key=lambda p: (-views_of(p.repo), -stars_of(p.repo), p.repo.name.lower()))
+    rest.sort(key=lambda p: (-popularity_of(p.repo), p.repo.name.lower()))
     for p in rest:
         if not unlimited and len(chosen) >= limit:
             break

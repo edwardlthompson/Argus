@@ -1,0 +1,52 @@
+# Template for public GitHub profile Overview (USERNAME/USERNAME).
+# After fork: copy to config/profile_readme.yaml, edit voice, set enabled: true.
+# Live languages/projects come from the API — do not invent achievements here.
+# Empty roles/capabilities → Argus auto-fills from config/profile_skills.yaml.
+#
+# Full walkthrough: docs/PROFILE_OVERVIEW.md
+enabled: false
+tagline: "Building clean, secure, maintainable apps."
+about: |
+  Write 2–4 sentences about you and what you ship. Prefer outcomes over buzzwords.
+  Languages and featured apps are filled from your public repos at sync time.
+roles: []
+capabilities: []
+principles: >
+  Build for real users. Protect data integrity. Automate repetitive work.
+  Prefer FOSS, local-first, and maintainable solutions.
+# Curated flagships (short name or owner/name). Empty → popularity sort only
+# (Views + Stars + Watching + Forks from Insights + GitHub meta).
+featured_repos: []
+# Optional https icon URLs when a repo has no discoverable PNG mark.
+icon_overrides: {}
+current_focus:
+  - title: Current focus
+    blurb: What you are shipping this month.
+  - title: Learning
+    blurb: Skills or stacks you are deepening.
+open_to_cards:
+  - title: Software development
+    blurb: Practical builds across automation, apps, and FOSS tooling.
+  - title: Automation
+    blurb: Scheduled systems, bots, CI, and workflow cleanup.
+  - title: FOSS collaboration
+    blurb: Issues, PRs, and shared maintainership on MIT-licensed work.
+  - title: Clean secure apps
+    blurb: Local vaults, clear UX, and maintainable architecture.
+open_to: "Software development, automation, FOSS collaboration, and clean secure apps."
+# Optional contact (never scraped from secrets).
+# email: ""
+# Footer link on the generated Overview (defaults to YOUR GitHub Argus clone if unset).
+# argus_repo: YOUR_LOGIN/Argus
+max_languages: 8
+max_featured_repos: 0
+featured_columns: 7
+featured_icon_size: 64
+include_badges: true
+show_featured_stars: false
+show_featured_stats: true
+show_profile_views: true
+banner_carries_identity: true
+featured_card_width: 280
+# Icons: config/profile_icons.yaml · docs/PROFILE_ICONS.md
+# Self-hosted assets on YOU/YOU: banner, divider, octicons, optional argus-icons/

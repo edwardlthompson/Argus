@@ -19,3 +19,7 @@
 ## Primary outputs
 
 `dist/runbook.md`, `dist/report.html`, notifications, optional PRs into target repos.
+
+## Profile Overview (operators)
+
+Public `YOU/YOU` skills portfolio README from live GitHub evidence. Start from `config/profile_readme.yaml.example`, then follow [`docs/PROFILE_OVERVIEW.md`](docs/PROFILE_OVERVIEW.md). Behaviour stays in YAML (`profile_readme`, `profile_skills`, `profile_stack`, `profile_icons`).

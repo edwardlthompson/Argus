@@ -7,9 +7,10 @@ from argus.models import (
     RepoStatus,
     ScoreResult,
 )
-from argus.profile_banner import render_banner_svg
+from argus.profile_banner import render_banner_svg, render_divider_svg
 from argus.profile_featured import center_grid_rows, select_featured
 from argus.profile_icons import pick_icon_path
+from argus.profile_octicons import load_octicon_svgs
 from argus.profile_readme import MARKER, compose_profile_readme, needs_profile_update
 from argus.profile_skills import bio_is_distinct, resolve_roles_and_capabilities
 from argus.profile_stack import grouped_stack, ranked_languages
@@ -54,17 +55,20 @@ def _plan(
     )
 
 
-def test_featured_ranks_by_views_then_stars_not_attention():
+def test_featured_ranks_by_popularity_sum_not_attention():
+    # popularity = views + stars + watches + forks
     plans = [
         _plan("alice/noisy", attention=99, stars=1, traffic_views=1),
-        _plan("alice/popular", attention=5, stars=50, traffic_views=10),
+        _plan("alice/starry", attention=5, stars=80, forks=10, watches=10, traffic_views=5),
         _plan("alice/busy", attention=80, stars=50, traffic_views=200),
         _plan("alice/alice", attention=1, stars=999),
         _plan("alice/sleeper", attention=1, stars=99, traffic_views=5),
     ]
     featured = select_featured(plans, limit=3)
-    assert [f["short"] for f in featured] == ["busy", "popular", "sleeper"]
-    assert featured[0]["views"] == "200"
+    # busy=250, starry=105, sleeper=104
+    assert [f["short"] for f in featured] == ["busy", "starry", "sleeper"]
+    assert featured[0]["popularity"] == "250"
+    assert featured[1]["popularity"] == "105"
 
 
 def test_featured_curated_overrides_ranking():
@@ -217,7 +221,9 @@ def test_compose_portfolio_html_no_traffic_or_topics():
     assert "# Alice" not in body
     assert body.index("## Featured projects") < body.index("## Tech stack")
     assert "./assets/octicons/star-16.svg" in body
+    assert "./assets/argus-divider.svg" in body
     assert 'alt="Views"' in body
+    assert "github.com/alice/Argus" in body
     assert "Current focus" in body
     assert "Also open to" in body
     assert "FOSS" in body
@@ -332,11 +338,21 @@ def test_compose_shows_stars_watches_forks_views():
     assert "traffic" not in body.lower()
 
 
-def test_banner_svg_contains_name():
+def test_banner_svg_contains_name_and_motion():
     svg = render_banner_svg("Alice", "Ship tools")
     assert "Alice" in svg
     assert "Ship tools" in svg
     assert "linearGradient" in svg
+    assert "keyframes" in svg
+    assert "pulseGlow" in svg
+
+
+def test_divider_and_colored_octicons():
+    div = render_divider_svg()
+    assert "keyframes" in div and "slide" in div
+    icons = load_octicon_svgs()
+    assert "#e3b341" in icons["assets/octicons/star-16.svg"]
+    assert "#3fb950" in icons["assets/octicons/repo-forked-16.svg"]
 
 
 def test_needs_update():

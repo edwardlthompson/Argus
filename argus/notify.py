@@ -57,7 +57,7 @@ def should_notify(plans: list[RepoPlan], config: dict[str, Any] | None = None) -
 def control_plane_urls() -> dict[str, str | None]:
     """Deep links for Issues inbox and Actions (never CVE lists)."""
     inbox_cfg = load_inbox()
-    controller = str(inbox_cfg.get("controller_repo") or "edwardlthompson/Argus")
+    controller = str(inbox_cfg.get("controller_repo") or "YOUR_LOGIN/argus-runner")
     label = str(inbox_cfg.get("label_inbox") or "argus-inbox")
     base = f"https://github.com/{controller}"
     inbox_url = f"{base}/issues?q=is%3Aissue+is%3Aopen+label%3A{label}"

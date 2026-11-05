@@ -17,7 +17,7 @@ from argus.paths import CONFIG_DIR, DIST_DIR, TEMPLATES_DIR, ensure_runtime_dirs
 def _inbox_cfg() -> dict[str, Any]:
     path = CONFIG_DIR / "inbox.yaml"
     if not path.exists():
-        return {"controller_repo": "edwardlthompson/Argus"}
+        return {"controller_repo": "YOUR_LOGIN/argus-runner"}
     return load_yaml(path)
 
 
@@ -35,7 +35,7 @@ def safe_status_payload(plans: list[RepoPlan], *, circuit_open: bool = False) ->
 def compose_status_html(plans: list[RepoPlan]) -> str:
     payload = safe_status_payload(plans)
     cfg = _inbox_cfg()
-    controller = str(cfg.get("controller_repo") or "edwardlthompson/Argus")
+    controller = str(cfg.get("controller_repo") or "YOUR_LOGIN/argus-runner")
     env = Environment(
         loader=FileSystemLoader(str(TEMPLATES_DIR)),
         autoescape=select_autoescape(["html", "xml"]),
@@ -107,7 +107,7 @@ def write_status_artifacts(plans: list[RepoPlan], dist_dir: Path | None = None) 
     payload = safe_status_payload(plans)
     notify_rows = _recent_notify_rows()
     cfg = _inbox_cfg()
-    controller = str(cfg.get("controller_repo") or "edwardlthompson/Argus")
+    controller = str(cfg.get("controller_repo") or "YOUR_LOGIN/argus-runner")
     env = Environment(
         loader=FileSystemLoader(str(TEMPLATES_DIR)),
         autoescape=select_autoescape(["html", "xml"]),

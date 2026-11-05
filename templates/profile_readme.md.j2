@@ -75,6 +75,10 @@ _{{ bio }}_
 ## Featured projects
 
 <div align="center">
+<img src="./assets/argus-divider.svg" width="100%" alt="" />
+</div>
+
+<div align="center">
 {% if featured_rows %}
 <table>
 {% for row in featured_rows %}
@@ -112,6 +116,10 @@ _Featured public repositories will appear here after a portfolio scan._
 </div>
 
 ## Tech stack
+
+<div align="center">
+<img src="./assets/argus-divider.svg" width="100%" alt="" />
+</div>
 
 {% if stack_groups %}
 {% for group in stack_groups %}
@@ -181,4 +189,4 @@ _Languages appear after Argus scans your public repos._
 
 ---
 
-_Updated by [Argus](https://github.com/edwardlthompson/Argus). Marker: `argus:profile-readme`._
+_Updated by [Argus](https://github.com/{{ argus_repo }}). Marker: `argus:profile-readme`._

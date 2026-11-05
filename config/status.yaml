@@ -1,3 +1,7 @@
-repos:
-  edwardlthompson/linear-trend-spotter:
-    status: archived
+# Optional declared statuses for portfolio repos (owner/name → status).
+# After fork, list only your repos — leave empty to rely on discovery + GitHub archived flag.
+# Example:
+# repos:
+#   YOUR_LOGIN/some-old-app:
+#     status: archived
+repos: {}

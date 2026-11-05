@@ -148,7 +148,7 @@ def load_inbox(path: Path | None = None) -> dict[str, Any]:
     path = path or (CONFIG_DIR / "inbox.yaml")
     defaults = {
         "enabled": True,
-        "controller_repo": "edwardlthompson/Argus",
+        "controller_repo": "YOUR_LOGIN/argus-runner",
         "label_inbox": "argus-inbox",
         "label_security": "argus-security",
         "security_issues": False,

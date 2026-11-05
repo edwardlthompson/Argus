@@ -1,4 +1,5 @@
 # Operator voice for the public GitHub profile Overview (USERNAME/USERNAME).
+# New operators: start from config/profile_readme.yaml.example (see docs/PROFILE_OVERVIEW.md).
 # Live languages/projects come from the API — do not invent achievements here.
 # Empty roles/capabilities → Argus auto-fills from config/profile_skills.yaml.
 enabled: true
@@ -12,11 +13,12 @@ capabilities: []
 principles: >
   Build for real users. Protect data integrity. Automate repetitive work.
   Prefer FOSS, local-first, and maintainable solutions.
-# Curated flagships (short name or owner/name). Empty → stars then traffic only.
+# Curated flagships (short name or owner/name). Empty → popularity sum only.
 featured_repos: []
-# Optional https icon URLs when repos lack icon.png / logo.png / fastlane icon.
-icon_overrides:
-  continuum-calendar: https://raw.githubusercontent.com/edwardlthompson/continuum-calendar/main/docs/brand/logo-official.png
+# Optional https icon URLs when repos lack a discoverable PNG mark.
+icon_overrides: {}
+# Footer attribution on the Overview (this product's public repo).
+argus_repo: edwardlthompson/Argus
 current_focus:
   - title: Portfolio hygiene
     blurb: Keeping public Overview and FOSS apps aligned with live evidence via Argus.

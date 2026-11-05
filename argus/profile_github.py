@@ -6,7 +6,7 @@ import base64
 from typing import Any
 
 from argus.github_client import GitHubClient, GitHubError
-from argus.profile_banner import render_banner_svg
+from argus.profile_banner import render_banner_svg, render_divider_svg
 from argus.profile_octicons import load_octicon_svgs
 from argus.profile_readme import MARKER
 
@@ -99,6 +99,10 @@ def open_readme_pr(
     _put_file(
         client, login, "assets/argus-banner.svg", render_banner_svg(display_name or login, tagline),
         branch=branch, message="chore(argus): refresh profile banner SVG",
+    )
+    _put_file(
+        client, login, "assets/argus-divider.svg", render_divider_svg(),
+        branch=branch, message="chore(argus): refresh profile divider SVG",
     )
     for path, svg in load_octicon_svgs().items():
         _put_file(client, login, path, svg, branch=branch, message=f"chore(argus): refresh {path.rsplit('/', 1)[-1]}")

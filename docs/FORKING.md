@@ -35,12 +35,22 @@ Open PRs against the **public** product. Do not commit secrets or real portfolio
 
 ## Profile Overview
 
-Argus can PR an updated GitHub profile README into public `YOU/YOU` (see START_HERE), including `assets/argus-banner.svg`. That repo must stay **public** for GitHub to show the Overview.
+Full checklist: [`docs/PROFILE_OVERVIEW.md`](PROFILE_OVERVIEW.md).
+
+```bash
+cp config/profile_readme.yaml.example config/profile_readme.yaml
+# edit voice, set enabled: true, optional argus_repo: YOU/Argus
+```
+
+Argus PRs an updated README into public `YOU/YOU` (banner, divider, octicons, featured grid). Keep that repo **public**.
 
 Retune in YAML (not Python):
 
-- `config/profile_readme.yaml` — voice, `featured_repos`, `current_focus`, `open_to_cards`, `icon_overrides`, optional `email`
+- `config/profile_readme.yaml` — voice, `featured_repos`, `current_focus`, `open_to_cards`, `icon_overrides`, `argus_repo`, optional `email`
 - `config/profile_skills.yaml` — auto Focus / What I build when roles/capabilities are empty
 - `config/profile_stack.yaml` — grouped tech stack from languages + topics
+- `config/profile_icons.yaml` — canonical app-icon paths (hygiene `BRAND-ICON-MISSING`)
 
 Hand-crafted banner: commit your own `assets/argus-banner.svg` in `YOU/YOU` (self-hosted SVG only; avoid third-party stats widgets).
+
+Default hygiene profile is **`generic`**. `config/profiles/edward.yaml` is maintainer-stricter for this product’s author — only use `--profile edward` if you want those extra rules.
