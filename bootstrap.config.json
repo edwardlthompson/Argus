@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "project_name": "Argus",
+  "purpose": "Controller for multi-repo hygiene, scoring, safe auto-apply, gated agents, and grandma-simple notifications",
+  "stack": "python",
+  "license": "MIT",
+  "distribution_tier": "foss",
+  "parent_template": "edwardlthompson/agent-project-bootstrap",
+  "parent_version": "1.12.0",
+  "agent_adapters": {
+    "cursor_rules": true,
+    "claude": true,
+    "copilot": true,
+    "gemini": true,
+    "windsurf": false,
+    "cline": true,
+    "aider": false,
+    "continue": false
+  },
+  "security": {
+    "dependabot": true,
+    "code_scanning": true,
+    "secret_detection": true
+  },
+  "hooks": {
+    "preflight": false,
+    "post_sync_adapters": false,
+    "post_checklist": false,
+    "post_git_init": false,
+    "post_git_commit": false,
+    "post_install_deps": false,
+    "post_run_tests": false,
+    "post_welcome_issue": false
+  },
+  "crash_proxy": {
+    "enabled": false
+  },
+  "crash_inbox": {
+    "enabled": false,
+    "provider": "none"
+  }
+}

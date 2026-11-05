@@ -1,0 +1,36 @@
+# Scoring weights and status-aware multipliers. No magic numbers in Python beyond defaults.
+weights:
+  momentum: 1.0
+  responsiveness: 0.8
+  ci: 1.2
+  deps: 1.1
+  presentation: 0.9
+  hygiene: 1.0
+  security: 1.4
+  lineage: 1.0
+  prs: 0.9
+  releases: 0.5
+
+status_multipliers:
+  shipped:
+    multiplier: 1.0
+  active:
+    multiplier: 1.0
+  experimental:
+    multiplier: 0.85
+  parked:
+    multiplier: 0.6
+    categories: [hygiene, security, presentation, lineage]
+  archived:
+    multiplier: 0.4
+    categories: [hygiene, security]
+
+category_rules:
+  momentum:
+    base: 50
+  ci:
+    base: 50
+
+attention_thresholds:
+  high: 60
+  notify_human: 1

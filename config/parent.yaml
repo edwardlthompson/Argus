@@ -1,0 +1,10 @@
+upstream: edwardlthompson/agent-project-bootstrap
+expected_version: "1.12.0"
+lineage_files:
+  - .template-version
+  - .template-update.json
+  - AGENTS.md
+  - bootstrap.config.json
+controller_repo_names:
+  - Argus
+  - argus

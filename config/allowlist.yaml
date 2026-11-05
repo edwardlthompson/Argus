@@ -1,0 +1,5 @@
+# Blast-radius control.
+# mode: owner_only | allowlist | all
+mode: owner_only
+allow: []
+deny: []

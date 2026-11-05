@@ -1,0 +1,19 @@
+{
+  "repo": {
+    "full_name": "example/agent-only",
+    "status": "active",
+    "description": "Needs agent judgment for README non-goals",
+    "topics": ["rust", "cli", "tools"],
+    "can_write": true
+  },
+  "signals": {
+    "momentum": {"days_since_push": 7, "open_issues": 4, "stargazers": 2, "fork": false},
+    "responsiveness": {"open_issue_sample": 4, "stale_issues_90d": 4},
+    "ci": {"has_workflows": true, "latest_failed": true, "days_since_run": 1},
+    "deps": {"vulnerability_alerts_enabled": true, "has_dependabot_config": true, "open_dependabot_alerts": 0},
+    "presentation": {"description": "Needs agent judgment for README non-goals", "description_len": 41, "topics": ["rust", "cli", "tools"], "specific_topic_count": 3, "has_readme": true, "has_what_not_section": false},
+    "hygiene": {"security_md": true, "contributing_md": true, "code_of_conduct_md": true, "gitattributes": true, "license_file": true, "agent_files_at_root": true},
+    "security": {"secret_scanning_enabled": true, "private": false, "archived": false, "codeql_likely": true},
+    "prs": {"open_prs": 2, "stale_prs_30d": 1, "draft_prs": 0}
+  }
+}

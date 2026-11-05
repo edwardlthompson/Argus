@@ -1,0 +1,14 @@
+* text=auto eol=lf
+
+*.sh text eol=lf
+*.ps1 text eol=lf
+*.py text eol=lf
+*.md text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+
+# Prefer Python over docs/noise in Linguist
+*.md linguist-documentation=true
+docs/** linguist-documentation=true
+tests/** linguist-vendored=false
+argus/** linguist-detectable=true

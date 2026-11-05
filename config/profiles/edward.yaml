@@ -1,0 +1,4 @@
+name: edward
+description: Author-specific stricter profile (extends generic fix catalogue membership).
+fixes_include: [generic, edward]
+strictness: high

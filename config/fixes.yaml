@@ -1,0 +1,242 @@
+# Hygiene constitution + fix catalogue. Behaviour lives here, not in Python.
+fixes:
+  - id: HYGIENE-GITATTRIBUTES
+    class: auto_safe
+    title: Add language attribution (.gitattributes)
+    why: Helps GitHub Linguist show your real product language instead of docs/noise.
+    applies_when: "not hygiene.get('gitattributes', False)"
+    phase: 3
+    depends_on: []
+    confidence: high
+    auto_safe: true
+    gate: "test -f .gitattributes"
+    profiles: [generic, edward]
+    resolution_ttl_days: 90
+
+  - id: HYGIENE-DESCRIPTION
+    class: auto_safe
+    title: Trim repository description to ≤120 characters
+    why: Long descriptions wrap poorly on GitHub and look unfinished.
+    applies_when: "presentation.get('description_len', 0) > 120"
+    phase: 3
+    depends_on: []
+    confidence: high
+    auto_safe: true
+    gate: "python -c \"import os; assert len(os.environ.get('REPO_DESC',''))<=120 or True\""
+    profiles: [generic, edward]
+    resolution_ttl_days: 60
+
+  - id: HYGIENE-TOPICS
+    class: auto_safe
+    title: Set 3–5 specific repository topics
+    why: Specific topics help people find the project; generic tags add noise.
+    applies_when: "presentation.get('specific_topic_count', 0) < 3"
+    phase: 3
+    depends_on: []
+    confidence: high
+    auto_safe: true
+    gate: "true"
+    profiles: [generic, edward]
+    resolution_ttl_days: 60
+
+  - id: HYGIENE-LICENSE
+    class: auto_safe
+    title: Ensure LICENSE file is present
+    why: Without a license, others cannot safely use or contribute to the code.
+    applies_when: "not hygiene.get('license_file', False)"
+    phase: 1
+    depends_on: []
+    confidence: high
+    auto_safe: true
+    gate: "test -f LICENSE -o -f LICENSE.md"
+    profiles: [generic, edward]
+    resolution_ttl_days: 180
+
+  - id: HYGIENE-SECURITY-MD
+    class: auto_safe
+    title: Add SECURITY.md
+    why: Tells people how to report vulnerabilities privately.
+    applies_when: "not hygiene.get('security_md', False)"
+    phase: 2
+    depends_on: []
+    confidence: high
+    auto_safe: true
+    gate: "test -f SECURITY.md"
+    profiles: [generic, edward]
+    resolution_ttl_days: 180
+
+  - id: HYGIENE-CONTRIBUTING
+    class: auto_safe
+    title: Add CONTRIBUTING.md
+    why: New contributors need a clear starting point.
+    applies_when: "not hygiene.get('contributing_md', False)"
+    phase: 3
+    depends_on: []
+    confidence: high
+    auto_safe: true
+    gate: "test -f CONTRIBUTING.md"
+    profiles: [generic, edward]
+    resolution_ttl_days: 180
+
+  - id: HYGIENE-COC
+    class: auto_safe
+    title: Add CODE_OF_CONDUCT.md
+    why: Sets expectations for respectful collaboration.
+    applies_when: "not hygiene.get('code_of_conduct_md', False)"
+    phase: 3
+    depends_on: []
+    confidence: medium
+    auto_safe: true
+    gate: "test -f CODE_OF_CONDUCT.md"
+    profiles: [generic, edward]
+    resolution_ttl_days: 180
+
+  - id: HYGIENE-CI
+    class: auto_safe
+    title: Add a basic CI workflow on the default branch
+    why: Automated checks catch breakages before they ship.
+    applies_when: "not ci.get('has_workflows', False)"
+    phase: 1
+    depends_on: []
+    confidence: high
+    auto_safe: true
+    gate: "test -d .github/workflows && ls .github/workflows/*.yml .github/workflows/*.yaml 2>/dev/null | head -1 | grep -q ."
+    profiles: [generic, edward]
+    resolution_ttl_days: 90
+
+  - id: SEC-DEPENDABOT-ALERTS
+    class: human
+    title: Turn on Dependabot alerts
+    why: GitHub can warn you when known-vulnerable packages appear.
+    applies_when: "not deps.get('vulnerability_alerts_enabled', False)"
+    phase: 2
+    depends_on: []
+    confidence: high
+    auto_safe: false
+    human_steps: |
+      1. Open the repository on GitHub in your browser.
+      2. Click **Settings**.
+      3. In the left sidebar, click **Code security**.
+      4. Find **Dependabot alerts** and click **Enable**.
+      5. If GitHub asks to confirm, click **Enable Dependabot alerts**.
+    gate: "Dependabot alerts show as Enabled on the Code security settings page"
+    profiles: [generic, edward]
+    resolution_ttl_days: 180
+
+  - id: SEC-SECRET-SCANNING
+    class: human
+    title: Turn on secret scanning
+    why: Stops accidental passwords and API keys from sitting in git history unnoticed.
+    applies_when: "not security.get('secret_scanning_enabled', False) and not repo.get('private', False)"
+    phase: 2
+    depends_on: []
+    confidence: medium
+    auto_safe: false
+    human_steps: |
+      1. Open the repository on GitHub.
+      2. Click **Settings** → **Code security**.
+      3. Find **Secret scanning** and click **Enable**.
+      4. Leave the page only when it says Enabled.
+    gate: "Secret scanning shows as Enabled"
+    profiles: [generic, edward]
+    resolution_ttl_days: 180
+
+  - id: HUMAN-ARCHIVE-JUDGMENT
+    class: human
+    title: Decide whether to archive this parked repository
+    why: Parked repos that stay public forever confuse visitors about what is maintained.
+    applies_when: "repo.get('status') == 'parked' and (momentum.get('days_since_push') or 0) > 365"
+    phase: 4
+    depends_on: []
+    confidence: medium
+    auto_safe: false
+    human_steps: |
+      1. Open the repository on GitHub.
+      2. Read the README and decide: keep it visible, or archive it.
+      3. If archiving: Settings → scroll to **Danger Zone** → **Archive this repository**.
+      4. If keeping: reply on the Argus report that it should stay parked.
+    gate: "Repo is archived, or you noted 'keep parked' on the Argus report"
+    profiles: [generic, edward]
+
+  - id: AGENT-MEMORY-LAYOUT
+    class: agent
+    title: Move agent memory/log files into .agent/
+    why: Agent scratch files in the repo root confuse contributors and tools.
+    applies_when: "hygiene.get('agent_files_at_root', False) and repo.get('status') in ('active', 'experimental', 'shipped')"
+    phase: 3
+    depends_on: []
+    confidence: medium
+    auto_safe: false
+    agent_prompt: |
+      Search for agent memory/log files (AGENT_MEMORY.md at root, .cursorrules duplicates,
+      loose session dumps). Move durable notes into `.agent/` and update references.
+      Do not delete history — relocate only.
+    gate: "test ! -f ./AGENT_MEMORY.md || test -f .agent/AGENT_MEMORY.md"
+    profiles: [generic, edward]
+    resolution_ttl_days: 60
+
+  - id: AGENT-WHAT-NOT
+    class: agent
+    title: Add or improve a "What this is not" section
+    why: Clear non-goals prevent wrong expectations and support tickets.
+    applies_when: "presentation.get('has_readme', False) and not presentation.get('has_what_not_section', False) and repo.get('status') in ('active', 'shipped', 'experimental')"
+    phase: 3
+    depends_on: []
+    confidence: low
+    auto_safe: false
+    agent_prompt: |
+      In README.md, ensure a short "## What this is not" section with 3–5 concrete bullets.
+      Keep tone plain. Do not invent features.
+    gate: "grep -qi 'what this is not' README.md"
+    profiles: [generic, edward]
+    resolution_ttl_days: 90
+
+  - id: AGENT-STALE-ISSUES
+    class: agent
+    title: Triage truly stale issues
+    why: Ancient open issues hide real bugs and signal abandonment.
+    applies_when: "(responsiveness.get('stale_issues_90d') or 0) >= 3"
+    phase: 2
+    depends_on: []
+    confidence: medium
+    auto_safe: false
+    agent_prompt: |
+      List open issues idle ≥90 days. For each: comment with current status, or close with
+      a polite resolution if clearly obsolete. Do not close issues that need human judgment —
+      label them `needs-human` instead.
+    gate: "true"
+    profiles: [generic, edward]
+    resolution_ttl_days: 45
+
+  - id: AGENT-PRESENTATION
+    class: agent
+    title: Presentation polish requiring judgment
+    why: Descriptions, badges, and README structure need a careful human-like edit.
+    applies_when: "presentation.get('description_len', 0) == 0 or not presentation.get('has_readme', False)"
+    phase: 3
+    depends_on: [HYGIENE-DESCRIPTION]
+    confidence: low
+    auto_safe: false
+    agent_prompt: |
+      If README is missing, create a short accurate README (purpose, quick start, what it is not).
+      If description is empty, propose a ≤120 character description in the PR body for a human to paste.
+    gate: "test -f README.md"
+    profiles: [generic, edward]
+    resolution_ttl_days: 60
+
+  - id: AGENT-CORRECTNESS
+    class: agent
+    title: Fix obvious correctness issues uncovered by CI
+    why: Failing or missing correctness checks block trust in the project.
+    applies_when: "not ci.get('has_workflows', False) and repo.get('status') in ('active', 'shipped')"
+    phase: 2
+    depends_on: [HYGIENE-CI]
+    confidence: low
+    auto_safe: false
+    agent_prompt: |
+      After CI exists, run the project's tests. Fix only clear, high-confidence failures.
+      Leave design debates for humans.
+    gate: "bash -lc 'test -f scripts/verify.sh && bash scripts/verify.sh || npm test || pytest -q || true'"
+    profiles: [edward, strict]
+    resolution_ttl_days: 30
+

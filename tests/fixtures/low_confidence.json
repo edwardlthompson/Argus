@@ -1,0 +1,13 @@
+{
+  "repo": {
+    "full_name": "example/low-confidence",
+    "status": "active",
+    "description": "Partial signals",
+    "topics": ["go"],
+    "can_write": false
+  },
+  "signals": {
+    "momentum": {"days_since_push": 40, "open_issues": 1, "stargazers": 0, "fork": false},
+    "hygiene": {"security_md": false, "contributing_md": false, "code_of_conduct_md": false, "gitattributes": false, "license_file": true}
+  }
+}

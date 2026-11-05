@@ -1,0 +1,18 @@
+{
+  "repo": {
+    "full_name": "example/parked-lab",
+    "status": "parked",
+    "description": "Old experiment",
+    "topics": ["lab"],
+    "can_write": true
+  },
+  "signals": {
+    "momentum": {"days_since_push": 400, "open_issues": 0, "stargazers": 0, "fork": false},
+    "responsiveness": {"open_issue_sample": 0, "stale_issues_90d": 0},
+    "ci": {"has_workflows": true},
+    "deps": {"vulnerability_alerts_enabled": true, "has_dependabot_config": true},
+    "presentation": {"description": "Old experiment", "description_len": 14, "topics": ["lab"], "specific_topic_count": 1, "has_readme": true},
+    "hygiene": {"security_md": false, "contributing_md": true, "code_of_conduct_md": true, "gitattributes": true, "license_file": true},
+    "security": {"secret_scanning_enabled": true, "private": false, "archived": false}
+  }
+}

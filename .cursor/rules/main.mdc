@@ -1,0 +1,28 @@
+---
+description: Argus main agent adapter (child of agent-project-bootstrap)
+alwaysApply: true
+---
+
+# Main (AGENTS.md adapter)
+
+Read `AGENTS.md` before editing. Product brief: `AGENT.md`. Parent: `edwardlthompson/agent-project-bootstrap` @ `.template-version`.
+
+## Invariants
+
+- FOSS MIT; config-driven behaviour under `config/`
+- Max 300 lines static data, 150 lines pure logic
+- Conventional Commits; never commit secrets or `.env`
+- Every agent/auto_safe fix needs a `gate`
+- Prefer PRs; never delete repos or force-push
+
+## Commands
+
+```bash
+bash scripts/verify.sh
+# or: powershell -File scripts/verify.ps1
+argus doctor
+```
+
+## Board
+
+Sequential BUILD_PLAN before Parallel. Status: 🔲 / ✅ / ❌. Venue `[LOCAL]`/`[CLOUD]` + `— scope:`.

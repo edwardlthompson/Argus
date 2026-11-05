@@ -1,0 +1,18 @@
+{
+  "repo": {
+    "full_name": "brother/family-app",
+    "status": "active",
+    "description": "Brothers weekend project with a long description that definitely exceeds one hundred and twenty characters for sure",
+    "topics": ["app"],
+    "can_write": false
+  },
+  "signals": {
+    "momentum": {"days_since_push": 60, "open_issues": 2, "stargazers": 1, "fork": false},
+    "responsiveness": {"open_issue_sample": 2, "stale_issues_90d": 0},
+    "ci": {"has_workflows": false},
+    "deps": {"vulnerability_alerts_enabled": false, "has_dependabot_config": false},
+    "presentation": {"description": "Brothers weekend project with a long description that definitely exceeds one hundred and twenty characters for sure", "description_len": 113, "topics": ["app"], "specific_topic_count": 1, "has_readme": true},
+    "hygiene": {"security_md": false, "contributing_md": false, "code_of_conduct_md": false, "gitattributes": false, "license_file": false},
+    "security": {"secret_scanning_enabled": false, "private": false, "archived": false}
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "repo": {
+    "full_name": "example/experimental-spike",
+    "status": "experimental",
+    "description": "Spike",
+    "topics": ["spike"],
+    "can_write": true
+  },
+  "signals": {
+    "momentum": {"days_since_push": 2, "open_issues": 0, "stargazers": 0, "fork": false},
+    "responsiveness": {"open_issue_sample": 0, "stale_issues_90d": 0},
+    "ci": {"has_workflows": false},
+    "deps": {"vulnerability_alerts_enabled": false, "has_dependabot_config": false},
+    "presentation": {"description": "Spike", "description_len": 5, "topics": ["spike"], "specific_topic_count": 1, "has_readme": true, "has_what_not_section": false},
+    "hygiene": {"security_md": false, "contributing_md": false, "code_of_conduct_md": false, "gitattributes": false, "license_file": true, "agent_files_at_root": false},
+    "security": {"secret_scanning_enabled": false, "private": true, "archived": false}
+  }
+}

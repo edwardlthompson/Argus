@@ -1,0 +1,18 @@
+{
+  "repo": {
+    "full_name": "example/active-rotting",
+    "status": "active",
+    "description": "",
+    "topics": ["foss", "mit"],
+    "can_write": true
+  },
+  "signals": {
+    "momentum": {"days_since_push": 200, "open_issues": 12, "stargazers": 3, "fork": false},
+    "responsiveness": {"open_issue_sample": 10, "stale_issues_90d": 5},
+    "ci": {"has_workflows": false},
+    "deps": {"vulnerability_alerts_enabled": false, "has_dependabot_config": false},
+    "presentation": {"description": "", "description_len": 0, "topics": ["foss", "mit"], "specific_topic_count": 0, "has_readme": false, "has_what_not_section": false},
+    "hygiene": {"security_md": false, "contributing_md": false, "code_of_conduct_md": false, "gitattributes": false, "license_file": false, "agent_files_at_root": true},
+    "security": {"secret_scanning_enabled": false, "private": false, "archived": false}
+  }
+}

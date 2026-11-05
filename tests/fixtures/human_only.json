@@ -1,0 +1,18 @@
+{
+  "repo": {
+    "full_name": "example/human-only",
+    "status": "active",
+    "description": "Healthy repo missing only Settings toggles",
+    "topics": ["python", "library", "api"],
+    "can_write": true
+  },
+  "signals": {
+    "momentum": {"days_since_push": 3, "open_issues": 0, "stargazers": 8, "fork": false},
+    "responsiveness": {"open_issue_sample": 0, "stale_issues_90d": 0},
+    "ci": {"has_workflows": true},
+    "deps": {"vulnerability_alerts_enabled": false, "has_dependabot_config": true},
+    "presentation": {"description": "Healthy repo missing only Settings toggles", "description_len": 42, "topics": ["python", "library", "api"], "specific_topic_count": 3, "has_readme": true, "has_what_not_section": true},
+    "hygiene": {"security_md": true, "contributing_md": true, "code_of_conduct_md": true, "gitattributes": true, "license_file": true, "agent_files_at_root": false},
+    "security": {"secret_scanning_enabled": false, "private": false, "archived": false, "codeql_likely": true}
+  }
+}

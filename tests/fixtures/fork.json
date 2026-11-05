@@ -1,0 +1,19 @@
+{
+  "repo": {
+    "full_name": "example/forked-tool",
+    "status": "active",
+    "fork": true,
+    "description": "Fork of a tool with a reasonably short description",
+    "topics": ["cli", "python", "automation"],
+    "can_write": true
+  },
+  "signals": {
+    "momentum": {"days_since_push": 10, "open_issues": 0, "stargazers": 0, "fork": true},
+    "responsiveness": {"open_issue_sample": 0, "stale_issues_90d": 0},
+    "ci": {"has_workflows": true},
+    "deps": {"vulnerability_alerts_enabled": true, "has_dependabot_config": true},
+    "presentation": {"description": "Fork of a tool with a reasonably short description", "description_len": 49, "topics": ["cli", "python", "automation"], "specific_topic_count": 3, "has_readme": true},
+    "hygiene": {"security_md": true, "contributing_md": true, "code_of_conduct_md": true, "gitattributes": true, "license_file": true},
+    "security": {"secret_scanning_enabled": true, "private": false, "archived": false}
+  }
+}

@@ -1,0 +1,4 @@
+name: strict
+description: Strict hygiene for shipped products.
+fixes_include: [generic, edward]
+strictness: high

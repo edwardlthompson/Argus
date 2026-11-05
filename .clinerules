@@ -1,0 +1,5 @@
+# Cline — Argus
+
+Follow `AGENTS.md` and `AGENT.md`. Parent: edwardlthompson/agent-project-bootstrap.
+
+Verify with `scripts/verify.ps1` or `bash scripts/verify.sh` before claiming a BUILD_PLAN row complete.

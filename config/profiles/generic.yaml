@@ -1,0 +1,4 @@
+name: generic
+description: Widely applicable hygiene rules for any GitHub repository.
+fixes_include: generic
+strictness: standard

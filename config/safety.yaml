@@ -1,0 +1,8 @@
+max_auto_prs_per_run: 5
+max_concurrent_agent_sessions: 1
+max_agent_prompt_chars: 12000
+max_gate_failures_before_pause: 2
+prefer_pull_requests: true
+never_delete_repos: true
+never_force_push: true
+attention_threshold_for_agents: 60

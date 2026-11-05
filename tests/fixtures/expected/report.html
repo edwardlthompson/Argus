@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Argus Report</title>
+  <style>
+    :root {
+      --bg: #f6f3ee;
+      --ink: #1c1a16;
+      --muted: #5c574e;
+      --accent: #0f6b5c;
+      --card: #fffdf8;
+      --line: #ddd6c8;
+      --warn: #8a4b12;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Helvetica Neue", sans-serif;
+      background:
+        radial-gradient(circle at top left, #e7f2ef 0%, transparent 40%),
+        linear-gradient(180deg, #f6f3ee 0%, #efe8dc 100%);
+      color: var(--ink);
+      line-height: 1.5;
+    }
+    header {
+      padding: 2rem 1.25rem 1rem;
+      max-width: 920px;
+      margin: 0 auto;
+    }
+    h1 { margin: 0 0 0.35rem; font-size: 2rem; letter-spacing: -0.02em; }
+    .banner {
+      background: #e8f5f1;
+      border: 1px solid #b7d9cf;
+      color: var(--accent);
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      margin: 1rem 0;
+    }
+    .summary { color: var(--muted); }
+    main { max-width: 920px; margin: 0 auto; padding: 0 1.25rem 3rem; }
+    section.repo {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 1.25rem;
+      margin: 1rem 0;
+    }
+    section.repo h2 { margin-top: 0; font-size: 1.25rem; }
+    .meta { color: var(--muted); font-size: 0.95rem; }
+    .task {
+      border-top: 1px solid var(--line);
+      padding: 1rem 0 0.25rem;
+    }
+    .task h3 { margin: 0 0 0.35rem; font-size: 1.05rem; }
+    .why { color: var(--muted); }
+    ol { padding-left: 1.2rem; }
+    .done {
+      background: #f3eee4;
+      border-radius: 6px;
+      padding: 0.5rem 0.75rem;
+      margin-top: 0.5rem;
+    }
+    .low { color: var(--warn); font-weight: 600; }
+    code { font-family: ui-monospace, Consolas, monospace; font-size: 0.9em; }
+    footer { max-width: 920px; margin: 0 auto; padding: 0 1.25rem 2rem; color: var(--muted); font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Argus</h1>
+    <p class="summary">
+      
+        Argus needs you for 20 small tasks.
+      
+    </p>
+    
+  </header>
+  <main>
+    
+      <section class="repo">
+        <h2>example/parked-lab</h2>
+        <p class="meta">
+          
+            Attention 16.6/100 (medium confidence)
+          
+          · status parked
+        </p>
+
+        
+          <h3>Your tasks</h3>
+          
+            <div class="task">
+              <h3>H1. Decide whether to archive this parked repository</h3>
+              <p class="why">Parked repos that stay public forever confuse visitors about what is maintained.</p>
+              <pre style="white-space:pre-wrap;font-family:inherit;margin:0.5rem 0;">1. Open the repository on GitHub.
+2. Read the README and decide: keep it visible, or archive it.
+3. If archiving: Settings → scroll to **Danger Zone** → **Archive this repository**.
+4. If keeping: reply on the Argus report that it should stay parked.
+</pre>
+              <div class="done"><strong>Done when:</strong> Repo is archived, or you noted 'keep parked' on the Argus report</div>
+            </div>
+          
+            <div class="task">
+              <h3>H2. Turn on CodeQL / default code scanning</h3>
+              <p class="why">Static analysis catches common security bugs before they ship.</p>
+              <pre style="white-space:pre-wrap;font-family:inherit;margin:0.5rem 0;">1. Open the repository on GitHub.
+2. Settings → Code security → Code scanning.
+3. Set up CodeQL (default setup) and wait until it shows Enabled.
+</pre>
+              <div class="done"><strong>Done when:</strong> Code scanning shows as configured</div>
+            </div>
+          
+        
+
+        
+
+        
+          <h3>Safe auto-fixes</h3>
+          <ul>
+            
+              <li><code>HYGIENE-TOPICS</code> — Set 3–5 specific repository topics</li>
+            
+              <li><code>HYGIENE-SECURITY-MD</code> — Add SECURITY.md</li>
+            
+          </ul>
+        
+
+        
+      </section>
+    
+      <section class="repo">
+        <h2>example/active-rotting</h2>
+        <p class="meta">
+          
+            <span class="low">Needs a human read</span> — raw score 89.3/100
+          
+          · status active
+        </p>
+
+        
+          <h3>Your tasks</h3>
+          
+            <div class="task">
+              <h3>H1. Turn on Dependabot alerts</h3>
+              <p class="why">GitHub can warn you when known-vulnerable packages appear.</p>
+              <pre style="white-space:pre-wrap;font-family:inherit;margin:0.5rem 0;">1. Open the repository on GitHub in your browser.
+2. Click **Settings**.
+3. In the left sidebar, click **Code security**.
+4. Find **Dependabot alerts** and click **Enable**.
+5. If GitHub asks to confirm, click **Enable Dependabot alerts**.
+</pre>
+              <div class="done"><strong>Done when:</strong> Dependabot alerts show as Enabled on the Code security settings page</div>
+            </div>
+          
+            <div class="task">
+              <h3>H2. Turn on secret scanning</h3>
+              <p class="why">Stops accidental passwords and API keys from sitting in git history unnoticed.</p>
+              <pre style="white-space:pre-wrap;font-family:inherit;margin:0.5rem 0;">1. Open the repository on GitHub.
+2. Click **Settings** → **Code security**.
+3. Find **Secret scanning** and click **Enable**.
+4. Leave the page only when it says Enabled.
+</pre>
+              <div class="done"><strong>Done when:</strong> Secret scanning shows as Enabled</div>
+            </div>
+          
+            <div class="task">
+              <h3>H3. Turn on CodeQL / default code scanning</h3>
+              <p class="why">Static analysis catches common security bugs before they ship.</p>
+              <pre style="white-space:pre-wrap;font-family:inherit;margin:0.5rem 0;">1. Open the repository on GitHub.
+2. Settings → Code security → Code scanning.
+3. Set up CodeQL (default setup) and wait until it shows Enabled.
+</pre>
+              <div class="done"><strong>Done when:</strong> Code scanning shows as configured</div>
+            </div>
+          
+            <div class="task">
+              <h3>H4. Park or archive a long-inactive active repo</h3>
+              <p class="why">Repos that look abandoned confuse visitors about what you still maintain.</p>
+              <pre style="white-space:pre-wrap;font-family:inherit;margin:0.5rem 0;">1. Open the repository on GitHub.
+2. Decide: keep active, park (tell Argus), or archive.
+3. To archive: Settings → Danger Zone → Archive this repository.
+4. To park without archiving: ask Argus `argus park owner/repo`.
+</pre>
+              <div class="done"><strong>Done when:</strong> Repo is parked, archived, or you noted keep-active on the report</div>
+            </div>
+          
+        
+
+        
+          <h3>Agent work queued</h3>
+          <ul>
+            
+              <li><code>AGENT-MEMORY-LAYOUT</code> — Move agent memory/log files into .agent/</li>
+            
+              <li><code>AGENT-STALE-ISSUES</code> — Triage truly stale issues</li>
+            
+              <li><code>AGENT-PRESENTATION</code> — Presentation polish requiring judgment</li>
+            
+          </ul>
+          <p class="meta">Full gated prompt is in <code>dist/runbook.md</code>.</p>
+        
+
+        
+          <h3>Safe auto-fixes</h3>
+          <ul>
+            
+              <li><code>HYGIENE-GITATTRIBUTES</code> — Add language attribution (.gitattributes)</li>
+            
+              <li><code>HYGIENE-TOPICS</code> — Set 3–5 specific repository topics</li>
+            
+              <li><code>HYGIENE-LICENSE</code> — Ensure LICENSE file is present</li>
+            
+              <li><code>HYGIENE-SECURITY-MD</code> — Add SECURITY.md</li>
+            
+              <li><code>HYGIENE-CONTRIBUTING</code> — Add CONTRIBUTING.md</li>
+            
+              <li><code>HYGIENE-COC</code> — Add CODE_OF_CONDUCT.md</li>
+            
+              <li><code>HYGIENE-CI</code> — Add a basic CI workflow on the default branch</li>
+            
+          </ul>
+        
+
+        
+      </section>
+    
+      <section class="repo">
+        <h2>example/forked-tool</h2>
+        <p class="meta">
+          
+            <span class="low">Needs a human read</span> — raw score 15.4/100
+          
+          · status active
+        </p>
+
+        
+          <h3>Your tasks</h3>
+          
+            <div class="task">
+              <h3>H1. Turn on CodeQL / default code scanning</h3>
+              <p class="why">Static analysis catches common security bugs before they ship.</p>
+              <pre style="white-space:pre-wrap;font-family:inherit;margin:0.5rem 0;">1. Open the repository on GitHub.
+2. Settings → Code security → Code scanning.
+3. Set up CodeQL (default setup) and wait until it shows Enabled.
+</pre>
+              <div class="done"><strong>Done when:</strong> Code scanning shows as configured</div>
+            </div>
+          
+        
+
+        
+          <h3>Agent work queued</h3>
+          <ul>
+            
+              <li><code>AGENT-WHAT-NOT</code> — Add or improve a "What this is not" section</li>
+            
+          </ul>
+          <p class="meta">Full gated prompt is in <code>dist/runbook.md</code>.</p>
+        
+
+        
+
+        
+      </section>
+    
+      <section class="repo">
+        <h2>example/docs-only</h2>
+        <p class="meta">
+          
+            <span class="low">Needs a human read</span> — raw score 17.4/100
+          
+          · status shipped
+        </p>
+
+        
+          <h3>Your tasks</h3>
+          
+            <div class="task">
+              <h3>H1. Turn on CodeQL / default code scanning</h3>
+              <p class="why">Static analysis catches common security bugs before they ship.</p>
+              <pre style="white-space:pre-wrap;font-family:inherit;margin:0.5rem 0;">1. Open the repository on GitHub.
+2. Settings → Code security → Code scanning.
+3. Set up CodeQL (default setup) and wait until it shows Enabled.
+</pre>
+              <div class="done"><strong>Done when:</strong> Code scanning shows as configured</div>
+            </div>
+          
+        
+
+        
+          <h3>Agent work queued</h3>
+          <ul>
+            
+              <li><code>AGENT-WHAT-NOT</code> — Add or improve a "What this is not" section</li>
+            
+          </ul>
+          <p class="meta">Full gated prompt is in <code>dist/runbook.md</code>.</p>
+        
+
+        
+          <h3>Safe auto-fixes</h3>
+          <ul>
+            
+              <li><code>HYGIENE-GITATTRIBUTES</code> — Add language attribution (.gitattributes)</li>
+            
+          </ul>
+        
+
+        
+      </section>
+    
+      <section class="repo">
+        <h2>example/human-only</h2>
+        <p class="meta">
+          
+            <span class="low">Needs a human read</span> — raw score 29.9/100
+          
+          · status active
+        </p>
+
+        
+          <h3>Your tasks</h3>
+          
+            <div class="task">
+              <h3>H1. Turn on Dependabot alerts</h3>
+              <p class="why">GitHub can warn you when known-vulnerable packages appear.</p>
+              <pre style="white-space:pre-wrap;font-family:inherit;margin:0.5rem 0;">1. Open the repository on GitHub in your browser.
+2. Click **Settings**.
+3. In the left sidebar, click **Code security**.
+4. Find **Dependabot alerts** and click **Enable**.
+5. If GitHub asks to confirm, click **Enable Dependabot alerts**.
+</pre>
+              <div class="done"><strong>Done when:</strong> Dependabot alerts show as Enabled on the Code security settings page</div>
+            </div>
+          
+            <div class="task">
+              <h3>H2. Turn on secret scanning</h3>
+              <p class="why">Stops accidental passwords and API keys from sitting in git history unnoticed.</p>
+              <pre style="white-space:pre-wrap;font-family:inherit;margin:0.5rem 0;">1. Open the repository on GitHub.
+2. Click **Settings** → **Code security**.
+3. Find **Secret scanning** and click **Enable**.
+4. Leave the page only when it says Enabled.
+</pre>
+              <div class="done"><strong>Done when:</strong> Secret scanning shows as Enabled</div>
+            </div>
+          
+        
+
+        
+
+        
+
+        
+      </section>
+    
+      <section class="repo">
+        <h2>example/agent-only</h2>
+        <p class="meta">
+          
+            Attention 26.0/100 (medium confidence)
+          
+          · status active
+        </p>
+
+        
+
+        
+          <h3>Agent work queued</h3>
+          <ul>
+            
+              <li><code>AGENT-MEMORY-LAYOUT</code> — Move agent memory/log files into .agent/</li>
+            
+              <li><code>AGENT-WHAT-NOT</code> — Add or improve a "What this is not" section</li>
+            
+              <li><code>AGENT-STALE-ISSUES</code> — Triage truly stale issues</li>
+            
+              <li><code>CI-LATEST-FAILED</code> — Fix failing CI on the default branch</li>
+            
+              <li><code>PR-STALE</code> — Triage stale open pull requests</li>
+            
+          </ul>
+          <p class="meta">Full gated prompt is in <code>dist/runbook.md</code>.</p>
+        
+
+        
+
+        
+      </section>
+    
+      <section class="repo">
+        <h2>example/low-confidence</h2>
+        <p class="meta">
+          
+            <span class="low">Needs a human read</span> — raw score 52.5/100
+          
+          · status active
+        </p>
+
+        
+          <h3>Your tasks</h3>
+          
+            <div class="task">
+              <h3>H1. Turn on Dependabot alerts</h3>
+              <p class="why">GitHub can warn you when known-vulnerable packages appear.</p>
+              <pre style="white-space:pre-wrap;font-family:inherit;margin:0.5rem 0;">1. Open the repository on GitHub in your browser.
+2. Click **Settings**.
+3. In the left sidebar, click **Code security**.
+4. Find **Dependabot alerts** and click **Enable**.
+5. If GitHub asks to confirm, click **Enable Dependabot alerts**.
+</pre>
+              <div class="done"><strong>Done when:</strong> Dependabot alerts show as Enabled on the Code security settings page</div>
+            </div>
+          
+            <div class="task">
+              <h3>H2. Turn on secret scanning</h3>
+              <p class="why">Stops accidental passwords and API keys from sitting in git history unnoticed.</p>
+              <pre style="white-space:pre-wrap;font-family:inherit;margin:0.5rem 0;">1. Open the repository on GitHub.
+2. Click **Settings** → **Code security**.
+3. Find **Secret scanning** and click **Enable**.
+4. Leave the page only when it says Enabled.
+</pre>
+              <div class="done"><strong>Done when:</strong> Secret scanning shows as Enabled</div>
+            </div>
+          
+            <div class="task">
+              <h3>H3. Turn on CodeQL / default code scanning</h3>
+              <p class="why">Static analysis catches common security bugs before they ship.</p>
+              <pre style="white-space:pre-wrap;font-family:inherit;margin:0.5rem 0;">1. Open the repository on GitHub.
+2. Settings → Code security → Code scanning.
+3. Set up CodeQL (default setup) and wait until it shows Enabled.
+</pre>
+              <div class="done"><strong>Done when:</strong> Code scanning shows as configured</div>
+            </div>
+          
+        
+
+        
+          <h3>Agent work queued</h3>
+          <ul>
+            
+              <li><code>AGENT-PRESENTATION</code> — Presentation polish requiring judgment</li>
+            
+          </ul>
+          <p class="meta">Full gated prompt is in <code>dist/runbook.md</code>.</p>
+        
+
+        
+          <h3>Safe auto-fixes</h3>
+          <ul>
+            
+              <li><code>HYGIENE-GITATTRIBUTES</code> — Add language attribution (.gitattributes)</li>
+            
+              <li><code>HYGIENE-TOPICS</code> — Set 3–5 specific repository topics</li>
+            
+              <li><code>HYGIENE-SECURITY-MD</code> — Add SECURITY.md</li>
+            
+              <li><code>HYGIENE-CONTRIBUTING</code> — Add CONTRIBUTING.md</li>
+            
+              <li><code>HYGIENE-COC</code> — Add CODE_OF_CONDUCT.md</li>
+            
+              <li><code>HYGIENE-CI</code> — Add a basic CI workflow on the default branch</li>
+            
+          </ul>
+        
+
+        
+      </section>
+    
+      <section class="repo">
+        <h2>brother/family-app</h2>
+        <p class="meta">
+          
+            <span class="low">Needs a human read</span> — raw score 66.5/100
+          
+          · status active
+        </p>
+
+        
+          <h3>Your tasks</h3>
+          
+            <div class="task">
+              <h3>H1. Turn on Dependabot alerts</h3>
+              <p class="why">GitHub can warn you when known-vulnerable packages appear.</p>
+              <pre style="white-space:pre-wrap;font-family:inherit;margin:0.5rem 0;">1. Open the repository on GitHub in your browser.
+2. Click **Settings**.
+3. In the left sidebar, click **Code security**.
+4. Find **Dependabot alerts** and click **Enable**.
+5. If GitHub asks to confirm, click **Enable Dependabot alerts**.
+</pre>
+              <div class="done"><strong>Done when:</strong> Dependabot alerts show as Enabled on the Code security settings page</div>
+            </div>
+          
+            <div class="task">
+              <h3>H2. Turn on secret scanning</h3>
+              <p class="why">Stops accidental passwords and API keys from sitting in git history unnoticed.</p>
+              <pre style="white-space:pre-wrap;font-family:inherit;margin:0.5rem 0;">1. Open the repository on GitHub.
+2. Click **Settings** → **Code security**.
+3. Find **Secret scanning** and click **Enable**.
+4. Leave the page only when it says Enabled.
+</pre>
+              <div class="done"><strong>Done when:</strong> Secret scanning shows as Enabled</div>
+            </div>
+          
+            <div class="task">
+              <h3>H3. Turn on CodeQL / default code scanning</h3>
+              <p class="why">Static analysis catches common security bugs before they ship.</p>
+              <pre style="white-space:pre-wrap;font-family:inherit;margin:0.5rem 0;">1. Open the repository on GitHub.
+2. Settings → Code security → Code scanning.
+3. Set up CodeQL (default setup) and wait until it shows Enabled.
+</pre>
+              <div class="done"><strong>Done when:</strong> Code scanning shows as configured</div>
+            </div>
+          
+        
+
+        
+          <h3>Agent work queued</h3>
+          <ul>
+            
+              <li><code>AGENT-WHAT-NOT</code> — Add or improve a "What this is not" section</li>
+            
+          </ul>
+          <p class="meta">Full gated prompt is in <code>dist/runbook.md</code>.</p>
+        
+
+        
+          <h3>Safe auto-fixes</h3>
+          <ul>
+            
+              <li><code>HYGIENE-GITATTRIBUTES</code> — Add language attribution (.gitattributes)</li>
+            
+              <li><code>HYGIENE-TOPICS</code> — Set 3–5 specific repository topics</li>
+            
+              <li><code>HYGIENE-LICENSE</code> — Ensure LICENSE file is present</li>
+            
+              <li><code>HYGIENE-SECURITY-MD</code> — Add SECURITY.md</li>
+            
+              <li><code>HYGIENE-CONTRIBUTING</code> — Add CONTRIBUTING.md</li>
+            
+              <li><code>HYGIENE-COC</code> — Add CODE_OF_CONDUCT.md</li>
+            
+              <li><code>HYGIENE-CI</code> — Add a basic CI workflow on the default branch</li>
+            
+          </ul>
+        
+
+        
+      </section>
+    
+      <section class="repo">
+        <h2>example/archived-old</h2>
+        <p class="meta">
+          
+            Attention 6.7/100 (high confidence)
+          
+          · status archived
+        </p>
+
+        
+          <h3>Your tasks</h3>
+          
+            <div class="task">
+              <h3>H1. Turn on CodeQL / default code scanning</h3>
+              <p class="why">Static analysis catches common security bugs before they ship.</p>
+              <pre style="white-space:pre-wrap;font-family:inherit;margin:0.5rem 0;">1. Open the repository on GitHub.
+2. Settings → Code security → Code scanning.
+3. Set up CodeQL (default setup) and wait until it shows Enabled.
+</pre>
+              <div class="done"><strong>Done when:</strong> Code scanning shows as configured</div>
+            </div>
+          
+        
+
+        
+
+        
+
+        
+      </section>
+    
+      <section class="repo">
+        <h2>example/experimental-spike</h2>
+        <p class="meta">
+          
+            <span class="low">Needs a human read</span> — raw score 50.8/100
+          
+          · status experimental
+        </p>
+
+        
+          <h3>Your tasks</h3>
+          
+            <div class="task">
+              <h3>H1. Turn on Dependabot alerts</h3>
+              <p class="why">GitHub can warn you when known-vulnerable packages appear.</p>
+              <pre style="white-space:pre-wrap;font-family:inherit;margin:0.5rem 0;">1. Open the repository on GitHub in your browser.
+2. Click **Settings**.
+3. In the left sidebar, click **Code security**.
+4. Find **Dependabot alerts** and click **Enable**.
+5. If GitHub asks to confirm, click **Enable Dependabot alerts**.
+</pre>
+              <div class="done"><strong>Done when:</strong> Dependabot alerts show as Enabled on the Code security settings page</div>
+            </div>
+          
+            <div class="task">
+              <h3>H2. Turn on secret scanning</h3>
+              <p class="why">Stops accidental passwords and API keys from sitting in git history unnoticed.</p>
+              <pre style="white-space:pre-wrap;font-family:inherit;margin:0.5rem 0;">1. Open the repository on GitHub.
+2. Click **Settings** → **Code security**.
+3. Find **Secret scanning** and click **Enable**.
+4. Leave the page only when it says Enabled.
+</pre>
+              <div class="done"><strong>Done when:</strong> Secret scanning shows as Enabled</div>
+            </div>
+          
+            <div class="task">
+              <h3>H3. Turn on CodeQL / default code scanning</h3>
+              <p class="why">Static analysis catches common security bugs before they ship.</p>
+              <pre style="white-space:pre-wrap;font-family:inherit;margin:0.5rem 0;">1. Open the repository on GitHub.
+2. Settings → Code security → Code scanning.
+3. Set up CodeQL (default setup) and wait until it shows Enabled.
+</pre>
+              <div class="done"><strong>Done when:</strong> Code scanning shows as configured</div>
+            </div>
+          
+        
+
+        
+          <h3>Agent work queued</h3>
+          <ul>
+            
+              <li><code>AGENT-WHAT-NOT</code> — Add or improve a "What this is not" section</li>
+            
+          </ul>
+          <p class="meta">Full gated prompt is in <code>dist/runbook.md</code>.</p>
+        
+
+        
+          <h3>Safe auto-fixes</h3>
+          <ul>
+            
+              <li><code>HYGIENE-GITATTRIBUTES</code> — Add language attribution (.gitattributes)</li>
+            
+              <li><code>HYGIENE-TOPICS</code> — Set 3–5 specific repository topics</li>
+            
+              <li><code>HYGIENE-SECURITY-MD</code> — Add SECURITY.md</li>
+            
+              <li><code>HYGIENE-CONTRIBUTING</code> — Add CONTRIBUTING.md</li>
+            
+              <li><code>HYGIENE-COC</code> — Add CODE_OF_CONDUCT.md</li>
+            
+              <li><code>HYGIENE-CI</code> — Add a basic CI workflow on the default branch</li>
+            
+          </ul>
+        
+
+        
+      </section>
+    
+  </main>
+  <footer>Generated by Argus. Silent when nothing needs you.</footer>
+</body>
+</html>

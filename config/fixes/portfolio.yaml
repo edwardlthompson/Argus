@@ -1,0 +1,127 @@
+fixes:
+  - id: LINEAGE-VERSION-STALE
+    class: auto_safe
+    title: Bump .template-version toward parent
+    why: Child repos should track agent-project-bootstrap so upgrades stay visible.
+    applies_when: "lineage.get('is_template_child', False) and lineage.get('version_behind', False)"
+    phase: 3
+    depends_on: []
+    confidence: high
+    auto_safe: true
+    gate: "test -f .template-version"
+    profiles: [generic, edward]
+    resolution_ttl_days: 30
+
+  - id: LINEAGE-MISSING-MARKERS
+    class: auto_safe
+    title: Add missing parent-lineage marker files
+    why: Without markers, Argus cannot tell which repos are bootstrap children.
+    applies_when: "lineage.get('is_template_child', False) and len(lineage.get('missing_lineage_files') or []) > 0"
+    phase: 3
+    depends_on: []
+    confidence: medium
+    auto_safe: true
+    gate: "test -f .template-version"
+    profiles: [generic, edward]
+    resolution_ttl_days: 60
+
+  - id: LINEAGE-RECOMMEND-UPGRADE
+    class: human
+    title: Review parent template upgrade notes
+    why: A major version gap needs a careful upgrade pass, not just a version bump.
+    applies_when: "lineage.get('is_template_child', False) and lineage.get('version_behind', False)"
+    phase: 4
+    depends_on: [LINEAGE-VERSION-STALE]
+    confidence: medium
+    auto_safe: false
+    human_steps: |
+      1. Open the parent releases page for agent-project-bootstrap on GitHub.
+      2. Read notes since your child's .template-version.
+      3. Follow docs/UPGRADING_FROM_TEMPLATE.md in the child repo (or Argus).
+      4. Mark done when the child .template-version matches the parent pin.
+    gate: "Child .template-version equals parent expected_version"
+    profiles: [generic, edward]
+    resolution_ttl_days: 45
+
+  - id: CI-LATEST-FAILED
+    class: agent
+    title: Fix failing CI on the default branch
+    why: A red default-branch build means the project cannot be trusted to ship.
+    applies_when: "ci.get('latest_failed', False)"
+    phase: 2
+    depends_on: []
+    confidence: medium
+    auto_safe: false
+    agent_prompt: |
+      Open the latest failed Actions run on the default branch. Fix the clear failure.
+      Do not disable the workflow. Stop after two gate failures.
+    gate: "true"
+    profiles: [generic, edward]
+    resolution_ttl_days: 14
+
+  - id: PR-STALE
+    class: agent
+    title: Triage stale open pull requests
+    why: Old PRs hide real review work and confuse contributors.
+    applies_when: "(prs.get('stale_prs_30d') or 0) >= 1"
+    phase: 2
+    depends_on: []
+    confidence: medium
+    auto_safe: false
+    agent_prompt: |
+      For each open PR idle ≥30 days: comment with status, close if obsolete, or label needs-human.
+      Prefer not force-merging.
+    gate: "true"
+    profiles: [generic, edward]
+    resolution_ttl_days: 30
+
+  - id: SEC-OPEN-DEPENDABOT-ALERTS
+    class: human
+    title: Review open Dependabot alerts
+    why: Known vulnerable dependencies need a human decision to bump or accept risk.
+    applies_when: "(deps.get('open_dependabot_alerts') or 0) >= 1"
+    phase: 2
+    depends_on: []
+    confidence: high
+    auto_safe: false
+    human_steps: |
+      1. Open the repository on GitHub.
+      2. Click the Security tab → Dependabot.
+      3. Open each alert and create or merge the suggested update, or dismiss with a reason.
+    gate: "Open Dependabot alert count is 0"
+    profiles: [generic, edward]
+    resolution_ttl_days: 30
+
+  - id: SEC-CODEQL
+    class: human
+    title: Turn on CodeQL / default code scanning
+    why: Static analysis catches common security bugs before they ship.
+    applies_when: "not security.get('codeql_likely', False) and not repo.get('private', False)"
+    phase: 2
+    depends_on: []
+    confidence: low
+    auto_safe: false
+    human_steps: |
+      1. Open the repository on GitHub.
+      2. Settings → Code security → Code scanning.
+      3. Set up CodeQL (default setup) and wait until it shows Enabled.
+    gate: "Code scanning shows as configured"
+    profiles: [generic, edward]
+    resolution_ttl_days: 180
+
+  - id: HUMAN-PARK-INACTIVE
+    class: human
+    title: Park or archive a long-inactive active repo
+    why: Repos that look abandoned confuse visitors about what you still maintain.
+    applies_when: "repo.get('status') == 'active' and (momentum.get('days_since_push') or 0) > 180"
+    phase: 4
+    depends_on: []
+    confidence: medium
+    auto_safe: false
+    human_steps: |
+      1. Open the repository on GitHub.
+      2. Decide: keep active, park (tell Argus), or archive.
+      3. To archive: Settings → Danger Zone → Archive this repository.
+      4. To park without archiving: ask Argus `argus park owner/repo`.
+    gate: "Repo is parked, archived, or you noted keep-active on the report"
+    profiles: [generic, edward]

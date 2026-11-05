@@ -1,0 +1,18 @@
+{
+  "repo": {
+    "full_name": "example/docs-only",
+    "status": "shipped",
+    "description": "Documentation site for the product line",
+    "topics": ["docs", "guide", "handbook"],
+    "can_write": true
+  },
+  "signals": {
+    "momentum": {"days_since_push": 5, "open_issues": 1, "stargazers": 20, "fork": false},
+    "responsiveness": {"open_issue_sample": 1, "stale_issues_90d": 0},
+    "ci": {"has_workflows": true},
+    "deps": {"vulnerability_alerts_enabled": true, "has_dependabot_config": true},
+    "presentation": {"description": "Documentation site for the product line", "description_len": 39, "topics": ["docs", "guide", "handbook"], "specific_topic_count": 3, "has_readme": true},
+    "hygiene": {"security_md": true, "contributing_md": true, "code_of_conduct_md": true, "gitattributes": false, "license_file": true},
+    "security": {"secret_scanning_enabled": true, "private": false, "archived": false}
+  }
+}

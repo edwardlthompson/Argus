@@ -1,0 +1,18 @@
+{
+  "repo": {
+    "full_name": "example/archived-old",
+    "status": "archived",
+    "description": "Archived product",
+    "topics": ["legacy", "archive", "history"],
+    "can_write": false
+  },
+  "signals": {
+    "momentum": {"days_since_push": 900, "open_issues": 0, "stargazers": 40, "fork": false},
+    "responsiveness": {"open_issue_sample": 0, "stale_issues_90d": 0},
+    "ci": {"has_workflows": true},
+    "deps": {"vulnerability_alerts_enabled": true, "has_dependabot_config": true},
+    "presentation": {"description": "Archived product", "description_len": 16, "topics": ["legacy", "archive", "history"], "specific_topic_count": 3, "has_readme": true, "has_what_not_section": true},
+    "hygiene": {"security_md": true, "contributing_md": true, "code_of_conduct_md": true, "gitattributes": true, "license_file": true, "agent_files_at_root": false},
+    "security": {"secret_scanning_enabled": true, "private": false, "archived": true}
+  }
+}

@@ -1,0 +1,37 @@
+name: argus-report
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "user | user/repo | org"
+        required: true
+      public_only:
+        description: "public only"
+        required: false
+        default: "true"
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install -e ".[dev]"
+      - name: Report
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          EXTRA=""
+          if [ "${{ inputs.public_only }}" = "true" ]; then EXTRA="--public-only"; fi
+          argus report --target "${{ inputs.target }}" $EXTRA
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: argus-report
+          path: dist/

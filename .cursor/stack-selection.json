@@ -1,0 +1,6 @@
+{
+  "stack": "python",
+  "distribution_tier": "foss",
+  "parent_template": "edwardlthompson/agent-project-bootstrap",
+  "parent_version": "1.12.0"
+}
