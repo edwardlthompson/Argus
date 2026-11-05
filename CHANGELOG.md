@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-11-05
+
+### Added
+
+- Dual-plane docs + `bootstrap-argus-runner.*`; doctor public-controller guard; profile Overview compose/PR (`PROF-README`).
+- Projects v2 inbox sync; `repository_dispatch` scan; profile packs; org/collaborator discover; hygiene signals (SPDX, CODEOWNERS, stale branches).
+- `argus explain` / `inbox` / `status --safe` / `report --open`; notify quiet hours + digest coalesce; auto-safe CODEOWNERS/gitignore/CodeQL + Dependabot/secret-scan API; dry-run `would_prs`.
+- CodeQL, gitleaks, SBOM workflows; pinned CI Action SHAs; `update-deps` / `gc-worktrees` / encoding gates.
+
 ## [0.2.0] — 2026-11-05
 
 ### Added

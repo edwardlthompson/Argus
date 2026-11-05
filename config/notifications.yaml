@@ -4,6 +4,14 @@ notify_on_run_error: true
 critical_security_threshold: 80
 # Digests use counts + Issue/Actions links only (no CVE / per-repo security names).
 notify_include_repo_names: false
+# Quiet hours (local timezone name). Empty = always allow.
+quiet_hours:
+  enabled: false
+  timezone: UTC
+  start_hour: 22
+  end_hour: 8
+# Coalesce: skip if a digest was sent within this many hours.
+digest_coalesce_hours: 24
 
 # Prefer env secrets over committing URLs:
 #   ARGUS_DISCORD_WEBHOOK

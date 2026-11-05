@@ -14,6 +14,8 @@ on:
         description: "Send chat digests when human work exists"
         required: false
         default: "true"
+  repository_dispatch:
+    types: [argus-scan]
 
 jobs:
   scan:
@@ -44,9 +46,18 @@ jobs:
           fi
           REPORT_FLAG=""
           if [ -n "$ARGUS_REPORT_URL" ]; then REPORT_FLAG="--report-url $ARGUS_REPORT_URL"; fi
+          # workflow_dispatch inputs; repository_dispatch defaults to dry-run unless client_payload.apply=true
+          APPLY="${{ inputs.apply }}"
+          NOTIFY="${{ inputs.notify }}"
+          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            APPLY="${{ github.event.client_payload.apply }}"
+            NOTIFY="${{ github.event.client_payload.notify }}"
+            APPLY="${APPLY:-false}"
+            NOTIFY="${NOTIFY:-true}"
+          fi
           NOTIFY_FLAG=""
-          if [ "${{ inputs.notify }}" != "true" ]; then NOTIFY_FLAG="--no-notify"; fi
-          if [ "${{ inputs.apply }}" = "true" ]; then
+          if [ "$NOTIFY" != "true" ]; then NOTIFY_FLAG="--no-notify"; fi
+          if [ "$APPLY" = "true" ]; then
             argus run --apply $REPORT_FLAG $NOTIFY_FLAG
           else
             argus run --dry-run $REPORT_FLAG $NOTIFY_FLAG

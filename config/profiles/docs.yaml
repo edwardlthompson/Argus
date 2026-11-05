@@ -1,0 +1,4 @@
+name: docs
+description: Documentation sites — presentation, LICENSE, CONTRIBUTING.
+fixes_include: generic
+strictness: standard

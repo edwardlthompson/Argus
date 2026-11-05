@@ -40,3 +40,16 @@ def append_notification_log(
     rows = rows[-cap:]
     out.write_text(json.dumps(rows, indent=2) + "\n", encoding="utf-8")
     return out
+
+
+def recent_notification_rows(*, limit: int = 5, path: Path | None = None) -> list[dict[str, Any]]:
+    out = path or (DATA_DIR / "notifications.json")
+    if not out.exists():
+        return []
+    try:
+        raw = json.loads(out.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return []
+    if not isinstance(raw, list):
+        return []
+    return list(raw[-limit:])

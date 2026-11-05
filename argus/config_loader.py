@@ -182,6 +182,7 @@ def load_safety(path: Path | None = None) -> dict[str, Any]:
     path = path or (CONFIG_DIR / "safety.yaml")
     defaults = {
         "max_auto_prs_per_run": 5,
+        "max_auto_prs_per_owner": 3,
         "max_concurrent_agent_sessions": 1,
         "max_agent_prompt_chars": 12000,
         "max_gate_failures_before_pause": 2,

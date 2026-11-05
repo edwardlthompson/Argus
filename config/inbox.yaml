@@ -1,9 +1,13 @@
-# GitHub Issues inbox on the controller repo (private control plane).
+# Issues inbox — on the *private runner*, not the public product repo.
+# Bootstrap: pwsh -File scripts/bootstrap-argus-runner.ps1
+# Replace YOUR_LOGIN after fork, or leave and override on the private runner only.
 enabled: true
-controller_repo: edwardlthompson/Argus
+controller_repo: YOUR_LOGIN/argus-runner
 label_inbox: argus-inbox
 label_security: argus-security
-# When false (default for public controller): SEC-* human fixes are NOT filed as Issues
-# with enablement steps — details stay in Actions artifacts + private chat digests.
+# true only when controller_repo is private (bootstrap script sets this on the runner).
 security_issues: false
 max_issues_per_run: 20
+# Optional GitHub Projects v2 board (private runner). Omit project_number to skip.
+# project_owner: YOUR_LOGIN
+# project_number: 1

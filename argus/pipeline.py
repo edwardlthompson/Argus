@@ -10,15 +10,18 @@ from argus.agent_dispatch import (
     prepare_dispatches,
     summarize_dispatch,
 )
+from argus.agent_ops import prompt_budget_report
 from argus.apply import apply_auto_safe, summarize_apply
 from argus.compose import write_artifacts
 from argus.config_loader import load_fixes, load_profile, load_rubric, load_safety
 from argus.discover import discover_portfolio
 from argus.github_client import GitHubClient
 from argus.inbox_issues import summarize_inbox, sync_inbox_issues
+from argus.inbox_project import summarize_project, sync_inbox_project
 from argus.match import match_fixes
 from argus.models import FixClass, RepoPlan
 from argus.notify import send_notifications
+from argus.profile_apply import sync_profile_readme
 from argus.score import score_repo
 from argus.signals import collect_signals, fixture_bundle
 from argus.state import StateStore
@@ -140,7 +143,13 @@ def run_pipeline(
                     plans,
                     dry_run=dry_run or discovery.report_only,
                     max_prs=int(safety["max_auto_prs_per_run"]),
+                    max_prs_per_owner=int(safety.get("max_auto_prs_per_owner") or 0) or None,
                 )
+                profile_result = None
+                if not discovery.report_only:
+                    profile_result = sync_profile_readme(
+                        client, store, plans, dry_run=dry_run
+                    )
 
                 threshold = (
                     float(attention_threshold)
@@ -168,8 +177,10 @@ def run_pipeline(
                     report_banner=report_banner,
                 )
                 inbox_result = None
+                project_result = None
                 if not discovery.report_only:
                     inbox_result = sync_inbox_issues(client, store, plans, dry_run=dry_run)
+                    project_result = sync_inbox_project(client, dry_run=dry_run)
                 notify_result = None
                 if notify and not discovery.report_only:
                     notify_result = send_notifications(plans, report_url=report_url)
@@ -191,7 +202,21 @@ def run_pipeline(
                         "skipped_archived": discovery.skipped_archived or [],
                         "apply": summarize_apply(apply_result),
                         "dispatch": summarize_dispatch(dispatch),
+                        "prompt_budget": prompt_budget_report(
+                            dispatch.prompts, int(safety["max_agent_prompt_chars"])
+                        ),
                         "inbox": None if inbox_result is None else summarize_inbox(inbox_result),
+                        "project": None
+                        if project_result is None
+                        else summarize_project(project_result),
+                        "profile": None
+                        if profile_result is None
+                        else {
+                            "action": profile_result.action,
+                            "url": profile_result.url,
+                            "detail": profile_result.detail,
+                            "errors": profile_result.errors,
+                        },
                         "notify": None
                         if notify_result is None
                         else {"sent": notify_result.sent, "skipped": notify_result.skipped},

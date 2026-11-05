@@ -8,6 +8,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
+from argus.apply_templates import file_from_template
 from argus.config_loader import load_yaml
 from argus.github_client import GitHubClient, GitHubError
 from argus.models import MatchedFix, RepoPlan
@@ -24,10 +25,20 @@ class ApplyResult:
     skipped: list[str] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
     applied: list[str] = field(default_factory=list)
+    would_prs: list[dict[str, str]] = field(default_factory=list)
+
+
+def _banned_topics() -> set[str]:
+    path = CONFIG_DIR / "topics.yaml"
+    if not path.exists():
+        return {"foss", "mit", "open-source", "opensource"}
+    data = load_yaml(path) or {}
+    return {str(t).lower() for t in (data.get("generic") or [])}
 
 
 def _topics_for(plan: RepoPlan) -> list[str]:
-    existing = [t for t in plan.repo.topics if t.lower() not in {"foss", "mit", "open-source", "opensource"}]
+    banned = _banned_topics()
+    existing = [t for t in plan.repo.topics if t.lower() not in banned]
     name_bits = re.split(r"[^a-z0-9]+", plan.repo.name.lower())
     for bit in name_bits:
         if len(bit) >= 3 and bit not in existing:
@@ -116,46 +127,36 @@ def _content_pr(
     return str(pr.get("html_url") or "")
 
 
-def _file_from_template(fix_id: str) -> tuple[str, str] | None:
-    templates = {
-        "HYGIENE-SECURITY-MD": (
-            "SECURITY.md",
-            "# Security Policy\n\nReport vulnerabilities privately via GitHub Security Advisories.\n",
-        ),
-        "HYGIENE-CONTRIBUTING": (
-            "CONTRIBUTING.md",
-            "# Contributing\n\n1. Open an issue or PR.\n2. Keep changes focused.\n3. Run tests before review.\n",
-        ),
-        "HYGIENE-COC": (
-            "CODE_OF_CONDUCT.md",
-            "# Code of Conduct\n\nBe respectful. Harassment is not tolerated.\n",
-        ),
-        "HYGIENE-GITATTRIBUTES": (
-            ".gitattributes",
-            "* text=auto eol=lf\n*.py text eol=lf\n*.md linguist-documentation=true\n",
-        ),
-        "HYGIENE-LICENSE": (
-            "LICENSE",
-            "MIT License\n\nCopyright (c) contributors\n\nPermission is hereby granted...\n",
-        ),
-        "HYGIENE-CI": (
-            ".github/workflows/ci.yml",
-            (
-                "name: ci\non:\n  push:\n    branches: [main, master]\n  pull_request:\n"
-                "jobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n"
-                "      - uses: actions/checkout@v4\n      - run: echo ok\n"
-            ),
-        ),
-    }
-    return templates.get(fix_id)
-
-
 def _handler_file_pr(client: GitHubClient, plan: RepoPlan, matched: MatchedFix) -> str:
-    pair = _file_from_template(matched.fix.id)
+    pair = file_from_template(matched.fix.id)
     if not pair:
         raise GitHubError(f"No file template for {matched.fix.id}")
     path, body = pair
+    if matched.fix.id == "HYGIENE-CODEOWNERS":
+        body = body.replace("@OWNER", f"@{plan.repo.owner}")
     return _content_pr(client, plan, matched, path, body, f"chore(argus): add {path}")
+
+
+def _enable_dependabot(client: GitHubClient, plan: RepoPlan, _m: MatchedFix) -> str:
+    client.put(
+        f"/repos/{plan.repo.owner}/{plan.repo.name}/vulnerability-alerts",
+        allow_write=True,
+    )
+    return f"dependabot-alerts:{plan.repo.full_name}"
+
+
+def _enable_secret_scanning(client: GitHubClient, plan: RepoPlan, _m: MatchedFix) -> str:
+    client.patch(
+        f"/repos/{plan.repo.owner}/{plan.repo.name}",
+        allow_write=True,
+        json={
+            "security_and_analysis": {
+                "secret_scanning": {"status": "enabled"},
+                "secret_scanning_push_protection": {"status": "enabled"},
+            }
+        },
+    )
+    return f"secret-scanning:{plan.repo.full_name}"
 
 
 def _lineage_version(client: GitHubClient, plan: RepoPlan, matched: MatchedFix) -> str:
@@ -217,6 +218,11 @@ HANDLERS: dict[str, Handler] = {
     "HYGIENE-GITATTRIBUTES": _handler_file_pr,
     "HYGIENE-LICENSE": _handler_file_pr,
     "HYGIENE-CI": _handler_file_pr,
+    "HYGIENE-CODEOWNERS": _handler_file_pr,
+    "HYGIENE-GITIGNORE": _handler_file_pr,
+    "SEC-CODEQL-WORKFLOW": _handler_file_pr,
+    "SEC-DEPENDABOT-ENABLE": _enable_dependabot,
+    "SEC-SECRET-SCAN-ENABLE": _enable_secret_scanning,
     "LINEAGE-VERSION-STALE": _lineage_version,
     "LINEAGE-MISSING-MARKERS": _lineage_markers,
 }
@@ -229,6 +235,7 @@ def apply_auto_safe(
     *,
     dry_run: bool = True,
     max_prs: int = 5,
+    max_prs_per_owner: int | None = None,
 ) -> ApplyResult:
     result = ApplyResult()
     if client.report_only:
@@ -238,18 +245,28 @@ def apply_auto_safe(
         return result
 
     opened = 0
+    per_owner: dict[str, int] = {}
     for plan in plans:
         if not plan.repo.can_write:
             for m in plan.auto_fixes:
                 result.skipped.append(f"{plan.repo.full_name}:{m.fix.id}:no_write")
             continue
         for m in plan.auto_fixes:
+            owner = plan.repo.owner
             if opened >= max_prs:
                 result.skipped.append(f"{plan.repo.full_name}:{m.fix.id}:max_prs")
                 continue
+            if max_prs_per_owner is not None and per_owner.get(owner, 0) >= max_prs_per_owner:
+                result.skipped.append(f"{plan.repo.full_name}:{m.fix.id}:max_owner")
+                continue
             key = f"{plan.repo.full_name}:{m.fix.id}"
             result.attempted.append(key)
+            preview = file_from_template(m.fix.id)
+            path_hint = preview[0] if preview else m.fix.id
             if dry_run:
+                result.would_prs.append(
+                    {"repo": plan.repo.full_name, "fix": m.fix.id, "path": path_hint}
+                )
                 result.skipped.append(f"{key}:dry_run")
                 continue
             handler = HANDLERS.get(m.fix.id)
@@ -265,6 +282,7 @@ def apply_auto_safe(
                     plan.repo.full_name, m.fix.id, ttl_days=ttl, source="auto_apply"
                 )
                 opened += 1
+                per_owner[owner] = per_owner.get(owner, 0) + 1
             except GitHubError as exc:
                 result.errors.append(f"{key}:{exc}")
     return result
@@ -277,4 +295,5 @@ def summarize_apply(result: ApplyResult) -> dict[str, Any]:
         "skipped": result.skipped,
         "errors": result.errors,
         "applied": result.applied,
+        "would_prs": result.would_prs,
     }

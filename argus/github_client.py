@@ -49,8 +49,10 @@ class GitHubClient:
     def __exit__(self, *args: object) -> None:
         self.close()
 
-    def _request(self, method: str, path: str, *, allow_write: bool = False, **kwargs: Any) -> Any:
-        mutating = method.upper() not in {"GET", "HEAD"}
+    def _request(
+        self, method: str, path: str, *, allow_write: bool = False, read_post: bool = False, **kwargs: Any
+    ) -> Any:
+        mutating = method.upper() not in {"GET", "HEAD"} and not read_post
         if mutating:
             self.write_attempts += 1
             if self.report_only or not allow_write:
@@ -58,24 +60,19 @@ class GitHubClient:
                     f"Write blocked (report_only={self.report_only}, allow_write={allow_write}): "
                     f"{method} {path}"
                 )
-
-        retries = 3
-        for _attempt in range(retries):
+        for _ in range(3):
             self._limiter.wait()
             resp = self._client.request(method, path, **kwargs)
             if resp.status_code == 403 and "rate limit" in resp.text.lower():
                 self._secondary.on_failure()
                 reset = resp.headers.get("X-RateLimit-Reset")
                 if reset and reset.isdigit():
-                    sleep_for = max(0, int(reset) - int(time.time()))
-                    time.sleep(min(sleep_for, 60))
+                    time.sleep(min(max(0, int(reset) - int(time.time())), 60))
                 continue
             if resp.status_code >= 400:
                 raise GitHubError(f"{method} {path} -> {resp.status_code}: {resp.text[:200]}")
             self._secondary.on_success()
-            if resp.status_code == 204:
-                return None
-            return resp.json()
+            return None if resp.status_code == 204 else resp.json()
         raise GitHubError(f"Rate limited after retries: {method} {path}")
 
     def get(self, path: str, **kwargs: Any) -> Any:
@@ -96,21 +93,35 @@ class GitHubClient:
     def list_viewer_repos(
         self, *, affiliation: str = "owner,collaborator,organization_member"
     ) -> list[dict[str, Any]]:
-        return self._paginate(
-            "/user/repos",
-            {"affiliation": affiliation, "sort": "updated"},
-        )
+        return self._paginate("/user/repos", {"affiliation": affiliation, "sort": "updated"})
 
     def list_user_repos(self, username: str, *, public_only: bool = False) -> list[dict[str, Any]]:
-        type_param = "public" if public_only else "owner"
-        return self._paginate(f"/users/{username}/repos", {"type": type_param, "sort": "updated"})
+        kind = "public" if public_only else "owner"
+        return self._paginate(f"/users/{username}/repos", {"type": kind, "sort": "updated"})
 
     def list_org_repos(self, org: str, *, public_only: bool = False) -> list[dict[str, Any]]:
-        type_param = "public" if public_only else "all"
-        return self._paginate(f"/orgs/{org}/repos", {"type": type_param, "sort": "updated"})
+        kind = "public" if public_only else "all"
+        return self._paginate(f"/orgs/{org}/repos", {"type": kind, "sort": "updated"})
 
     def get_repo(self, owner: str, name: str) -> dict[str, Any]:
         return self.get(f"/repos/{owner}/{name}")
+
+    def graphql(
+        self, query: str, variables: dict[str, Any] | None = None, *, allow_write: bool = False
+    ) -> dict[str, Any]:
+        is_mut = allow_write or query.lstrip().lower().startswith("mutation")
+        data = self._request(
+            "POST", "/graphql", allow_write=is_mut, read_post=not is_mut,
+            json={"query": query, "variables": variables or {}},
+        )
+        if not isinstance(data, dict):
+            raise GitHubError("GraphQL returned non-object")
+        if data.get("errors"):
+            raise GitHubError(f"GraphQL errors: {data['errors']!r}"[:200])
+        result = data.get("data")
+        if not isinstance(result, dict):
+            raise GitHubError("GraphQL missing data")
+        return result
 
     def _paginate(self, path: str, params: dict[str, Any]) -> list[dict[str, Any]]:
         repos: list[dict[str, Any]] = []

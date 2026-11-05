@@ -10,7 +10,6 @@ from argus.models import Confidence, RepoStatus, ScoreResult, SignalBundle
 def _clamp(value: float, lo: float = 0.0, hi: float = 100.0) -> float:
     return max(lo, min(hi, value))
 
-
 def _cat_score(name: str, data: dict[str, Any] | None, rubric: dict[str, Any]) -> float | None:
     if data is None:
         return None
@@ -67,6 +66,18 @@ def _cat_score(name: str, data: dict[str, Any] | None, rubric: dict[str, Any]) -
         ):
             if not data.get(key):
                 score += weight
+        for key, weight in (("codeowners", 10), ("gitignore", 5)):
+            if key in data and not data.get(key):
+                score += weight
+        if "license_spdx" in data and data.get("license_spdx") in (None, "NOASSERTION", ""):
+            score = _clamp(score + 8)
+        if "stale_branch_count" in data:
+            score = _clamp(score + min(15, int(data.get("stale_branch_count") or 0) * 3))
+        if data.get("branch_protection") is False:
+            score = _clamp(score + 10)
+        runs = data.get("actions_runs_30d")
+        if isinstance(runs, int) and runs > 500:
+            score = _clamp(score + 5)
     elif name == "security":
         score = 10 if data.get("secret_scanning_enabled") else 70
         if not data.get("codeql_likely"):
@@ -87,7 +98,6 @@ def _cat_score(name: str, data: dict[str, Any] | None, rubric: dict[str, Any]) -
             score = 35
 
     return _clamp(score)
-
 
 def score_repo(
     signals: SignalBundle,

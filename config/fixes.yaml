@@ -104,39 +104,100 @@ fixes:
     profiles: [generic, edward]
     resolution_ttl_days: 90
 
-  - id: SEC-DEPENDABOT-ALERTS
-    class: human
-    title: Turn on Dependabot alerts
+  - id: HYGIENE-CODEOWNERS
+    class: auto_safe
+    title: Add CODEOWNERS
+    why: Default owners make review routing explicit.
+    applies_when: "not hygiene.get('codeowners', False)"
+    phase: 1
+    depends_on: []
+    confidence: medium
+    auto_safe: true
+    gate: "test -f CODEOWNERS -o -f .github/CODEOWNERS -o -f docs/CODEOWNERS"
+    profiles: [generic, edward, library]
+    resolution_ttl_days: 180
+
+  - id: HYGIENE-GITIGNORE
+    class: auto_safe
+    title: Add a starter .gitignore
+    why: Keeps build caches and secrets out of git.
+    applies_when: "not hygiene.get('gitignore', False)"
+    phase: 1
+    depends_on: []
+    confidence: high
+    auto_safe: true
+    gate: "test -f .gitignore"
+    profiles: [generic, edward]
+    resolution_ttl_days: 180
+
+  - id: SEC-CODEQL-WORKFLOW
+    class: auto_safe
+    title: Add CodeQL workflow pack
+    why: Static analysis catches common security bugs early.
+    applies_when: "not security.get('codeql_likely', False)"
+    phase: 2
+    depends_on: []
+    confidence: medium
+    auto_safe: true
+    gate: "test -f .github/workflows/codeql.yml -o -f .github/workflows/codeql.yaml"
+    profiles: [generic, edward, library, android]
+    resolution_ttl_days: 180
+
+  - id: SEC-DEPENDABOT-ENABLE
+    class: auto_safe
+    title: Enable Dependabot alerts via API
     why: GitHub can warn you when known-vulnerable packages appear.
     applies_when: "not deps.get('vulnerability_alerts_enabled', False)"
+    phase: 2
+    depends_on: []
+    confidence: high
+    auto_safe: true
+    gate: "true"
+    profiles: [generic, edward]
+    resolution_ttl_days: 180
+
+  - id: SEC-SECRET-SCAN-ENABLE
+    class: auto_safe
+    title: Enable secret scanning + push protection via API
+    why: Stops accidental passwords and API keys from sitting unnoticed.
+    applies_when: "not security.get('secret_scanning_enabled', False) and not repo.get('private', False)"
+    phase: 2
+    depends_on: []
+    confidence: medium
+    auto_safe: true
+    gate: "true"
+    profiles: [generic, edward]
+    resolution_ttl_days: 180
+
+  - id: SEC-DEPENDABOT-ALERTS
+    class: human
+    title: Turn on Dependabot alerts (manual fallback)
+    why: Use when the API toggle is unavailable for the org.
+    applies_when: "False"
     phase: 2
     depends_on: []
     confidence: high
     auto_safe: false
     human_steps: |
       1. Open the repository on GitHub in your browser.
-      2. Click **Settings**.
-      3. In the left sidebar, click **Code security**.
-      4. Find **Dependabot alerts** and click **Enable**.
-      5. If GitHub asks to confirm, click **Enable Dependabot alerts**.
+      2. Click **Settings** → **Code security**.
+      3. Enable **Dependabot alerts**.
     gate: "Dependabot alerts show as Enabled on the Code security settings page"
     profiles: [generic, edward]
     resolution_ttl_days: 180
 
   - id: SEC-SECRET-SCANNING
     class: human
-    title: Turn on secret scanning
-    why: Stops accidental passwords and API keys from sitting in git history unnoticed.
-    applies_when: "not security.get('secret_scanning_enabled', False) and not repo.get('private', False)"
+    title: Turn on secret scanning (manual fallback)
+    why: Use when the API toggle is unavailable.
+    applies_when: "False"
     phase: 2
     depends_on: []
     confidence: medium
     auto_safe: false
     human_steps: |
-      1. Open the repository on GitHub.
-      2. Click **Settings** → **Code security**.
-      3. Find **Secret scanning** and click **Enable**.
-      4. Leave the page only when it says Enabled.
+      1. Open Settings → Code security.
+      2. Enable Secret scanning.
     gate: "Secret scanning shows as Enabled"
     profiles: [generic, edward]
     resolution_ttl_days: 180

@@ -1,0 +1,4 @@
+name: library
+description: Libraries and packages — docs, SPDX license, CODEOWNERS, Dependabot.
+fixes_include: generic
+strictness: standard

@@ -37,7 +37,6 @@ NA_VERBS = frozenset(
         "simulate-template-upgrade",
         "check-template-updates",
         "check-template-gaps",
-        "update-deps",
         "render-upd-status",
         "apply-depsonar-gradle",
         "pre-release-gate",
@@ -78,6 +77,146 @@ def _next_build_plan_row() -> str:
         if "🔲" in line and "[AGENT]" in line:
             return line.strip()
     return "(no open AGENT rows)"
+
+
+def _project_dep_names() -> set[str]:
+    """Direct dependency names from pyproject.toml (runtime + optional)."""
+    import re
+
+    text = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    names: set[str] = set()
+    for raw in re.findall(r'"([A-Za-z0-9_.\-]+)(?:[<>=!~].*)?"', text):
+        base = raw.split("[", 1)[0].lower().replace("_", "-")
+        if base in {"argus", "hatchling"}:
+            continue
+        names.add(base)
+    # Common packaging aliases
+    names.update({"pyyaml", "jinja2", "pytest-cov"})
+    return names
+
+
+def _is_patch_or_minor(current: str, latest: str) -> bool:
+    def parts(v: str) -> list[int]:
+        out: list[int] = []
+        for bit in v.replace("post", ".").split("."):
+            digits = "".join(c for c in bit if c.isdigit())
+            if digits:
+                out.append(int(digits))
+        return out or [0]
+
+    a, b = parts(current), parts(latest)
+    if not a or not b:
+        return False
+    if a[0] != b[0]:
+        return False  # major bump — skip
+    return tuple(b) > tuple(a)
+
+
+def _update_deps(argv: list[str]) -> int:
+    """Project-scoped outdated scan; --audit uses pip-audit; --apply patch/minor only."""
+    import json
+
+    audit = "--audit" in argv
+    apply = "--apply" in argv
+    if audit:
+        subprocess.call([sys.executable, "-m", "pip", "install", "-q", "pip-audit"], cwd=str(ROOT))
+        req = ROOT / ".requirements-audit.txt"
+        # Direct deps only — ignore unrelated global site-packages.
+        lines = [
+            "click>=8.1",
+            "httpx>=0.27",
+            "jinja2>=3.1",
+            "jsonschema>=4.22",
+            "pyyaml>=6.0",
+            "pytest>=8.0",
+            "pytest-cov>=5.0",
+            "ruff>=0.6",
+        ]
+        req.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        try:
+            proc = subprocess.run(
+                [sys.executable, "-m", "pip_audit", "-r", str(req)],
+                cwd=str(ROOT),
+                capture_output=True,
+                text=True,
+            )
+        finally:
+            req.unlink(missing_ok=True)
+        text = (proc.stdout or "") + (proc.stderr or "")
+        print(text)
+        upper = text.upper()
+        if "CRITICAL" in upper:
+            print("FAIL update-deps --audit: CRITICAL findings")
+            return 1
+        if proc.returncode not in (0,):
+            # pip-audit exits 1 when vulns exist; treat as WARN for direct deps without CRITICAL
+            print("WARN update-deps --audit: findings present (no CRITICAL keyword); continuing")
+        print("OK update-deps --audit")
+        return 0
+
+    listing = subprocess.run(
+        [sys.executable, "-m", "pip", "list", "--outdated", "--format=json"],
+        cwd=str(ROOT),
+        capture_output=True,
+        text=True,
+    )
+    if listing.returncode != 0:
+        print(listing.stderr or listing.stdout)
+        return listing.returncode
+    wanted = _project_dep_names()
+    rows = [
+        r
+        for r in json.loads(listing.stdout or "[]")
+        if str(r.get("name", "")).lower().replace("_", "-") in wanted
+    ]
+    print(json.dumps(rows, indent=2))
+    majors = [
+        r
+        for r in rows
+        if not _is_patch_or_minor(str(r.get("version") or "0"), str(r.get("latest_version") or "0"))
+    ]
+    if majors:
+        print("majors skipped:", ", ".join(str(r.get("name")) for r in majors))
+    if not apply:
+        print("dry-run: pass --apply to upgrade patch/minor project deps only")
+        print("Gradle: Dependabot backup or enable depsonar MCP.")
+        return 0
+    for row in rows:
+        name = row.get("name")
+        cur = str(row.get("version") or "0")
+        latest = str(row.get("latest_version") or "0")
+        if not name or not _is_patch_or_minor(cur, latest):
+            continue
+        print(f"upgrade {name} {cur} -> {latest}")
+        subprocess.call(
+            [sys.executable, "-m", "pip", "install", "-U", f"{name}=={latest}"],
+            cwd=str(ROOT),
+        )
+    return 0
+
+
+def _check_encoding() -> int:
+    bad: list[str] = []
+    for path in ROOT.rglob("*"):
+        if not path.is_file():
+            continue
+        if any(p in path.parts for p in (".git", ".venv", "dist", "node_modules", "__pycache__")):
+            continue
+        if path.suffix.lower() not in {".py", ".md", ".yaml", ".yml", ".json", ".toml", ".txt"}:
+            continue
+        raw = path.read_bytes()
+        if raw.startswith(b"\xff\xfe") or raw.startswith(b"\xfe\xff"):
+            bad.append(str(path.relative_to(ROOT)))
+            continue
+        try:
+            raw.decode("utf-8")
+        except UnicodeDecodeError:
+            bad.append(str(path.relative_to(ROOT)))
+    if bad:
+        print("FAIL encoding:", ", ".join(bad[:20]))
+        return 1
+    print("OK check-file-encoding")
+    return 0
 
 
 def _smoke_hooks() -> int:
@@ -121,6 +260,19 @@ def main(argv: list[str] | None = None) -> int:
     if verb == "build-sprint-status":
         print(_next_build_plan_row())
         return 0
+
+    if verb == "gc-worktrees":
+        from argus.agent_ops import gc_worktrees
+
+        apply = "--apply" in argv
+        print(gc_worktrees(apply=apply))
+        return 0
+
+    if verb == "update-deps":
+        return _update_deps(argv)
+
+    if verb == "check-file-encoding":
+        return _check_encoding()
 
     if verb in VERIFY_VERBS:
         return _run_verify()

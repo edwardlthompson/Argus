@@ -1,0 +1,15 @@
+---
+description: Honesty labels for destructive ops (Argus thin child)
+alwaysApply: true
+---
+
+# Destructive ops (honesty labels)
+
+| Control | Label |
+|---------|-------|
+| `git push` | Enforced (best-effort) via hooks denylist; `/push` session override |
+| `git push --force` | Enforced (best-effort); no override |
+| Production deploys | Instructed |
+| Committing `.env` / secrets | Instructed + never do it |
+
+Hooks are **fail-open** on parse error. Prefer PRs; never force-push or delete target repos.

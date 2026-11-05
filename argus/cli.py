@@ -13,11 +13,13 @@ from argus.config_loader import (
     ConfigError,
     load_allowlist,
     load_fixes,
+    load_inbox,
     load_notifications,
     load_rubric,
     load_safety,
     load_status,
 )
+from argus.inbox_guard import check_public_controller_risks
 from argus.models import RepoStatus
 from argus.paths import CONFIG_DIR, PROJECT_ROOT, ensure_runtime_dirs
 from argus.pipeline import run_pipeline
@@ -112,8 +114,9 @@ def fix_cmd(
 @click.option("--public-only", is_flag=True, default=False)
 @click.option("--profile", default="generic", show_default=True)
 @click.option("--include-archived", is_flag=True, default=False)
+@click.option("--open", "open_html", is_flag=True, default=False, help="Open local report.html")
 def report_cmd(
-    target: str, public_only: bool, profile: str, include_archived: bool
+    target: str, public_only: bool, profile: str, include_archived: bool, open_html: bool
 ) -> None:
     """Read-only scan of one user/org/repo."""
     ensure_runtime_dirs()
@@ -132,11 +135,28 @@ def report_cmd(
         "artifacts": summary.artifacts,
         "report_only": True,
     }, indent=2))
+    if open_html:
+        import webbrowser
+        from pathlib import Path
+
+        html = Path(summary.artifacts.get("report") or "")
+        if html.is_file():
+            webbrowser.open(html.resolve().as_uri())
 
 
 @main.command("status")
-def status_cmd() -> None:
-    """Portfolio overview from local state + status.yaml."""
+@click.option("--safe", is_flag=True, default=False, help="Print public-safe counts from dist/status.json")
+def status_cmd(safe: bool) -> None:
+    """Portfolio overview from local state + status.yaml (or --safe counts)."""
+    from argus.paths import DIST_DIR
+
+    if safe:
+        path = DIST_DIR / "status.json"
+        if not path.exists():
+            click.echo(json.dumps({"error": "no status.json — run argus run first"}))
+            return
+        click.echo(path.read_text(encoding="utf-8"))
+        return
     declared = load_status()
     store = StateStore()
     try:
@@ -148,6 +168,33 @@ def status_cmd() -> None:
             active = known.get(name, {}).get("active", True)
             rows.append({"repo": name, "status": st.value if hasattr(st, "value") else st, "active": active})
         click.echo(json.dumps(rows, indent=2))
+    finally:
+        store.close()
+
+
+@main.command("inbox")
+@click.option("--dry-run/--apply", default=True, show_default=True)
+def inbox_cmd(dry_run: bool) -> None:
+    """List/sync argus-inbox Issues (dry-run default)."""
+    import os
+
+    from argus.github_client import GitHubClient
+    from argus.inbox_issues import sync_inbox_issues
+
+    token = os.environ.get("GITHUB_TOKEN", "")
+    if not token:
+        raise SystemExit("GITHUB_TOKEN is not set")
+    store = StateStore()
+    try:
+        with GitHubClient(token=token) as client:
+            result = sync_inbox_issues(client, store, plans=[], dry_run=dry_run)
+        click.echo(json.dumps({
+            "dry_run": dry_run,
+            "created": result.created,
+            "updated": result.updated,
+            "resolved": result.resolved,
+            "errors": result.errors,
+        }, indent=2))
     finally:
         store.close()
 
@@ -205,6 +252,22 @@ def allow_cmd(repo: str) -> None:
     click.echo(f"allowed {repo}")
 
 
+@main.command("explain")
+@click.argument("repo")
+def explain_cmd(repo: str) -> None:
+    """Dump attention-score breakdown for owner/name (read-only)."""
+    import os
+
+    from argus.explain import explain_repo
+    from argus.github_client import GitHubClient
+
+    token = os.environ.get("GITHUB_TOKEN", "")
+    if not token:
+        raise SystemExit("GITHUB_TOKEN is not set")
+    with GitHubClient(token=token, report_only=True) as client:
+        click.echo(json.dumps(explain_repo(client, repo), indent=2))
+
+
 @main.command("history")
 @click.option("--limit", default=20, show_default=True)
 def history_cmd(limit: int) -> None:
@@ -220,6 +283,7 @@ def history_cmd(limit: int) -> None:
 def doctor_cmd() -> None:
     """Check token, config validity, and safety settings."""
     import os
+    import smtplib
 
     problems: list[str] = []
     token = os.environ.get("GITHUB_TOKEN", "")
@@ -245,8 +309,20 @@ def doctor_cmd() -> None:
         problems.append(f"status.yaml: {exc}")
 
     try:
-        load_notifications()
+        notif = load_notifications()
         click.echo("notifications: ok")
+        for ch in ("discord", "telegram", "webhook", "email"):
+            enabled = bool((notif.get(ch) or {}).get("enabled"))
+            click.echo(f"  channel {ch}: {'enabled' if enabled else 'off'}")
+        email = notif.get("email") or {}
+        if email.get("enabled") and email.get("smtp_host"):
+            try:
+                with smtplib.SMTP(str(email["smtp_host"]), int(email.get("smtp_port") or 587), timeout=5) as smtp:
+                    if email.get("use_tls", True):
+                        smtp.starttls()
+                click.echo("email smtp: reachable")
+            except Exception as exc:  # noqa: BLE001
+                problems.append(f"email smtp smoke failed: {exc}")
     except ConfigError as exc:
         problems.append(f"notifications.yaml: {exc}")
 
@@ -261,15 +337,33 @@ def doctor_cmd() -> None:
     allow = load_allowlist()
     click.echo(f"allowlist mode: {allow.get('mode')}")
 
+    try:
+        inbox = load_inbox()
+        click.echo(f"inbox controller: {inbox.get('controller_repo')}")
+    except ConfigError as exc:
+        problems.append(f"inbox.yaml: {exc}")
+        inbox = {}
+
+    client = None
     if token:
         try:
             from argus.github_client import GitHubClient
 
-            with GitHubClient(token=token) as client:
-                me = client.whoami()
-                click.echo(f"github: authenticated as {me.get('login')}")
+            client = GitHubClient(token=token)
+            me = client.whoami()
+            click.echo(f"github: authenticated as {me.get('login')}")
+            for warn in check_public_controller_risks(client, config=inbox):
+                problems.append(warn)
         except Exception as exc:  # noqa: BLE001
             problems.append(f"github auth failed: {exc}")
+            for warn in check_public_controller_risks(None, config=inbox):
+                problems.append(warn)
+    elif inbox.get("security_issues"):
+        for warn in check_public_controller_risks(None, config=inbox):
+            problems.append(warn)
+
+    if client is not None:
+        client.close()
 
     if problems:
         for p in problems:
@@ -277,6 +371,16 @@ def doctor_cmd() -> None:
         raise SystemExit(1)
     click.echo("doctor: all checks passed")
     click.echo(f"root: {PROJECT_ROOT}")
+
+
+@main.command()
+def completion() -> None:
+    """Print shell completion setup hint for Click."""
+    click.echo(
+        "PowerShell: argus completion | Out-File -Encoding utf8 argus.ps1; . ./argus.ps1\n"
+        "bash: eval \"$(_ARGUS_COMPLETE=bash_source argus)\"\n"
+        "See https://click.palletsprojects.com/shell-completion/"
+    )
 
 
 # Alias so `argus status <repo> experimental` can be documented; Click groups conflict,

@@ -20,7 +20,6 @@ class DiscoveryResult:
     report_only: bool = False
     skipped_archived: list[str] | None = None
 
-
 def _to_record(raw: dict[str, Any], status: RepoStatus) -> RepoRecord:
     full = raw["full_name"]
     owner, name = full.split("/", 1)
@@ -41,23 +40,42 @@ def _to_record(raw: dict[str, Any], status: RepoStatus) -> RepoRecord:
         raw=raw,
     )
 
-
 def _allowed(full_name: str, owner: str, viewer: str | None, allow: dict[str, Any]) -> bool:
     if full_name in (allow.get("deny") or []):
         return False
     mode = allow.get("mode", "owner_only")
     allow_list = allow.get("allow") or []
+    orgs = {str(o).lower() for o in (allow.get("orgs") or [])}
     if mode == "allowlist":
         return full_name in allow_list
+    if mode == "org":
+        if orgs and owner.lower() not in orgs:
+            return False
+        return full_name in allow_list if allow_list else bool(orgs)
+    if mode == "collaborator":
+        return True
     if mode == "owner_only":
         if allow_list and full_name in allow_list:
             return True
         return viewer is not None and owner.lower() == viewer.lower()
-    # mode == all
-    if allow_list:
-        return full_name in allow_list
-    return True
+    return full_name in allow_list if allow_list else True
 
+def _portfolio_raw(client: GitHubClient, allow: dict[str, Any], *, public_only: bool) -> list[dict[str, Any]]:
+    mode = allow.get("mode", "owner_only")
+    orgs = [str(o) for o in (allow.get("orgs") or [])]
+    if mode == "org" and orgs:
+        seen: set[str] = set()
+        out: list[dict[str, Any]] = []
+        for org in orgs:
+            for raw in client.list_org_repos(org, public_only=public_only):
+                if raw["full_name"] not in seen:
+                    seen.add(raw["full_name"])
+                    out.append(raw)
+        return out
+    default_aff = "owner,collaborator,organization_member"
+    if mode == "collaborator":
+        default_aff = "collaborator,organization_member"
+    return client.list_viewer_repos(affiliation=str(allow.get("affiliation") or default_aff))
 
 def discover_portfolio(
     client: GitHubClient,
@@ -67,15 +85,10 @@ def discover_portfolio(
     public_only: bool = False,
     include_archived: bool = False,
 ) -> DiscoveryResult:
-    """Discover repos for the authenticated user, or a third-party target (report-only).
-
-    Archived repos are tracked in state but omitted from the scored set unless
-    ``include_archived`` is true.
-    """
+    """Discover repos; allowlist ``mode: org|collaborator`` scopes portfolio listing."""
     declared = load_status()
     sync_status_yaml(store, declared)
     allow = load_allowlist()
-
     viewer: str | None = None
     report_only = False
     raw_repos: list[dict[str, Any]] = []
@@ -89,12 +102,11 @@ def discover_portfolio(
         else:
             try:
                 raw_repos = client.list_org_repos(target, public_only=public_only)
-            except Exception:  # noqa: BLE001 — fall back to user listing
+            except Exception:  # noqa: BLE001
                 raw_repos = client.list_user_repos(target, public_only=True or public_only)
     else:
-        me = client.whoami()
-        viewer = me.get("login")
-        raw_repos = client.list_viewer_repos()
+        viewer = client.whoami().get("login")
+        raw_repos = _portfolio_raw(client, allow, public_only=public_only)
 
     known = store.known_repos()
     known_names = set(known.keys())
@@ -117,9 +129,7 @@ def discover_portfolio(
         else:
             status = RepoStatus.ACTIVE
         store.upsert_repo(full, status, {"html_url": raw.get("html_url") or ""})
-        if not include_archived and (
-            status == RepoStatus.ARCHIVED or bool(raw.get("archived"))
-        ):
+        if not include_archived and (status == RepoStatus.ARCHIVED or bool(raw.get("archived"))):
             skipped_archived.append(full)
             continue
         record = _to_record(raw, status)
@@ -131,7 +141,6 @@ def discover_portfolio(
     removed = sorted(known_names - current_names) if not target else []
     for name in removed:
         store.mark_inactive(name)
-
     return DiscoveryResult(
         repos=repos,
         new=new,

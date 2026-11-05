@@ -40,6 +40,9 @@
         <div><strong>{{ human_open }}</strong><span class="muted">human tasks</span></div>
         <div><strong>{{ ok }}</strong><span class="muted">status</span></div>
       </div>
+      {% if circuit_open %}
+      <p class="muted">Agent circuit breaker is open — new agent sessions paused.</p>
+      {% endif %}
     </section>
     <p class="note">
       Sign in to GitHub to view the inbox (Issues labeled <code>argus-inbox</code>)
@@ -47,8 +50,21 @@
       {% if controller_url %}
       <br /><a href="{{ controller_url }}/issues?q=is%3Aissue+is%3Aopen+label%3Aargus-inbox">Open inbox</a>
       · <a href="{{ controller_url }}/actions">Actions</a>
+      · <a href="badge.svg">Status badge</a>
       {% endif %}
     </p>
+    {% if notify_rows %}
+    <section class="card">
+      <p class="muted">Recent digests (counts only)</p>
+      <ul>
+      {% for row in notify_rows %}
+        <li>{{ row.ts }} — {{ row.human_count }} human
+          {% if row.channels %}via {{ row.channels | join(', ') }}{% endif %}
+        </li>
+      {% endfor %}
+      </ul>
+    </section>
+    {% endif %}
   </main>
 </body>
 </html>

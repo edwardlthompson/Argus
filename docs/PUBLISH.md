@@ -1,21 +1,31 @@
-# Publish Argus (controller) to GitHub
+# Publish Argus (public product)
 
-`[HUMAN]` step — create the remote and push so weekly Actions can scan your portfolio **including Argus itself**.
+Create the **public** MIT product remote (source + CI + docs). Real portfolio scans run on a **private runner** — see [FORKING.md](FORKING.md).
 
 ```bash
-# from the Argus project root
-gh repo create edwardlthompson/Argus --public --source=. --remote=origin --push
-# Stronger: --private  (recommended so Issues + artifacts stay off the open web)
+gh repo create YOUR_LOGIN/Argus --public --source=. --remote=origin --push
 ```
 
-Then:
+Then on the **public** product:
 
-1. **Settings → Actions → General** — allow workflows.
-2. **Settings → Pages → Source → GitHub Actions** (optional public **status-only** page).
-3. Add secrets if needed: `ARGUS_DISCORD_WEBHOOK` (etc.), optional fine-grained `ARGUS_GITHUB_TOKEN` with repo + issues scope for cross-repo apply and inbox sync.
-4. Set variable `ARGUS_REPORT_URL` to the Pages **status** URL after first Pages deploy (counts only).
-5. Run **argus-scan** or **argus-weekly** once; download the private artifact for the full report; confirm Issues labeled `argus-inbox` for non-security human tasks when `--apply` is used.
+1. **Settings → Actions** — allow workflows (CI / Pages status-only).
+2. Optional **Pages** → GitHub Actions for **status counts only** (`status.html`).
+3. Do **not** put your portfolio PAT apply secrets here if the repo is public and you sync Issues with security detail.
+4. Set `ARGUS_REPORT_URL` only to a **status-only** Pages URL if used in digests.
 
-Allow-list stays `owner_only` — no special skip for the controller.
+## Private runner (required for auto scan / auto-fix)
 
-If the repo is public, keep `config/inbox.yaml` → `security_issues: false` (default). Flip to `true` only after the controller is private.
+```bash
+pwsh -File scripts/bootstrap-argus-runner.ps1
+# or: bash scripts/bootstrap-argus-runner.sh
+```
+
+On the private runner:
+
+| Secret / input | Purpose |
+|----------------|---------|
+| `ARGUS_GITHUB_TOKEN` | Fine-grained or classic PAT: read portfolio + write PRs/issues as needed |
+| Discord/Telegram secrets | Optional digests |
+| Workflow `apply=true` | Enable `auto_safe` + Issues sync |
+
+Public product CI should stay tests/fixtures — not a live apply against the world.

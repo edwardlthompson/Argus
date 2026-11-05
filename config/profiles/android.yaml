@@ -1,0 +1,4 @@
+name: android
+description: Android apps — CI, security scanning, dependency alerts.
+fixes_include: generic
+strictness: standard

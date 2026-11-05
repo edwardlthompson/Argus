@@ -1,19 +1,38 @@
-# Forking Argus for your own account
+# Forking Argus (public product + private runner)
 
-1. Click **Fork** on GitHub (or clone and push to your account).
-2. In your fork: **Settings → Secrets and variables → Actions**, add `GITHUB_TOKEN` or rely on `secrets.GITHUB_TOKEN` with appropriate permissions.
-3. Leave `config/profiles/generic.yaml` as the default profile.
-4. Clear or edit `config/status.yaml` for your repos (empty is fine — discovery assigns `active`).
-5. Optionally edit `config/allowlist.yaml` if you collaborate on many orgs.
-6. Run locally:
+Argus is a **public MIT product**. Real scans, auto-apply, Issues inbox, and artifacts belong on a **private runner** so findings stay owner-only.
+
+## Recommended path (operators)
+
+1. Use / fork / clone the **public** `Argus` repo for source and contributions.
+2. Bootstrap a private runner (one command):
+
+```bash
+# from a clone of public Argus, with gh authenticated (repo + workflow scopes)
+pwsh -File scripts/bootstrap-argus-runner.ps1
+# or: bash scripts/bootstrap-argus-runner.sh
+```
+
+That creates `YOU/argus-runner` (private), pushes code, sets `ARGUS_GITHUB_TOKEN`, points `config/inbox.yaml` at the runner with `security_issues: true`, and queues a dry-run scan.
+
+3. Watch Actions on the **private** runner. When the dry-run looks sane, re-run **argus-scan** with `apply=true` (or weekly input).
+4. Live in: private Issues (`argus-inbox`) + Actions artifacts + optional Discord/Telegram digests.
+
+## Local dry-run (optional)
 
 ```bash
 pip install -e ".[dev]"
-export GITHUB_TOKEN=…   # or set in .env
+cp .env.example .env   # set GITHUB_TOKEN
 argus doctor
 argus run --dry-run
 ```
 
-You should see `dist/runbook.md` and `dist/report.html` for **your** repositories.
+Open `dist/report.html` locally. Do **not** point a public product repo’s inbox at your real findings.
 
-No Python changes required for a normal fork.
+## Contributing
+
+Open PRs against the **public** product. Do not commit secrets or real portfolio dumps.
+
+## Profile Overview
+
+Argus can PR an updated GitHub profile README into public `YOU/YOU` (see START_HERE). That repo must stay **public** for GitHub to show the Overview.

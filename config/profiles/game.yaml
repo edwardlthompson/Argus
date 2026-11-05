@@ -1,0 +1,4 @@
+name: game
+description: Game repos — README presentation, releases, CI; lighter on CODEOWNERS.
+fixes_include: generic
+strictness: standard

@@ -1,0 +1,82 @@
+<!-- argus:profile-readme -->
+# {{ display_name }}
+
+{% if tagline %}> {{ tagline }}
+{% endif %}
+
+{% if location or blog or twitter %}
+{% if location %}- {{ location }}
+{% endif %}
+{% if blog %}- [Website]({{ blog }})
+{% endif %}
+{% if twitter %}- [@{{ twitter }}](https://twitter.com/{{ twitter }})
+{% endif %}
+{% endif %}
+
+## About me
+
+{{ about }}
+
+{% if bio %}
+_{{ bio }}_
+{% endif %}
+
+{% if roles %}
+| {% for r in roles %}{{ r.title }} |{% endfor %}
+| {% for r in roles %}---|{% endfor %}
+| {% for r in roles %}{{ r.blurb }} |{% endfor %}
+{% endif %}
+
+## What I build
+
+{% if capabilities %}
+| {% for c in capabilities %}{{ c.title }} |{% endfor %}
+| {% for c in capabilities %}---|{% endfor %}
+| {% for c in capabilities %}{{ c.blurb }} |{% endfor %}
+{% endif %}
+
+## Tech stack
+
+{% if languages %}
+{% for lang in languages %}
+- {{ lang }}
+{% endfor %}
+{% else %}
+- (languages appear after Argus scans your public repos)
+{% endif %}
+
+{% if topics %}
+**Topics:** {{ topics | join(', ') }}
+{% endif %}
+
+## Featured projects
+
+{% if featured %}
+{% for repo in featured %}
+- [{{ repo.name }}]({{ repo.html_url }}){% if repo.description %} — {{ repo.description }}{% endif %}
+{% endfor %}
+{% else %}
+- Featured public repositories will appear here after a portfolio scan.
+{% endif %}
+
+{% if suggested_pins %}
+### Suggested pins (human step)
+
+GitHub pins are set in the UI. Consider pinning:
+
+{% for name in suggested_pins %}
+- `{{ name }}`
+{% endfor %}
+{% endif %}
+
+## Development principles
+
+> {{ principles }}
+
+## Also open to
+
+{{ open_to }}
+
+---
+
+_Updated by [Argus](https://github.com/edwardlthompson/Argus). Marker: `argus:profile-readme`._

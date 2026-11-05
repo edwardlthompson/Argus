@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from argus.agent_ops import open_gate_failure_issue
 from argus.compose import _agent_prompt_block
 from argus.config_loader import load_yaml
 from argus.github_client import GitHubClient, GitHubError
@@ -203,6 +204,19 @@ def execute_dispatches(
                     dispatch.errors.append(f"{full}:push_failed")
         except Exception as exc:  # noqa: BLE001
             dispatch.errors.append(f"{full}:{exc}")
+        finally:
+            if workdir.exists() and cfg.get("cleanup_worktrees", True):
+                shutil.rmtree(workdir, ignore_errors=True)
+    if dispatch.errors and not dry_run:
+        try:
+            open_gate_failure_issue(
+                client,
+                title=f"Argus gate failures ({len(dispatch.errors)})",
+                body="\n".join(f"- `{e}`" for e in dispatch.errors[:20]),
+                dry_run=False,
+            )
+        except GitHubError as exc:
+            dispatch.errors.append(f"gate_issue:{exc}")
     return dispatch
 
 
@@ -220,4 +234,5 @@ def summarize_dispatch(result: DispatchResult) -> dict[str, Any]:
         "executed": result.executed,
         "mechanical": result.mechanical,
         "errors": result.errors,
+        "circuit_open": result.paused and result.reason == "circuit_breaker_open",
     }
