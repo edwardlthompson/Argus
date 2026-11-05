@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Argus status</title>
+  <style>
+    :root { --ink: #1c1a16; --muted: #5c574e; --accent: #0f6b5c; --card: #fffdf8; --line: #ddd6c8; }
+    body {
+      margin: 0; font-family: "Segoe UI", "Helvetica Neue", sans-serif; color: var(--ink);
+      background: radial-gradient(circle at top left, #e7f2ef 0%, transparent 40%),
+        linear-gradient(180deg, #f6f3ee 0%, #efe8dc 100%);
+      min-height: 100vh;
+    }
+    main { max-width: 36rem; margin: 0 auto; padding: 3rem 1.25rem; }
+    h1 { margin: 0 0 0.5rem; letter-spacing: -0.02em; }
+    .muted { color: var(--muted); }
+    .card {
+      background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+      padding: 1.25rem; margin-top: 1.5rem;
+    }
+    .counts { display: flex; gap: 1.5rem; margin-top: 1rem; }
+    .counts div strong { display: block; font-size: 1.75rem; }
+    a { color: var(--accent); }
+    .note {
+      margin-top: 1.5rem; font-size: 0.95rem; color: var(--muted);
+      border-left: 3px solid var(--accent); padding-left: 0.75rem;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Argus</h1>
+    <p class="muted">Portfolio doctor — public status only. No security details here.</p>
+    <section class="card">
+      <p class="muted">Last run</p>
+      <p><strong>{{ generated_at }}</strong></p>
+      <div class="counts">
+        <div><strong>{{ repo_count }}</strong><span class="muted">repos scanned</span></div>
+        <div><strong>{{ human_open }}</strong><span class="muted">human tasks</span></div>
+        <div><strong>{{ ok }}</strong><span class="muted">status</span></div>
+      </div>
+    </section>
+    <p class="note">
+      Sign in to GitHub to view the inbox (Issues labeled <code>argus-inbox</code>)
+      and download the private scan artifact from Actions.
+      {% if controller_url %}
+      <br /><a href="{{ controller_url }}/issues?q=is%3Aissue+is%3Aopen+label%3Aargus-inbox">Open inbox</a>
+      · <a href="{{ controller_url }}/actions">Actions</a>
+      {% endif %}
+    </p>
+  </main>
+</body>
+</html>

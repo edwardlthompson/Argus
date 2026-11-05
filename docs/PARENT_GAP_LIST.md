@@ -2,7 +2,7 @@
 
 **Parent:** [edwardlthompson/agent-project-bootstrap](https://github.com/edwardlthompson/agent-project-bootstrap) (`v1.12.0`)  
 **Child:** Argus (this repository)  
-**Policy:** Argus is a **product child**, not a template fork. Inherit lineage + agent hygiene; do not vendor the full template runtime (`modules/`, `examples/`, full `scripts/agent-run.py` surface).
+**Policy:** Argus is a **product child**, not a template fork. Inherit lineage + Cursor FOSS surface; do not vendor full template lifecycle (`modules/`, `examples/`, full `scripts/lib`).
 
 Status: ✅ closed · ❌ wont (documented) · 🔲 open
 
@@ -19,9 +19,11 @@ Status: ✅ closed · ❌ wont (documented) · 🔲 open
 | G09 | No Dependabot | `.github/dependabot.yml` for pip + Actions | ✅ |
 | G10 | No `.gitattributes` | LF + linguist hints for Python | ✅ |
 | G11 | README silent on parent | Lineage section + upgrade pointer | ✅ |
-| G12 | Full template `scripts/agent-run.py` / lifecycle | Keep Argus `scripts/verify.*`; document as wont | ❌ |
-| G13 | Full Cursor hooks/skills/plugin pack | Thin adapters only; upgrade via parent docs | ❌ |
+| G12 | Full template `scripts/lib` / lifecycle | Thin `scripts/agent-run.py` shim only; `verify.*` remains source of truth | ❌ |
+| G13 | Cursor FOSS pack (commands/hooks/skills/agents/plugin) | Commands + hooks + curated skills/agents + `argus-foss` plugin; Android/Sprint0 skills omitted | ✅ |
 | G14 | Template `modules/` / `examples/` / `TEMPLATE_INDEX` | N/A for product child | ❌ |
 | G15 | CodeQL / secret-scan workflows | Rely on GitHub defaults + Dependabot; optional later | ❌ |
+
+**G13 note:** Omitted by design: `emulator`, `espresso-android16`, `blender-icons`, `sprint0-signoff`, full canvas-bootstrap-status. Upgrade: re-copy `.cursor/commands|hooks|skills`, re-stamp Argus banners/prefaces, extend shim verb sets from exit-2 unknowns.
 
 **Board rule:** New parent upgrades → open a BUILD_PLAN row, re-diff this table, close or wont each gap.

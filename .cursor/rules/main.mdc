@@ -17,11 +17,15 @@ Read `AGENTS.md` before editing. Product brief: `AGENT.md`. Parent: `edwardlthom
 
 ## Commands
 
+Type `/` for slash commands (`docs/help/BATCH_COMMANDS.md`). Gates:
+
 ```bash
-bash scripts/verify.sh
-# or: powershell -File scripts/verify.ps1
+python scripts/agent-run.py verify
+# or: bash scripts/verify.sh / powershell -File scripts/verify.ps1
 argus doctor
 ```
+
+`/push` and `/ship` need `[HUMAN]` approval (hooks denylist git push).
 
 ## Board
 

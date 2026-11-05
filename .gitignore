@@ -32,5 +32,6 @@ Thumbs.db
 # Argus local state (keep examples)
 data/*.sqlite
 data/*.db
+data/notifications.json
 data/worktrees/
 !data/.gitkeep

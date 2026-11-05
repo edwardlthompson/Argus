@@ -1,0 +1,12 @@
+---
+description: Bare-word batch commands — expand to .cursor/commands/{word}.md
+alwaysApply: false
+---
+
+# Batch command bare-word triggers
+
+When the user message is **exactly one word** (case-insensitive, no punctuation), treat it as the matching slash command: read `.cursor/commands/{word}.md` and execute it **before anything else**.
+
+Prefer `/audit` over bare `audit` when unsure. Registry: `docs/BATCH_COMMANDS.md` · cheat sheet: `docs/help/BATCH_COMMANDS.md`.
+
+`/push` and `/ship` grant explicit `git push` approval. `debug` ≠ `audit`. `ux-audit` ≠ `audit`. Supers (`bootstrap`, `verify`, `build`, `ship`, `maintain`) run child atomics in order.

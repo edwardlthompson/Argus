@@ -1,0 +1,9 @@
+# GitHub Issues inbox on the controller repo (private control plane).
+enabled: true
+controller_repo: edwardlthompson/Argus
+label_inbox: argus-inbox
+label_security: argus-security
+# When false (default for public controller): SEC-* human fixes are NOT filed as Issues
+# with enablement steps — details stay in Actions artifacts + private chat digests.
+security_issues: false
+max_issues_per_run: 20

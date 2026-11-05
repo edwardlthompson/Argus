@@ -1,0 +1,59 @@
+name: argus-scan
+
+# Start a scan from GitHub UI / mobile Actions (workflow_dispatch).
+# Full report stays in private artifacts; public Pages get status-only counts.
+
+on:
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: "Set true to allow non-dry-run auto-apply + Issues sync writes"
+        required: false
+        default: "false"
+      notify:
+        description: "Send chat digests when human work exists"
+        required: false
+        default: "true"
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install -e ".[dev]"
+      - name: Scan
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ARGUS_GITHUB_TOKEN: ${{ secrets.ARGUS_GITHUB_TOKEN }}
+          ARGUS_DISCORD_WEBHOOK: ${{ secrets.ARGUS_DISCORD_WEBHOOK }}
+          ARGUS_TELEGRAM_BOT_TOKEN: ${{ secrets.ARGUS_TELEGRAM_BOT_TOKEN }}
+          ARGUS_TELEGRAM_CHAT_ID: ${{ secrets.ARGUS_TELEGRAM_CHAT_ID }}
+          ARGUS_WEBHOOK_URL: ${{ secrets.ARGUS_WEBHOOK_URL }}
+          ARGUS_REPORT_URL: ${{ vars.ARGUS_REPORT_URL }}
+        run: |
+          if [ -n "$ARGUS_GITHUB_TOKEN" ]; then
+            export GITHUB_TOKEN="$ARGUS_GITHUB_TOKEN"
+          fi
+          REPORT_FLAG=""
+          if [ -n "$ARGUS_REPORT_URL" ]; then REPORT_FLAG="--report-url $ARGUS_REPORT_URL"; fi
+          NOTIFY_FLAG=""
+          if [ "${{ inputs.notify }}" != "true" ]; then NOTIFY_FLAG="--no-notify"; fi
+          if [ "${{ inputs.apply }}" = "true" ]; then
+            argus run --apply $REPORT_FLAG $NOTIFY_FLAG
+          else
+            argus run --dry-run $REPORT_FLAG $NOTIFY_FLAG
+          fi
+      - name: Upload private artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: argus-scan-dist
+          path: dist/
+          retention-days: 30

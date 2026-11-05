@@ -77,9 +77,7 @@ def _parse_fix(raw: dict[str, Any]) -> Fix:
         gate=str(gate) if gate else None,
         agent_prompt=str(agent_prompt) if agent_prompt else None,
         human_steps=str(human_steps) if human_steps else None,
-        resolution_ttl_days=(
-            int(raw["resolution_ttl_days"]) if raw.get("resolution_ttl_days") is not None else None
-        ),
+        resolution_ttl_days=(int(raw["resolution_ttl_days"]) if raw.get("resolution_ttl_days") is not None else None),
         profiles=tuple(str(p) for p in raw["profiles"]),
     )
 
@@ -144,6 +142,23 @@ def load_status(path: Path | None = None) -> dict[str, RepoStatus]:
 def load_notifications(path: Path | None = None) -> dict[str, Any]:
     path = path or (CONFIG_DIR / "notifications.yaml")
     return load_yaml(path)
+
+
+def load_inbox(path: Path | None = None) -> dict[str, Any]:
+    path = path or (CONFIG_DIR / "inbox.yaml")
+    defaults = {
+        "enabled": True,
+        "controller_repo": "edwardlthompson/Argus",
+        "label_inbox": "argus-inbox",
+        "label_security": "argus-security",
+        "security_issues": False,
+        "max_issues_per_run": 20,
+    }
+    if not path.exists():
+        return defaults
+    data = load_yaml(path)
+    defaults.update(data if isinstance(data, dict) else {})
+    return defaults
 
 
 def load_profile(name: str = "generic", path: Path | None = None) -> dict[str, Any]:

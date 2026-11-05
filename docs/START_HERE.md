@@ -27,18 +27,21 @@ argus doctor
 argus run --dry-run
 ```
 
-6. Open `dist/report.html` in a browser. If Argus needs you, the page lists grandma-simple steps.
+6. Open `dist/report.html` locally (full detail). Public Pages only publish `status.html` counts — never the exploit map.
+
+## Private control plane (day-to-day)
+
+1. **Human inbox** — On apply runs, Argus opens/updates Issues on the controller with label `argus-inbox`. Close the issue or comment `argus done` when finished. Security-class tasks (`SEC-*`) stay out of public Issue bodies by default (`config/inbox.yaml` → `security_issues: false`); details live in the Actions artifact.
+2. **Full report** — Download the `argus-dist` / `argus-scan-dist` artifact from Actions (`report.html`, `runbook.md`, `inbox.json`). Retention: 30 days.
+3. **Notifications** — Discord/Telegram get “Argus needs you for N tasks” plus links to the inbox and the Actions run. No CVE titles in chat.
+4. **Start a scan** — Actions → **argus-scan** → Run workflow (mobile-friendly). Weekly schedule remains in **argus-weekly**.
+5. **Public status (optional)** — Pages shows last-run counts only. Set `ARGUS_REPORT_URL` to that status URL if you want it in digests.
+
+Recommend making the controller repo **private** for the strongest ACL on Issues + artifacts.
 
 ## Weekly silence
 
-Use `.github/workflows/weekly.yml` (already included). It runs `argus run --dry-run` by default until you flip the workflow input or secret to allow apply.
-
-## Publish the HTML report (optional)
-
-1. In the GitHub repo: **Settings → Pages → Source → GitHub Actions**.
-2. Run the **pages** workflow (or wait for a successful weekly run).
-3. Your grandma-friendly report will be at `https://<user>.github.io/<repo>/`.
-4. Put that URL in notifications as `ARGUS_REPORT_URL` / `--report-url`.
+Use `.github/workflows/weekly.yml`. It runs `argus run --dry-run` by default until you flip the workflow input to allow apply (which also writes Issues).
 
 ## Enable notifications
 
@@ -46,11 +49,11 @@ Use `.github/workflows/weekly.yml` (already included). It runs `argus run --dry-
    - Discord: `ARGUS_DISCORD_WEBHOOK=<webhook url>`
    - Telegram: `ARGUS_TELEGRAM_BOT_TOKEN` + `ARGUS_TELEGRAM_CHAT_ID`
    - Generic: `ARGUS_WEBHOOK_URL`
-2. Set `ARGUS_REPORT_URL` to your Pages report URL.
+2. Optional: set `ARGUS_REPORT_URL` to the public **status** Pages URL.
 3. Run **without** `--no-notify`: `argus run --dry-run --report-url "$ARGUS_REPORT_URL"`.
-4. For Actions: add the same values as repository secrets/variables; weekly workflow already passes them.
+4. For Actions: add the same values as repository secrets/variables; weekly/scan workflows already pass them.
 
-Silent by default — you are only pinged for human tasks, critical security, or a failed run.
+Silent by default — you are only pinged for human tasks, critical security scores, or a failed run.
 
 ## Auto-fix without paste
 
@@ -65,6 +68,7 @@ Archived repos are skipped unless you pass `--include-archived`.
 ## Next reading
 
 - [FORKING.md](FORKING.md) — point Argus at *your* account
-- [SAFETY.md](SAFETY.md) — what Argus will never do
+- [SAFETY.md](SAFETY.md) — what Argus will never do (including public Pages)
 - [GRANDMA_MODE.md](GRANDMA_MODE.md) — how human instructions are written
 - [THIRD_PARTY.md](THIRD_PARTY.md) — report on someone else’s repos
+- [PUBLISH.md](PUBLISH.md) — push controller + enable Actions/Pages

@@ -15,6 +15,7 @@ from argus.compose import write_artifacts
 from argus.config_loader import load_fixes, load_profile, load_rubric, load_safety
 from argus.discover import discover_portfolio
 from argus.github_client import GitHubClient
+from argus.inbox_issues import summarize_inbox, sync_inbox_issues
 from argus.match import match_fixes
 from argus.models import FixClass, RepoPlan
 from argus.notify import send_notifications
@@ -118,9 +119,7 @@ def run_pipeline(
                 for repo in discovery.repos:
                     signals = collect_signals(client, repo)
                     score = score_repo(signals, rubric, repo.status)
-                    matched = match_fixes(
-                        fixes, repo, signals, store, profile=profile_name
-                    )
+                    matched = match_fixes(fixes, repo, signals, store, profile=profile_name)
                     plan = RepoPlan(
                         repo=repo,
                         score=score,
@@ -161,15 +160,16 @@ def run_pipeline(
                     max_prompt_chars=int(safety["max_agent_prompt_chars"]),
                 )
                 if run_agents and not discovery.report_only:
-                    dispatch = execute_dispatches(
-                        client, store, plans, dispatch, dry_run=dry_run
-                    )
+                    dispatch = execute_dispatches(client, store, plans, dispatch, dry_run=dry_run)
 
                 md_path, html_path = write_artifacts(
                     plans,
                     max_prompt_chars=int(safety["max_agent_prompt_chars"]),
                     report_banner=report_banner,
                 )
+                inbox_result = None
+                if not discovery.report_only:
+                    inbox_result = sync_inbox_issues(client, store, plans, dry_run=dry_run)
                 notify_result = None
                 if notify and not discovery.report_only:
                     notify_result = send_notifications(plans, report_url=report_url)
@@ -179,13 +179,19 @@ def run_pipeline(
                     repo_count=len(plans),
                     human_tasks=sum(len(p.human_fixes) for p in plans),
                     agent_repos=len(dispatch.queued),
-                    artifacts={"runbook": str(md_path), "report": str(html_path)},
+                    artifacts={
+                        "runbook": str(md_path),
+                        "report": str(html_path),
+                        "status": str(md_path.parent / "status.html"),
+                        "inbox_json": str(md_path.parent / "inbox.json"),
+                    },
                     details={
                         "new": discovery.new,
                         "removed": discovery.removed,
                         "skipped_archived": discovery.skipped_archived or [],
                         "apply": summarize_apply(apply_result),
                         "dispatch": summarize_dispatch(dispatch),
+                        "inbox": None if inbox_result is None else summarize_inbox(inbox_result),
                         "notify": None
                         if notify_result is None
                         else {"sent": notify_result.sent, "skipped": notify_result.skipped},

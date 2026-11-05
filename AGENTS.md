@@ -1,12 +1,12 @@
 # Agent Router
 
 1. **First read:** hook + `BUILD_PLAN.md` next row (full `docs/START_HERE.md` only on first day)
-2. **Cursor modes:** Ask / Plan / Agent / Debug
+2. **Cursor modes:** Ask / Plan / Agent / Debug — type `/` for slash commands (`docs/help/BATCH_COMMANDS.md`)
 3. **Task board:** `BUILD_PLAN.md` · Status: 🔲 · ✅ · ❌
 4. **Living memory:** `.agent/AGENT_MEMORY.md` at milestones only. Read `AGENT.md` before sprint rows.
 5. **Parent template:** [edwardlthompson/agent-project-bootstrap](https://github.com/edwardlthompson/agent-project-bootstrap) @ `.template-version` — see `docs/PARENT_GAP_LIST.md`
 
-> Thin child of agent-project-bootstrap. Do not re-import the full template runtime unless a BUILD_PLAN row says so.
+> Product child of agent-project-bootstrap. Cursor FOSS surface shipped (commands/hooks/skills/agents). Do not import full `scripts/lib` / modules unless a BUILD_PLAN row says so.
 
 ## Project Overview & Architecture
 
@@ -18,7 +18,7 @@
 
 - **Parent:** `edwardlthompson/agent-project-bootstrap` (product child, not template maintainer)
 - **Package:** `argus/` · **Config-as-behaviour:** `config/*.yaml`
-- **Outputs:** `dist/runbook.md`, `dist/report.html`
+- **Outputs:** `dist/runbook.md`, `dist/report.html` (private artifacts); public Pages = status-only
 - **Spec:** `docs/spec.md` · **Plan:** `docs/plan.md` · **Brief:** `AGENT.md`
 
 ## Environment & Dependency Management
@@ -40,11 +40,24 @@ cp .env.example .env
 Before marking a BUILD_PLAN row ✅:
 
 ```bash
-bash scripts/verify.sh
-# Windows: powershell -File scripts/verify.ps1
+python scripts/agent-run.py verify
+# or: bash scripts/verify.sh / powershell -File scripts/verify.ps1
 ```
 
-Also useful: `argus doctor`, `pytest`, `ruff check argus tests`.
+Also useful: `argus doctor`, `pytest`, `ruff check argus tests`, `python scripts/agent-run.py check-cursor-hooks --smoke`.
+
+## Cursor FOSS integrations
+
+| Layer | Path |
+|-------|------|
+| Commands | `.cursor/commands/` (45) |
+| Hooks | `.cursor/hooks.json` + `.cursor/hooks/` |
+| Skills | `.cursor/skills/` (curated) |
+| Subagents | `.cursor/agents/` (verifier, gate-fixer, explorer) |
+| Plugin | `.cursor-plugin/plugin.json` (`argus-foss`) |
+| Bare-words | `.cursor/rules/batch-commands.mdc` |
+
+Gate verbs go through the thin `scripts/agent-run.py` shim → `scripts/verify.*`. `/push` and `/ship` need `[HUMAN]` approval.
 
 ## Architecture Constraints
 
@@ -53,12 +66,13 @@ Also useful: `argus doctor`, `pytest`, `ruff check argus tests`.
 - Deterministic scoring/composition — no LLMs on that path
 - Prefer PRs; never force-push or delete target repos
 - Every agent/auto_safe fix requires an executable `gate`
+- Never publish per-repo security gaps on public Pages
 
 ## Session Protocol
 
-1. Next 🔲 `[AGENT][LOCAL]` from BUILD_PLAN (or empty board).
+1. Next 🔲 `[AGENT][LOCAL]` from BUILD_PLAN (or empty board). Mode: Ask/Plan/Agent/Debug.
 2. Skim CHANGELOG `[Unreleased]` (~20 lines).
-3. After AGENT steps: `scripts/verify.sh`.
+3. After AGENT steps: `python scripts/agent-run.py verify` or `/verify`.
 4. Milestone → `.agent/AGENT_MEMORY.md` / `.agent/DECISION_LOG.md`.
 5. 3-strike → halt.
 

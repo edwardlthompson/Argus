@@ -32,6 +32,8 @@ Argus is a controller repository for multi-repo hygiene, scoring, safe auto-appl
 | ✅ | `[AGENT][LOCAL]` — scope: publish | Publish `edwardlthompson/Argus`; enable Actions/Pages — see `docs/PUBLISH.md` |
 | ✅ | `[AGENT][LOCAL]` — scope: self-scan | Discovery/allowlist includes controller; no skip-self; PUBLISH.md |
 | ✅ | `[AGENT][LOCAL]` — scope: doctor-tests | Fixtures, apply mocks, docs, CHANGELOG, snapshots, verify |
+| ✅ | `[AGENT][LOCAL]` — scope: private-control-plane | Status-only Pages; Issues inbox; private artifacts; safe notify; scan.yml |
+| ✅ | `[AGENT][LOCAL]` — scope: cursor-foss | Slash commands, hooks, curated skills/agents, argus-foss plugin, agent-run shim |
 
 ## Parallel (after Sequential)
 

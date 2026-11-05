@@ -3,7 +3,7 @@ name: pages
 on:
   workflow_dispatch:
   workflow_run:
-    workflows: ["argus-weekly"]
+    workflows: ["argus-weekly", "argus-scan"]
     types: [completed]
 
 permissions:
@@ -26,17 +26,22 @@ jobs:
           python-version: "3.12"
       - name: Install
         run: pip install -e ".[dev]"
-      - name: Generate report (dry-run)
+      - name: Generate status-only site (dry-run)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: argus run --dry-run --no-notify || true
-      - name: Stage Pages site
+      - name: Stage public status page only
         run: |
           mkdir -p _site
-          if [ -f dist/report.html ]; then cp dist/report.html _site/index.html; fi
-          if [ -f dist/runbook.md ]; then cp dist/runbook.md _site/runbook.md; fi
+          # Never publish report.html / runbook.md / inbox.json to public Pages.
+          if [ -f dist/status.html ]; then
+            cp dist/status.html _site/index.html
+          fi
+          if [ -f dist/status.json ]; then
+            cp dist/status.json _site/status.json
+          fi
           if [ ! -f _site/index.html ]; then
-            printf '%s\n' '<!DOCTYPE html><html><body><h1>Argus</h1><p>No report yet. Run the weekly workflow.</p></body></html>' > _site/index.html
+            printf '%s\n' '<!DOCTYPE html><html><body><h1>Argus</h1><p>No status yet. Run the scan or weekly workflow.</p></body></html>' > _site/index.html
           fi
       - uses: actions/upload-pages-artifact@v3
         with:
