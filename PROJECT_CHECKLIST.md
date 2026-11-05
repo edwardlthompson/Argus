@@ -16,7 +16,7 @@
 - ✅ CI workflow present (`.github/workflows/ci.yml`)
 - ❌ CodeQL workflow vendor — wont for now (enable on GitHub when published)
 - ✅ Dependabot config present
-- 🔲 Branch protection on default branch — `[HUMAN]` after first push
+- 🔲 Branch protection on default branch — optional follow-up
 - ✅ `SECURITY.md` present
 
 ## Agent adapters / lineage
