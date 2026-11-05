@@ -1,4 +1,4 @@
-"""Featured profile repos: curated flagships, stars/traffic fill, app-icon URLs."""
+"""Featured profile repos: curated flagships, views/stars fill, app-icon URLs."""
 
 from __future__ import annotations
 
@@ -6,16 +6,16 @@ from argus.models import RepoPlan, RepoRecord
 
 
 def _eligible(repo: RepoRecord) -> bool:
-    return (
-        not repo.private
-        and not repo.archived
-        and not repo.fork
-        and repo.owner != repo.name
-    )
+    # Public non-archived, including forks; exclude profile Overview repo.
+    return not repo.private and not repo.archived and repo.owner != repo.name
 
 
 def stars_of(repo: RepoRecord) -> int:
     return int((repo.raw or {}).get("stargazers_count") or 0)
+
+
+def views_of(repo: RepoRecord) -> int:
+    return int((repo.raw or {}).get("argus_traffic_views") or 0)
 
 
 def traffic_of(repo: RepoRecord) -> int:
@@ -53,6 +53,7 @@ def _row(p: RepoPlan) -> dict[str, str]:
         "stars": str(stars_of(p.repo)),
         "forks": str(forks_of(p.repo)),
         "watches": str(watches_of(p.repo)),
+        "views": str(views_of(p.repo)),
         "traffic": str(traffic_of(p.repo)),
         "icon_url": icon_of(p.repo),
         "visual": "icon" if has_app_icon(p.repo) else "og",
@@ -65,7 +66,7 @@ def select_featured(
     *,
     curated: list[str] | None = None,
 ) -> list[dict[str, str]]:
-    """Curated names first; fill by stars then traffic. limit<=0 = all eligible."""
+    """Curated names first; fill by Insights views then stars. limit<=0 = all eligible."""
     by_full = {p.repo.full_name.lower(): p for p in plans if _eligible(p.repo)}
     by_short = {p.repo.name.lower(): p for p in by_full.values()}
     chosen: list[RepoPlan] = []
@@ -80,12 +81,23 @@ def select_featured(
         if not unlimited and len(chosen) >= limit:
             break
     rest = [p for p in by_full.values() if p.repo.full_name not in seen]
-    rest.sort(key=lambda p: (-stars_of(p.repo), -traffic_of(p.repo), p.repo.name.lower()))
+    rest.sort(key=lambda p: (-views_of(p.repo), -stars_of(p.repo), p.repo.name.lower()))
     for p in rest:
         if not unlimited and len(chosen) >= limit:
             break
         chosen.append(p)
     return [_row(p) for p in chosen]
+
+
+def profile_repo_views(plans: list[RepoPlan], login: str) -> int | None:
+    """14-day Insights views for YOU/YOU when present in plans."""
+    if not login:
+        return None
+    key = f"{login}/{login}".lower()
+    for plan in plans:
+        if plan.repo.full_name.lower() == key:
+            return views_of(plan.repo)
+    return None
 
 
 def center_grid_rows(

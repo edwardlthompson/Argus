@@ -36,13 +36,20 @@ open_to: "Software development, automation, FOSS collaboration, and clean secure
 # Optional contact (never scraped from secrets). GitHub profile badge always shown when include_badges.
 # email: ""
 max_languages: 8
-# 0 = every eligible public non-fork project (curated list still leads).
+# 0 = every eligible public project including forks (curated list still leads).
 max_featured_repos: 0
 featured_columns: 7
 featured_icon_size: 64
 include_badges: true
 show_featured_stars: false
 show_featured_stats: true
+show_profile_views: true
+# Self-hosted muted Primer Octicons (written to YOU/YOU assets/octicons/ on profile PR).
+# Override paths only if you relocate assets:
+# octicon_star: ./assets/octicons/star-16.svg
+# octicon_watch: ./assets/octicons/eye-16.svg
+# octicon_fork: ./assets/octicons/repo-forked-16.svg
+# octicon_views: ./assets/octicons/pulse-16.svg
 banner_carries_identity: true
 featured_card_width: 280
 # Showcase: N columns, adaptive rows; short last rows are center-padded.

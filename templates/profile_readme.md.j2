@@ -87,7 +87,15 @@ _{{ bio }}_
 </a><br/>
 <a href="{{ repo.html_url }}"><sub>{{ repo.short }}</sub></a>
 {% if show_featured_stats %}
-<br/><sub>★{{ repo.stars }} · Watch {{ repo.watches }} · Fork {{ repo.forks }}</sub>
+<br/><sub>
+<img src="{{ octicon_star }}" alt="Stars" width="12" height="12" /> {{ repo.stars }}
+·
+<img src="{{ octicon_watch }}" alt="Watching" width="12" height="12" /> {{ repo.watches }}
+·
+<img src="{{ octicon_fork }}" alt="Forks" width="12" height="12" /> {{ repo.forks }}
+·
+<img src="{{ octicon_views }}" alt="Views" width="12" height="12" /> {{ repo.views }}
+</sub>
 {% endif %}
 {% endif %}
 </td>
@@ -97,6 +105,9 @@ _{{ bio }}_
 </table>
 {% else %}
 _Featured public repositories will appear here after a portfolio scan._
+{% endif %}
+{% if show_profile_views and profile_views is not none %}
+<p><sub>Profile README views (14d Insights): {{ profile_views }}</sub></p>
 {% endif %}
 </div>
 

@@ -31,3 +31,7 @@ Config source of truth: [`config/profile_icons.yaml`](../config/profile_icons.ya
 ## Fallbacks Argus still discovers
 
 Tauri `examples/desktop/src-tauri/icons/icon.png`, Android `mipmap-xxxhdpi/ic_launcher.png`, Fastlane `icon.png`, `branding/template/logo-mark.png` (when assets are still stubs). Hygiene still prefers a canonical PNG (or a non-stub SVG).
+
+## Generated marks (when nothing is found)
+
+Argus draws a **512×512 PNG** (not SVG) from the repo name + description using Golden Path tokens (`#1a1a2e` surface, `#D3304E` / `#9BB8E8` accents, `#E6E6F0` foreground). Motifs are simple high-contrast shapes (chat, camera, bars, lock, …). Files land on the Overview repo under `assets/argus-icons/`.

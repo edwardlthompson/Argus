@@ -7,6 +7,7 @@ from typing import Any
 
 from argus.github_client import GitHubClient, GitHubError
 from argus.profile_banner import render_banner_svg
+from argus.profile_octicons import load_octicon_svgs
 from argus.profile_readme import MARKER
 
 
@@ -17,20 +18,14 @@ def ensure_profile_repo(client: GitHubClient, login: str) -> dict[str, Any]:
         return client.post(
             "/user/repos",
             allow_write=True,
-            json={
-                "name": login,
-                "description": "GitHub profile Overview (managed by Argus)",
-                "private": False,
-                "auto_init": True,
-            },
+            json={"name": login, "description": "GitHub profile Overview", "private": False, "auto_init": True},
         )
 
 
 def get_readme(client: GitHubClient, login: str) -> tuple[str | None, str | None]:
     try:
         data = client.get(f"/repos/{login}/{login}/contents/README.md")
-        raw = base64.b64decode(data["content"]).decode("utf-8")
-        return raw, data.get("sha")
+        return base64.b64decode(data["content"]).decode("utf-8"), data.get("sha")
     except GitHubError:
         return None, None
 
@@ -39,31 +34,43 @@ def _put_file(
     client: GitHubClient,
     login: str,
     path: str,
-    content: str,
+    content: str | bytes,
     *,
     branch: str,
     message: str,
+    sha: str | None = None,
 ) -> None:
-    content_b64 = base64.b64encode(content.encode("utf-8")).decode("ascii")
+    raw = content.encode("utf-8") if isinstance(content, str) else content
     payload: dict[str, Any] = {
         "message": message,
-        "content": content_b64,
+        "content": base64.b64encode(raw).decode("ascii"),
         "branch": branch,
     }
+    if sha:
+        payload["sha"] = sha
+    else:
+        try:
+            data = client.get(
+                f"/repos/{login}/{login}/contents/{path}",
+                params={"ref": branch},
+            )
+            if isinstance(data, dict) and data.get("sha"):
+                payload["sha"] = data["sha"]
+        except GitHubError:
+            pass
     try:
-        data = client.get(
-            f"/repos/{login}/{login}/contents/{path}",
-            params={"ref": branch},
-        )
-        if isinstance(data, dict) and data.get("sha"):
-            payload["sha"] = data["sha"]
+        client.put(f"/repos/{login}/{login}/contents/{path}", allow_write=True, json=payload)
     except GitHubError:
-        pass
-    client.put(
-        f"/repos/{login}/{login}/contents/{path}",
-        allow_write=True,
-        json=payload,
-    )
+        payload.pop("sha", None)
+        try:
+            data = client.get(
+                f"/repos/{login}/{login}/contents/{path}",
+                params={"ref": branch},
+            )
+            payload["sha"] = data["sha"]
+        except GitHubError:
+            pass
+        client.put(f"/repos/{login}/{login}/contents/{path}", allow_write=True, json=payload)
 
 
 def open_readme_pr(
@@ -74,11 +81,11 @@ def open_readme_pr(
     sha: str | None,
     display_name: str = "",
     tagline: str = "",
+    icon_files: dict[str, bytes] | None = None,
 ) -> str:
     repo = client.get(f"/repos/{login}/{login}")
     default = repo.get("default_branch") or "main"
-    ref = client.get(f"/repos/{login}/{login}/git/ref/heads/{default}")
-    base_sha = ref["object"]["sha"]
+    base_sha = client.get(f"/repos/{login}/{login}/git/ref/heads/{default}")["object"]["sha"]
     branch = "chore/argus-profile-readme"
     try:
         client.post(
@@ -89,46 +96,18 @@ def open_readme_pr(
     except GitHubError as exc:
         if "422" not in str(exc):
             raise
-
-    banner = render_banner_svg(display_name or login, tagline)
     _put_file(
-        client,
-        login,
-        "assets/argus-banner.svg",
-        banner,
-        branch=branch,
-        message="chore(argus): refresh profile banner SVG",
+        client, login, "assets/argus-banner.svg", render_banner_svg(display_name or login, tagline),
+        branch=branch, message="chore(argus): refresh profile banner SVG",
     )
-
-    content_b64 = base64.b64encode(body.encode("utf-8")).decode("ascii")
-    payload: dict[str, Any] = {
-        "message": "chore(argus): refresh profile Overview README",
-        "content": content_b64,
-        "branch": branch,
-    }
-    if sha:
-        payload["sha"] = sha
-    try:
-        client.put(
-            f"/repos/{login}/{login}/contents/README.md",
-            allow_write=True,
-            json=payload,
-        )
-    except GitHubError:
-        payload.pop("sha", None)
-        try:
-            data = client.get(
-                f"/repos/{login}/{login}/contents/README.md",
-                params={"ref": branch},
-            )
-            payload["sha"] = data["sha"]
-        except GitHubError:
-            pass
-        client.put(
-            f"/repos/{login}/{login}/contents/README.md",
-            allow_write=True,
-            json=payload,
-        )
+    for path, svg in load_octicon_svgs().items():
+        _put_file(client, login, path, svg, branch=branch, message=f"chore(argus): refresh {path.rsplit('/', 1)[-1]}")
+    for path, png in (icon_files or {}).items():
+        _put_file(client, login, path, png, branch=branch, message=f"chore(argus): add icon {path.rsplit('/', 1)[-1]}")
+    _put_file(
+        client, login, "README.md", body, branch=branch,
+        message="chore(argus): refresh profile Overview README", sha=sha,
+    )
     pr = client.post(
         f"/repos/{login}/{login}/pulls",
         allow_write=True,
@@ -136,11 +115,7 @@ def open_readme_pr(
             "title": "chore(argus): refresh profile Overview README",
             "head": branch,
             "base": default,
-            "body": (
-                f"Generated by Argus. Marker `{MARKER}`.\n\n"
-                "Includes `assets/argus-banner.svg` and a skills portfolio README "
-                "from live languages, topics, and featured repos."
-            ),
+            "body": f"Generated by Argus (`{MARKER}`). Banner, octicons, optional icons.",
         },
     )
     return str(pr.get("html_url") or "")

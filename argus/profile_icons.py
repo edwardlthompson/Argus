@@ -1,10 +1,10 @@
-"""Resolve app/brand icons from target repos (paths + git tree scan)."""
+"""Resolve app/brand icons from target repos (raster paths + git tree scan)."""
 
 from __future__ import annotations
 
 from argus.github_client import GitHubClient, GitHubError
 from argus.models import RepoRecord
-from argus.profile_icon_policy import quick_paths, stub_svg_max
+from argus.profile_icon_policy import quick_paths
 
 _SKIP = ("/third_party/", "/concepts/", "/node_modules/", "/.git/", "/.cursor/", "fossify-")
 _REJECT_BASE = (
@@ -19,17 +19,16 @@ _REJECT_BASE = (
 
 
 def _score_icon_path(path: str, size: int | None = None) -> int | None:
+    del size  # reserved for future size heuristics
     low = path.replace("\\", "/").lower()
     if any(s in low for s in _SKIP):
         return None
-    if not low.endswith((".png", ".svg", ".webp", ".jpg", ".jpeg")):
+    if not low.endswith((".png", ".webp", ".jpg", ".jpeg")):
         return None
     base = low.rsplit("/", 1)[-1]
     if any(x in base for x in _REJECT_BASE) or "foreground" in base or "round" in base:
         return None
     score = 30 if low.endswith(".png") else 5
-    if low.endswith(".svg") and size is not None and size <= stub_svg_max():
-        return None
     if "docs/brand/" in low:
         score += 120
     elif base in {"continuum-mark.png", "logo-official.png", "logo-neon-3d.png"}:
@@ -62,8 +61,6 @@ def _score_icon_path(path: str, size: int | None = None) -> int | None:
         score += 95
     elif base in {"icon.png", "app-icon.png", "logo.png", "brand.png"}:
         score += 80
-    elif base.startswith("app-icon-512.") and base.endswith(".svg"):
-        score += 70
     elif base == "ic_launcher.png":
         score += 60
     elif "ic_launcher" in base:
@@ -88,17 +85,17 @@ def pick_icon_path(
 
 
 def resolve_icon(client: GitHubClient, repo: RepoRecord) -> str | None:
-    """Prefer product brand PNGs; skip tiny Golden Path stub SVGs."""
-    max_stub = stub_svg_max()
+    """Prefer product brand PNGs; Overview never uses SVG (generate PNG instead)."""
     for path in quick_paths():
+        if path.lower().endswith(".svg"):
+            continue
         try:
             data = client.get(f"/repos/{repo.owner}/{repo.name}/contents/{path}")
         except GitHubError:
             continue
         if not isinstance(data, dict) or not data.get("download_url"):
             continue
-        size = int(data.get("size") or 0)
-        if path.lower().endswith(".svg") and size <= max_stub:
+        if int(data.get("size") or 0) <= 0:
             continue
         return str(data["download_url"])
     try:

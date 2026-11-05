@@ -7,7 +7,7 @@ from typing import Any
 
 from argus.github_client import GitHubClient, GitHubError
 from argus.models import RepoPlan
-from argus.profile_enrich import enrich_plans_for_profile
+from argus.profile_enrich import collect_generated_icons, enrich_plans_for_profile
 from argus.profile_featured import apply_icon_overrides
 from argus.profile_github import ensure_profile_repo, get_readme, open_readme_pr
 from argus.profile_readme import (
@@ -53,20 +53,24 @@ def sync_profile_readme(
         result.detail = "no_login"
         return result
 
-    enrich_plans_for_profile(client, plans)
+    enrich_plans_for_profile(client, plans, profile_login=login)
     overrides = cfg.get("icon_overrides")
     if isinstance(overrides, dict):
         apply_icon_overrides(plans, {str(k): str(v) for k, v in overrides.items()})
+    generated_icons = collect_generated_icons(plans)
     body = compose_profile_readme(user=me, plans=plans, config=cfg)
     if dry_run:
         result.action = "dry_run"
-        result.detail = f"would_update:{login}/{login} chars={len(body)}"
+        result.detail = (
+            f"would_update:{login}/{login} chars={len(body)} "
+            f"icons={len(generated_icons)}"
+        )
         return result
 
     try:
         ensure_profile_repo(client, login)
         existing, sha = get_readme(client, login)
-        if not needs_profile_update(existing, body):
+        if not needs_profile_update(existing, body) and not generated_icons:
             result.action = "unchanged"
             store.record_resolution(
                 f"{login}/{login}", "PROF-README", ttl_days=7, source="profile"
@@ -79,6 +83,7 @@ def sync_profile_readme(
             sha=sha,
             display_name=str(me.get("name") or login),
             tagline=str(cfg.get("tagline") or ""),
+            icon_files=generated_icons or None,
         )
         result.action = "pr"
         result.url = url

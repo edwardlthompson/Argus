@@ -10,7 +10,8 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from argus.config_loader import load_yaml
 from argus.models import RepoPlan
 from argus.paths import CONFIG_DIR, TEMPLATES_DIR
-from argus.profile_featured import center_grid_rows, select_featured
+from argus.profile_featured import center_grid_rows, profile_repo_views, select_featured
+from argus.profile_octicons import default_octicon_urls
 from argus.profile_skills import (
     auto_about,
     bio_is_distinct,
@@ -58,7 +59,7 @@ def compose_profile_readme(
 ) -> str:
     cfg = config or load_profile_readme_config()
     max_lang = int(cfg.get("max_languages") or 8)
-    # 0 / negative = include every eligible public non-fork project.
+    # 0 / negative = include every eligible public project (including forks).
     max_feat = int(cfg.get("max_featured_repos") if cfg.get("max_featured_repos") is not None else 0)
     totals = _language_totals(plans)
     lang_rows = ranked_languages(totals, limit=max_lang)
@@ -115,6 +116,12 @@ def compose_profile_readme(
         featured_icon_size=int(cfg.get("featured_icon_size") or 72),
         show_featured_stars=bool(cfg.get("show_featured_stars", False)),
         show_featured_stats=bool(cfg.get("show_featured_stats", True)),
+        show_profile_views=bool(cfg.get("show_profile_views", True)),
+        profile_views=profile_repo_views(plans, login),
+        **{
+            k: str(cfg.get(k) or v)
+            for k, v in default_octicon_urls().items()
+        },
     )
 
 

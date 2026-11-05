@@ -17,6 +17,7 @@ from argus.signals import (
     releases,
     responsiveness,
     security,
+    traffic,
 )
 
 
@@ -34,6 +35,7 @@ def collect_signals(client: GitHubClient, repo: RepoRecord) -> SignalBundle:
         "lineage": lineage.collect,
         "prs": prs.collect,
         "releases": releases.collect,
+        "traffic": traffic.collect,
     }
     for name, fn in collectors.items():
         try:
@@ -55,4 +57,5 @@ def fixture_bundle(data: dict[str, Any]) -> SignalBundle:
         lineage=data.get("lineage"),
         prs=data.get("prs"),
         releases=data.get("releases"),
+        traffic=data.get("traffic"),
     )

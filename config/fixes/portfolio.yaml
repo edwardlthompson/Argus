@@ -133,6 +133,26 @@ fixes:
     profiles: [generic, edward]
     resolution_ttl_days: 60
 
+  - id: TRAFFIC-INSIGHTS-UNAVAILABLE
+    class: human
+    title: Enable GitHub Insights Traffic for popularity signals
+    why: >
+      Argus ranks featured apps and shows 14-day Views from Insights Traffic.
+      Without push access or a token that can read traffic, views stay at zero.
+    applies_when: "repo.get('can_write') and not traffic.get('skipped', True) and traffic.get('traffic_ok') is False"
+    phase: 3
+    depends_on: []
+    confidence: high
+    auto_safe: false
+    human_steps: |
+      1. Open the repository on GitHub → Insights → Traffic.
+      2. Confirm graphs load (requires push access on the repo).
+      3. Ensure the Argus PAT / GitHub App token includes the `repo` scope (private) or public_repo as needed.
+      4. Re-run Argus scan / profile sync; Views on Overview and TRAFFIC-INSIGHTS-UNAVAILABLE should clear when traffic_ok is true.
+    gate: "Insights → Traffic shows graphs, or Argus traffic.traffic_ok is true"
+    profiles: [generic, edward]
+    resolution_ttl_days: 30
+
   - id: HUMAN-PARK-INACTIVE
     class: human
     title: Park or archive a long-inactive active repo

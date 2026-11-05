@@ -5,7 +5,9 @@
 ### Added
 
 - Portfolio icon standard (`config/profile_icons.yaml`, `docs/PROFILE_ICONS.md`) + hygiene `BRAND-ICON-MISSING` for missing/stub marks.
-- Featured showcase stats under each app name (stars · watches · forks); `max_featured_repos: 0` shows all eligible projects.
+- Featured showcase stats under each app name (stars · watches · forks); `max_featured_repos: 0` shows all eligible projects including forks.
+- Generated Golden Path PNG marks (`assets/argus-icons/`) when a repo has no discoverable icon.
+- Self-hosted muted Primer Octicons; featured stats include Insights Views; sort views→stars; `TRAFFIC-INSIGHTS-UNAVAILABLE` human fix.
 
 ### Changed
 

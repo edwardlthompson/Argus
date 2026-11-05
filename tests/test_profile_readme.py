@@ -54,15 +54,17 @@ def _plan(
     )
 
 
-def test_featured_ranks_by_stars_then_traffic_not_attention():
+def test_featured_ranks_by_views_then_stars_not_attention():
     plans = [
         _plan("alice/noisy", attention=99, stars=1, traffic_views=1),
         _plan("alice/popular", attention=5, stars=50, traffic_views=10),
         _plan("alice/busy", attention=80, stars=50, traffic_views=200),
         _plan("alice/alice", attention=1, stars=999),
+        _plan("alice/sleeper", attention=1, stars=99, traffic_views=5),
     ]
     featured = select_featured(plans, limit=3)
-    assert [f["short"] for f in featured] == ["busy", "popular", "noisy"]
+    assert [f["short"] for f in featured] == ["busy", "popular", "sleeper"]
+    assert featured[0]["views"] == "200"
 
 
 def test_featured_curated_overrides_ranking():
@@ -86,6 +88,35 @@ def test_featured_limit_zero_includes_all_eligible():
     assert [f["short"] for f in featured] == ["a", "c", "b"]
 
 
+def test_featured_includes_forks():
+    from argus.models import Confidence, RepoPlan, RepoRecord, RepoStatus, ScoreResult
+
+    fork = RepoPlan(
+        repo=RepoRecord(
+            full_name="alice/Google-Messages-For-Desktop",
+            owner="alice",
+            name="Google-Messages-For-Desktop",
+            status=RepoStatus.ACTIVE,
+            fork=True,
+            html_url="https://github.com/alice/Google-Messages-For-Desktop",
+            description="Desktop Google Messages",
+            raw={"stargazers_count": 5},
+        ),
+        score=ScoreResult(attention=1, confidence=Confidence.HIGH, category_scores={}),
+    )
+    featured = select_featured([fork, _plan("alice/own", stars=1)], limit=0)
+    assert "Google-Messages-For-Desktop" in [f["short"] for f in featured]
+
+
+def test_generate_icon_png_is_png_and_motif_aware():
+    from argus.profile_icon_gen import _motif_chat, choose_motif, generate_icon_png
+
+    png = generate_icon_png("Google-Messages-For-Desktop", "FOSS Electron SMS chat app")
+    assert png[:8] == b"\x89PNG\r\n\x1a\n"
+    assert len(png) > 400
+    assert choose_motif("Google-Messages-For-Desktop", "chat app") is _motif_chat
+
+
 def test_center_grid_rows_pads_short_last_row():
     items = [{"short": str(i)} for i in range(10)]
     rows = center_grid_rows(items, 7)
@@ -98,19 +129,16 @@ def test_center_grid_rows_pads_short_last_row():
     assert rows[1][-1] is None and rows[1][-2] is None
 
 
-def test_pick_icon_rejects_stub_svg_prefers_real_mark():
+def test_pick_icon_skips_svg_prefers_png():
     paths = [
         "branding/assets/app-icon-512.svg",
         "docs/brand/logo-official.png",
         "examples/desktop/src-tauri/icons/icon.png",
     ]
-    assert pick_icon_path(paths, sizes={"branding/assets/app-icon-512.svg": 120}) == (
+    assert pick_icon_path(paths, sizes={"branding/assets/app-icon-512.svg": 878}) == (
         "docs/brand/logo-official.png"
     )
-    assert pick_icon_path(
-        ["branding/assets/app-icon-512.svg"],
-        sizes={"branding/assets/app-icon-512.svg": 878},
-    ) == "branding/assets/app-icon-512.svg"
+    assert pick_icon_path(["branding/assets/app-icon-512.svg"]) is None
 
 
 def test_ranked_languages_from_api_bytes():
@@ -188,6 +216,8 @@ def test_compose_portfolio_html_no_traffic_or_topics():
     assert "Just vibes" not in body
     assert "# Alice" not in body
     assert body.index("## Featured projects") < body.index("## Tech stack")
+    assert "./assets/octicons/star-16.svg" in body
+    assert 'alt="Views"' in body
     assert "Current focus" in body
     assert "Also open to" in body
     assert "FOSS" in body
@@ -262,7 +292,7 @@ def test_pick_icon_skips_golden_path_stub_prefers_mipmap():
     )
 
 
-def test_compose_shows_stars_watches_forks():
+def test_compose_shows_stars_watches_forks_views():
     body = compose_profile_readme(
         user={"login": "alice", "name": "Alice"},
         plans=[
@@ -271,9 +301,16 @@ def test_compose_shows_stars_watches_forks():
                 stars=3,
                 forks=2,
                 watches=4,
+                traffic_views=17,
                 icon="https://example.com/app.png",
                 languages={"Python": 100},
-            )
+            ),
+            _plan(
+                "alice/alice",
+                stars=0,
+                traffic_views=42,
+                languages={"Python": 1},
+            ),
         ],
         config={
             "about": "Hi",
@@ -281,13 +318,17 @@ def test_compose_shows_stars_watches_forks():
             "open_to": "O",
             "featured_columns": 7,
             "show_featured_stats": True,
+            "show_profile_views": True,
             "max_featured_repos": 0,
             "banner_carries_identity": True,
         },
     )
-    assert "★3" in body
-    assert "Watch 4" in body
-    assert "Fork 2" in body
+    assert "./assets/octicons/star-16.svg" in body
+    assert "./assets/octicons/eye-16.svg" in body
+    assert "./assets/octicons/repo-forked-16.svg" in body
+    assert "./assets/octicons/pulse-16.svg" in body
+    assert "17" in body
+    assert "Profile README views (14d Insights): 42" in body
     assert "traffic" not in body.lower()
 
 
