@@ -180,7 +180,27 @@ def load_allowlist(path: Path | None = None) -> dict[str, Any]:
 
 def load_safety(path: Path | None = None) -> dict[str, Any]:
     path = path or (CONFIG_DIR / "safety.yaml")
-    defaults = {
+    yolo_defaults: dict[str, Any] = {
+        "auto_merge_auto_safe": True,
+        "auto_merge_dependabot_patch": True,
+        "auto_dispatch_agents": True,
+        "auto_merge_agent_prs": True,
+        "max_auto_merges_per_day": 20,
+        "close_stale_bot_prs_days": 0,
+        "max_yolo_actions_per_run": 40,
+    }
+    # Authenticated REST core is 5000/hr; ~45–60 GETs per repo makes full-portfolio
+    # multi-pass scans burn the hour — batch + reserve (see docs/RATE_LIMIT.md).
+    github_api_defaults: dict[str, Any] = {
+        "core_limit_hint": 5000,
+        "reserve": 250,
+        "min_interval_ms": 80,
+        "max_interval_ms": 2000,
+        "calls_per_repo_estimate": 50,
+        "max_repos_per_batch": 6,
+        "max_wait_seconds": 3700,
+    }
+    defaults: dict[str, Any] = {
         "max_auto_prs_per_run": 5,
         "max_auto_prs_per_owner": 3,
         "max_concurrent_agent_sessions": 1,
@@ -189,9 +209,27 @@ def load_safety(path: Path | None = None) -> dict[str, Any]:
         "prefer_pull_requests": True,
         "never_delete_repos": True,
         "never_force_push": True,
+        "attention_threshold_for_agents": 60,
+        "apply_mode": "normal",
+        "yolo": dict(yolo_defaults),
+        "github_api": dict(github_api_defaults),
     }
     if not path.exists():
         return defaults
     data = load_yaml(path)
+    yolo_in = data.pop("yolo", None) if isinstance(data, dict) else None
+    api_in = data.pop("github_api", None) if isinstance(data, dict) else None
     defaults.update(data)
+    merged_yolo = dict(yolo_defaults)
+    if isinstance(yolo_in, dict):
+        merged_yolo.update(yolo_in)
+    defaults["yolo"] = merged_yolo
+    merged_api = dict(github_api_defaults)
+    if isinstance(api_in, dict):
+        merged_api.update(api_in)
+    defaults["github_api"] = merged_api
+    mode = str(defaults.get("apply_mode") or "normal").strip().lower()
+    if mode not in ("normal", "yolo"):
+        mode = "normal"
+    defaults["apply_mode"] = mode
     return defaults

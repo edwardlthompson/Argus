@@ -25,6 +25,8 @@
 - `config/allowlist.yaml` `owner_only` default
 - `max_auto_prs_per_run` in `safety.yaml`
 - Dry-run before first apply ([WEEKLY_APPLY.md](WEEKLY_APPLY.md))
+- YOLO (`apply_mode: yolo`) still requires gates + CI green + hard floors; kill switch to `normal` ([YOLO.md](YOLO.md))
+- Optional Grok Bots use a **separate** comment-only identity — never the Argus apply PAT ([GROK_BOTS.md](GROK_BOTS.md))
 
 ## Attacker goals (and controls)
 
@@ -34,6 +36,8 @@
 | Abuse PAT | Private runner secrets; least privilege; never commit `.env` |
 | Tamper public product into applying | Product CI must not run apply with owner PAT against portfolio |
 | Poison profile README | Compose from API + YAML only; no LLM; PR review before merge |
+| Grok Bot opens hostile code PRs | Policy: draft/handoff only; no merge scopes on Bot PAT |
+| YOLO silent breakage on main | PR + required checks + auto-merge only when green; circuit breaker |
 
 ## Residual risk
 

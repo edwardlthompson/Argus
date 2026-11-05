@@ -8,7 +8,7 @@ from typing import Any
 
 import httpx
 
-from argus.rate_limit import RateLimiter, SecondaryRateLimit
+from argus.rate_limit import CoreQuota, RateLimiter, SecondaryRateLimit
 
 
 class GitHubError(RuntimeError):
@@ -24,12 +24,14 @@ class GitHubClient:
         timeout: float = 30.0,
         report_only: bool = False,
         min_interval: float = 0.05,
+        quota: CoreQuota | None = None,
     ) -> None:
         self.token = token if token is not None else os.environ.get("GITHUB_TOKEN", "")
         self.base_url = base_url.rstrip("/")
         self.report_only = report_only
         self.write_attempts = 0
-        self._limiter = RateLimiter(min_interval=min_interval)
+        self.quota = quota or CoreQuota(min_interval=min_interval)
+        self._limiter = RateLimiter(min_interval=self.quota.min_interval)
         self._secondary = SecondaryRateLimit()
         headers = {
             "Accept": "application/vnd.github+json",
@@ -49,6 +51,51 @@ class GitHubClient:
     def __exit__(self, *args: object) -> None:
         self.close()
 
+    def refresh_rate_limit(self) -> dict[str, Any]:
+        """GET /rate_limit (does not consume core quota). Updates self.quota."""
+        last_exc: Exception | None = None
+        for attempt in range(6):
+            self._limiter.wait()
+            try:
+                resp = self._client.request("GET", "/rate_limit")
+            except (
+                httpx.RemoteProtocolError,
+                httpx.ConnectError,
+                httpx.ReadTimeout,
+                httpx.WriteTimeout,
+                httpx.ConnectTimeout,
+            ) as exc:
+                last_exc = exc
+                time.sleep(min(2 ** attempt, 20))
+                continue
+            if resp.status_code >= 400:
+                raise GitHubError(f"GET /rate_limit -> {resp.status_code}: {resp.text[:200]}")
+            data = resp.json()
+            core = (data.get("resources") or {}).get("core") or data.get("rate") or {}
+            if "limit" in core:
+                self.quota.limit = int(core["limit"])
+            if "remaining" in core:
+                self.quota.remaining = int(core["remaining"])
+            if "reset" in core:
+                self.quota.reset_at = float(core["reset"])
+            return data if isinstance(data, dict) else {}
+        raise GitHubError(f"GET /rate_limit transport: {last_exc}")
+
+    def ensure_budget(self, needed: int) -> None:
+        """Refresh quota if unknown/low, then wait until `needed` calls fit."""
+        if self.quota.remaining is None or self.quota.needs_wait_for(needed):
+            try:
+                self.refresh_rate_limit()
+            except GitHubError:
+                pass
+        self.quota.ensure_budget(needed)
+        # After a wait, refresh so remaining is accurate.
+        if self.quota.remaining is not None and self.quota.remaining < needed:
+            try:
+                self.refresh_rate_limit()
+            except GitHubError:
+                pass
+
     def _request(
         self, method: str, path: str, *, allow_write: bool = False, read_post: bool = False, **kwargs: Any
     ) -> Any:
@@ -60,14 +107,49 @@ class GitHubClient:
                     f"Write blocked (report_only={self.report_only}, allow_write={allow_write}): "
                     f"{method} {path}"
                 )
-        for _ in range(3):
+        for attempt in range(6):
+            self._limiter.set_interval(self.quota.adaptive_interval())
             self._limiter.wait()
-            resp = self._client.request(method, path, **kwargs)
+            if self.quota.remaining is not None and self.quota.remaining <= 0:
+                self.quota.wait_until_reset(reason="remaining_zero")
+                try:
+                    self.refresh_rate_limit()
+                except GitHubError:
+                    pass
+            try:
+                resp = self._client.request(method, path, **kwargs)
+            except (
+                httpx.RemoteProtocolError,
+                httpx.ConnectError,
+                httpx.ReadTimeout,
+                httpx.WriteTimeout,
+                httpx.ConnectTimeout,
+            ) as exc:
+                self._secondary.on_failure()
+                time.sleep(min(2 ** attempt, 20))
+                if attempt >= 5:
+                    raise GitHubError(f"{method} {path} transport: {exc}") from exc
+                continue
+            self.quota.observe_headers(resp.headers)
             if resp.status_code == 403 and "rate limit" in resp.text.lower():
                 self._secondary.on_failure()
                 reset = resp.headers.get("X-RateLimit-Reset")
                 if reset and reset.isdigit():
-                    time.sleep(min(max(0, int(reset) - int(time.time())), 60))
+                    self.quota.reset_at = float(reset)
+                    self.quota.remaining = 0
+                self.quota.wait_until_reset(reason=f"http_403_attempt_{attempt}")
+                try:
+                    self.refresh_rate_limit()
+                except GitHubError:
+                    pass
+                continue
+            if resp.status_code == 429:
+                self._secondary.on_failure()
+                retry_after = resp.headers.get("Retry-After")
+                if retry_after and str(retry_after).isdigit():
+                    time.sleep(min(int(retry_after), int(self.quota.max_wait_seconds)))
+                else:
+                    self.quota.wait_until_reset(reason=f"http_429_attempt_{attempt}")
                 continue
             if resp.status_code >= 400:
                 raise GitHubError(f"{method} {path} -> {resp.status_code}: {resp.text[:200]}")
@@ -86,6 +168,9 @@ class GitHubClient:
 
     def put(self, path: str, *, allow_write: bool = False, **kwargs: Any) -> Any:
         return self._request("PUT", path, allow_write=allow_write, **kwargs)
+
+    def delete(self, path: str, *, allow_write: bool = False, **kwargs: Any) -> Any:
+        return self._request("DELETE", path, allow_write=allow_write, **kwargs)
 
     def whoami(self) -> dict[str, Any]:
         return self.get("/user")

@@ -1,17 +1,17 @@
-# Release notes — Argus 0.3.0
+# Release notes — Argus 0.4.0
 
 ## Highlights
 
-- **Dual plane shipped** — Public MIT product + private `argus-runner` bootstrap; doctor guards against public security Issues.
-- **Profile Overview** — `PROF-README` PRs to `USER/USER` from live languages/topics + YAML voice.
-- **Operator loop** — Projects v2 inbox sync, chat `repository_dispatch` scan, quiet hours / digest coalesce, `argus explain` / `inbox` / `status --safe`.
-- **Auto-safe expansion** — CODEOWNERS, `.gitignore`, CodeQL pack, Dependabot/secret-scan API toggles, dry-run `would_prs`, per-owner PR caps.
-- **Security CI** — CodeQL, gitleaks, SBOM on release, pinned Action SHAs, project-scoped `update-deps` + pip-audit.
+- **Hands-off YOLO** — `apply_mode: yolo` applies gated fixes, merges `chore(argus)` + Dependabot **patch** PRs, closes stale bot PRs, optional in-process second pass, and opens one private `yolo-digest` Issue for judgment leftovers. Profile Overview stays sacred (`skip_profile`).
+- **Shareable portfolio reports** — Dark (default) / light HTML with charts + theme toggle; matching Markdown; dated copies under private `argus-history/reports/`.
+- **Health + rate limits** — Before/after health deltas every run; GitHub core budget pacing, wait-until-reset, batched discovery (`docs/RATE_LIMIT.md`).
+- **Apply history** — Append-only local + private-runner `argus-history/` sync.
+- **Grok Bots pack** — Draft/digest skills only; Argus remains the sole mutator (ADR 0001).
 
 ## Upgrade notes
 
-- Point private runner `config/inbox.yaml` at `YOU/argus-runner`; keep `security_issues: false` on public Argus.
-- Optional: set `project_number` for Projects v2 sync; wire Discord/Telegram bots to `repository_dispatch` with a server-side PAT.
-- Prefer `python scripts/agent-run.py verify` before merge.
+- Private runner: leave `apply_mode: yolo` or set `normal` as kill switch. Weekly/scan with unset apply follows safety.yaml (YOLO implies apply); pass `apply=false` for explicit dry-run.
+- Expect Actions minute burn from mass merges + CodeQL; thin CI on `argus-history/**` pushes if minutes are tight.
+- Prefer `python scripts/agent-run.py verify` before merge. Template Release Please / full pre-release-gate remain N/A (G12).
 
 See `CHANGELOG.md` for the full list.

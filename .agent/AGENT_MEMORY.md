@@ -5,4 +5,5 @@
 - **Stack:** Python 3.11+ · MIT · FOSS
 - **Dual plane:** Public product `edwardlthompson/Argus` (source/CI). Private runner `edwardlthompson/argus-runner` (scan/apply/inbox/artifacts). Bootstrap: `scripts/bootstrap-argus-runner.*`
 - **Profile Overview:** `PROF-README` / `sync_profile_readme` PRs public `USER/USER` from live portfolio + `config/profile_readme.yaml`
-- **Milestone:** v0.3.0 — Sequential A–L done (dual-plane, profile, signals, auto_safe, notify/CLI, security CI); board empty
+- **Milestone:** v0.4.0 — YOLO hands-off loop, health/rate-limit, apply history, shareable dark/light portfolio reports, Grok draft pack; board empty
+- **Prior:** v0.3.0 — Sequential A–L (dual-plane, profile, signals, auto_safe, notify/CLI, security CI)

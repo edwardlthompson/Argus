@@ -33,17 +33,27 @@ def main() -> None:
 
 
 @main.command("run")
-@click.option("--dry-run/--apply", default=True, show_default=True)
+@click.option(
+    "--dry-run/--apply",
+    default=None,
+    help="Dry-run vs apply. When apply_mode=yolo and neither flag is set, apply is implied.",
+)
 @click.option("--profile", default="generic", show_default=True)
 @click.option("--no-notify", is_flag=True, default=False)
 @click.option("--report-url", default=None, help="Public URL to HTML report for notifications")
 @click.option("--include-archived", is_flag=True, default=False)
+@click.option(
+    "--skip-profile/--with-profile",
+    default=None,
+    help="Skip USERNAME/USERNAME Overview. YOLO defaults to skip; --with-profile forces sync.",
+)
 def run_cmd(
-    dry_run: bool,
+    dry_run: bool | None,
     profile: str,
     no_notify: bool,
     report_url: str | None,
     include_archived: bool,
+    skip_profile: bool | None,
 ) -> None:
     """Full silent/scheduled run (archived repos skipped by default)."""
     ensure_runtime_dirs()
@@ -53,33 +63,48 @@ def run_cmd(
         notify=not no_notify,
         report_url=report_url,
         include_archived=include_archived,
+        skip_profile=skip_profile,
     )
+    effective_dry = summary.details.get("apply", {}).get("dry_run")
     click.echo(json.dumps({
         "mode": summary.mode,
         "repos": summary.repo_count,
         "human_tasks": summary.human_tasks,
         "skipped_archived": summary.details.get("skipped_archived"),
+        "health": summary.details.get("health"),
+        "yolo": summary.details.get("yolo"),
         "artifacts": summary.artifacts,
-        "dry_run": dry_run,
+        "dry_run": dry_run if dry_run is not None else (summary.mode == "run"),
+        "effective_dry_run_hint": effective_dry,
     }, indent=2))
 
 
 @main.command("fix")
-@click.option("--dry-run/--apply", default=True, show_default=True)
+@click.option(
+    "--dry-run/--apply",
+    default=None,
+    help="Dry-run vs apply. When apply_mode=yolo and neither flag is set, apply is implied.",
+)
 @click.option("--agent", "run_agents", is_flag=True, default=False, help="Batch agent dispatch")
 @click.option("--profile", default="generic", show_default=True)
 @click.option("--include-archived", is_flag=True, default=False)
 @click.option("--no-notify", is_flag=True, default=False)
 @click.option("--report-url", default=None)
 @click.option("--repo", "repos", multiple=True, help="Limit to owner/name (repeatable)")
+@click.option(
+    "--skip-profile/--with-profile",
+    default=None,
+    help="Skip USERNAME/USERNAME Overview. YOLO defaults to skip; --with-profile forces sync.",
+)
 def fix_cmd(
-    dry_run: bool,
+    dry_run: bool | None,
     run_agents: bool,
     profile: str,
     include_archived: bool,
     no_notify: bool,
     report_url: str | None,
     repos: tuple[str, ...],
+    skip_profile: bool | None,
 ) -> None:
     """Apply auto_safe fixes across the portfolio (and optionally agents)."""
     ensure_runtime_dirs()
@@ -91,6 +116,7 @@ def fix_cmd(
         include_archived=include_archived,
         run_agents=run_agents,
         attention_threshold=0.0 if run_agents else None,
+        skip_profile=skip_profile,
     )
     # Optional post-filter messaging when --repo used (full scan still for scoring consistency)
     details = summary.details
@@ -102,8 +128,13 @@ def fix_cmd(
         "repos": summary.repo_count,
         "human_tasks": summary.human_tasks,
         "apply": details.get("apply"),
+        "health": details.get("health"),
+        "apply_history": details.get("apply_history"),
+        "github_api": details.get("github_api"),
+        "profile": details.get("profile"),
         "dispatch": details.get("dispatch"),
         "artifacts": summary.artifacts,
+        "yolo": details.get("yolo"),
         "dry_run": dry_run,
         "agent": run_agents,
     }, indent=2))
@@ -328,11 +359,46 @@ def doctor_cmd() -> None:
 
     safety = load_safety()
     click.echo(f"safety: {json.dumps(safety)}")
+    click.echo(f"apply_mode: {safety.get('apply_mode', 'normal')}")
+    api = safety.get("github_api") or {}
+    click.echo(
+        "github_api: "
+        f"hint={api.get('core_limit_hint')} reserve={api.get('reserve')} "
+        f"batch={api.get('max_repos_per_batch')} est_calls/repo={api.get('calls_per_repo_estimate')}"
+    )
+    if token:
+        try:
+            from argus.github_client import GitHubClient
+            from argus.pipeline import _quota_from_safety
+
+            with GitHubClient(token=token, report_only=True, quota=_quota_from_safety(safety)) as gh:
+                live = gh.refresh_rate_limit()
+                core = (live.get("resources") or {}).get("core") or {}
+                click.echo(
+                    f"github_core_live: limit={core.get('limit')} "
+                    f"remaining={core.get('remaining')} reset={core.get('reset')}"
+                )
+                if int(core.get("remaining") or 0) < int(api.get("reserve") or 250):
+                    problems.append(
+                        "GitHub core remaining below reserve — wait for reset before a full scan"
+                    )
+        except Exception as exc:  # noqa: BLE001
+            problems.append(f"github rate_limit check failed: {exc}")
 
     required = ("never_delete_repos", "never_force_push", "prefer_pull_requests")
     for key in required:
         if not safety.get(key, True):
             problems.append(f"safety.yaml disables hard safety default: {key}")
+
+    if str(safety.get("apply_mode") or "") == "yolo":
+        click.echo("yolo: enabled (see docs/YOLO.md) — hard floors still required")
+        yolo = safety.get("yolo") or {}
+        try:
+            cap = int(yolo.get("max_auto_merges_per_day") or 0)
+        except (TypeError, ValueError):
+            cap = 0
+        if cap < 1:
+            problems.append("yolo.max_auto_merges_per_day must be >= 1 when apply_mode is yolo")
 
     allow = load_allowlist()
     click.echo(f"allowlist mode: {allow.get('mode')}")

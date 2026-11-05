@@ -59,8 +59,11 @@ jobs:
           if [ "$NOTIFY" != "true" ]; then NOTIFY_FLAG="--no-notify"; fi
           if [ "$APPLY" = "true" ]; then
             argus run --apply $REPORT_FLAG $NOTIFY_FLAG
-          else
+          elif [ "$APPLY" = "false" ]; then
             argus run --dry-run $REPORT_FLAG $NOTIFY_FLAG
+          else
+            # unset: respect safety.yaml (YOLO implies apply)
+            argus run $REPORT_FLAG $NOTIFY_FLAG
           fi
       - name: Upload private artifacts
         uses: actions/upload-artifact@v4

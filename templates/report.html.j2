@@ -1,138 +1,564 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Argus Report</title>
+  <meta name="color-scheme" content="dark light" />
+  <title>Argus Portfolio Report — {{ view.target_label }}</title>
   <style>
-    :root {
-      --bg: #f6f3ee;
-      --ink: #1c1a16;
-      --muted: #5c574e;
-      --accent: #0f6b5c;
-      --card: #fffdf8;
-      --line: #ddd6c8;
-      --warn: #8a4b12;
+    /* Dark (default) */
+    html[data-theme="dark"] {
+      --bg: #0f1419;
+      --bg-glow: #162033;
+      --card: #1a2332;
+      --ink: #e7ecf3;
+      --muted: #8b98a8;
+      --line: #2a3544;
+      --accent: #3d9cf0;
+      --good: #3dd68c;
+      --warn: #f0b429;
+      --bad: #f07178;
+      --chip: #243044;
+      --bar-track: #0c1016;
+      --banner-bg: #1e2a3a;
+      --toggle-bg: #243044;
+      --toggle-ink: #e7ecf3;
+      --grid-line: #2a3544;
+      --shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+      --plot-fill: #3d9cf0;
+      --plot-fill-2: #7aa2f7;
+      --plot-fill-3: #c3a6ff;
+    }
+    /* Light */
+    html[data-theme="light"] {
+      --bg: #f4f6f9;
+      --bg-glow: #e8eef6;
+      --card: #ffffff;
+      --ink: #1a2332;
+      --muted: #5a6878;
+      --line: #d5dde8;
+      --accent: #1a6fb5;
+      --good: #1f8a5b;
+      --warn: #b07a00;
+      --bad: #c23b45;
+      --chip: #e8eef6;
+      --bar-track: #e4eaf2;
+      --banner-bg: #eaf2fb;
+      --toggle-bg: #e8eef6;
+      --toggle-ink: #1a2332;
+      --grid-line: #d5dde8;
+      --shadow: 0 8px 24px rgba(26, 35, 50, 0.08);
+      --plot-fill: #1a6fb5;
+      --plot-fill-2: #3d7ec9;
+      --plot-fill-3: #6b5cad;
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      font-family: "Segoe UI", "Helvetica Neue", sans-serif;
-      background:
-        radial-gradient(circle at top left, #e7f2ef 0%, transparent 40%),
-        linear-gradient(180deg, #f6f3ee 0%, #efe8dc 100%);
+      font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+      background: radial-gradient(ellipse at top, var(--bg-glow) 0%, var(--bg) 55%);
       color: var(--ink);
       line-height: 1.5;
+      min-height: 100vh;
     }
-    header {
-      padding: 2rem 1.25rem 1rem;
-      max-width: 920px;
-      margin: 0 auto;
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 2rem 1.25rem 3rem; }
+    .header-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
     }
-    h1 { margin: 0 0 0.35rem; font-size: 2rem; letter-spacing: -0.02em; }
+    header h1 { margin: 0 0 0.35rem; font-size: 1.85rem; letter-spacing: -0.02em; }
+    .sub { color: var(--muted); margin: 0 0 1rem; }
+    .theme-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      border: 1px solid var(--line);
+      background: var(--toggle-bg);
+      color: var(--toggle-ink);
+      border-radius: 999px;
+      padding: 0.35rem 0.55rem;
+      font: inherit;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+    }
+    .theme-toggle:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+    .theme-toggle .ico { width: 1.1rem; height: 1.1rem; display: block; }
+    .theme-toggle .label-light { display: none; }
+    html[data-theme="light"] .theme-toggle .label-dark { display: none; }
+    html[data-theme="light"] .theme-toggle .label-light { display: inline; }
     .banner {
-      background: #e8f5f1;
-      border: 1px solid #b7d9cf;
-      color: var(--accent);
-      padding: 0.75rem 1rem;
+      background: var(--banner-bg);
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--accent);
+      padding: 0.85rem 1rem;
       border-radius: 8px;
-      margin: 1rem 0;
+      margin: 1rem 0 1.5rem;
+      color: var(--ink);
     }
-    .summary { color: var(--muted); }
-    main { max-width: 920px; margin: 0 auto; padding: 0 1.25rem 3rem; }
-    section.repo {
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 0.75rem;
+      margin: 1.25rem 0 1.5rem;
+    }
+    .stat {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 1rem;
+      box-shadow: var(--shadow);
+    }
+    .stat .n { font-size: 1.6rem; font-weight: 650; color: var(--ink); }
+    .stat .l { color: var(--muted); font-size: 0.85rem; }
+    h2 { font-size: 1.2rem; margin: 2rem 0 0.75rem; color: var(--ink); }
+    .card {
       background: var(--card);
       border: 1px solid var(--line);
       border-radius: 12px;
-      padding: 1.25rem;
-      margin: 1rem 0;
+      padding: 1.1rem 1.2rem;
+      margin: 0.75rem 0;
+      box-shadow: var(--shadow);
     }
-    section.repo h2 { margin-top: 0; font-size: 1.25rem; }
-    .meta { color: var(--muted); font-size: 0.95rem; }
-    .task {
-      border-top: 1px solid var(--line);
-      padding: 1rem 0 0.25rem;
+    .card h3 { margin: 0 0 0.35rem; font-size: 1.05rem; color: var(--ink); }
+    .meta { color: var(--muted); font-size: 0.9rem; }
+    .badge {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 650;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 0.15rem 0.45rem;
+      border-radius: 999px;
+      margin-right: 0.35rem;
+      vertical-align: middle;
     }
-    .task h3 { margin: 0 0 0.35rem; font-size: 1.05rem; }
-    .why { color: var(--muted); }
-    ol { padding-left: 1.2rem; }
-    .done {
-      background: #f3eee4;
-      border-radius: 6px;
-      padding: 0.5rem 0.75rem;
-      margin-top: 0.5rem;
+    .badge-high { background: color-mix(in srgb, var(--bad) 18%, transparent); color: var(--bad); }
+    .badge-medium { background: color-mix(in srgb, var(--warn) 16%, transparent); color: var(--warn); }
+    .badge-good { background: color-mix(in srgb, var(--good) 14%, transparent); color: var(--good); }
+    .badge-active, .badge-archived { background: var(--chip); color: var(--muted); }
+    .bar {
+      height: 8px;
+      background: var(--bar-track);
+      border-radius: 999px;
+      margin: 0.65rem 0 0.5rem;
+      overflow: hidden;
     }
-    .low { color: var(--warn); font-weight: 600; }
-    code { font-family: ui-monospace, Consolas, monospace; font-size: 0.9em; }
-    footer { max-width: 920px; margin: 0 auto; padding: 0 1.25rem 2rem; color: var(--muted); font-size: 0.9rem; }
+    .bar > span { display: block; height: 100%; border-radius: 999px; }
+    .bar-high > span { background: var(--bad); }
+    .bar-medium > span { background: var(--warn); }
+    .bar-good > span { background: var(--good); }
+    ul.issues { margin: 0.5rem 0 0; padding-left: 1.1rem; color: var(--muted); }
+    .assessment li { margin: 0.35rem 0; color: var(--ink); }
+    .charts {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 0.85rem;
+      margin: 0.5rem 0 1.25rem;
+    }
+    .chart-card h3 {
+      margin: 0 0 0.75rem;
+      font-size: 0.95rem;
+      color: var(--muted);
+      font-weight: 650;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .hbar { display: grid; gap: 0.45rem; }
+    .hbar-row { display: grid; grid-template-columns: minmax(4.5rem, 28%) 1fr auto; gap: 0.5rem; align-items: center; }
+    .hbar-row .lab { color: var(--ink); font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .hbar-row .track {
+      height: 10px;
+      background: var(--bar-track);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .hbar-row .track > i {
+      display: block;
+      height: 100%;
+      border-radius: 999px;
+      background: var(--plot-fill);
+    }
+    .hbar-row .val { color: var(--muted); font-size: 0.8rem; font-variant-numeric: tabular-nums; min-width: 2.2rem; text-align: right; }
+    .hbar-row.band-high .track > i { background: var(--bad); }
+    .hbar-row.band-medium .track > i { background: var(--warn); }
+    .hbar-row.band-good .track > i { background: var(--good); }
+    .hbar-row.cls-auto .track > i { background: var(--good); }
+    .hbar-row.cls-agent .track > i { background: var(--plot-fill-2); }
+    .hbar-row.cls-human .track > i { background: var(--warn); }
+    .hist {
+      display: flex;
+      align-items: flex-end;
+      gap: 0.45rem;
+      height: 140px;
+      padding-top: 0.5rem;
+      border-bottom: 1px solid var(--grid-line);
+    }
+    .hist-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      height: 100%;
+      gap: 0.35rem;
+    }
+    .hist-col .col {
+      width: 100%;
+      max-width: 42px;
+      background: linear-gradient(180deg, var(--plot-fill-2), var(--plot-fill));
+      border-radius: 6px 6px 2px 2px;
+      min-height: 4px;
+    }
+    .hist-col .lab { color: var(--muted); font-size: 0.72rem; }
+    .hist-col .cnt { color: var(--ink); font-size: 0.75rem; font-weight: 650; }
+    .donut-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 1rem;
+    }
+    .donut {
+      width: 132px;
+      height: 132px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      background: conic-gradient(
+        var(--bad) 0 calc(var(--p-high) * 1%),
+        var(--warn) calc(var(--p-high) * 1%) calc((var(--p-high) + var(--p-medium)) * 1%),
+        var(--good) calc((var(--p-high) + var(--p-medium)) * 1%) 100%
+      );
+      position: relative;
+      box-shadow: inset 0 0 0 1px var(--line);
+    }
+    .donut::after {
+      content: "";
+      position: absolute;
+      inset: 28%;
+      border-radius: 50%;
+      background: var(--card);
+      border: 1px solid var(--line);
+    }
+    .legend { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem; }
+    .legend li { display: flex; align-items: center; gap: 0.45rem; color: var(--ink); font-size: 0.9rem; }
+    .swatch {
+      width: 0.7rem; height: 0.7rem; border-radius: 3px; flex-shrink: 0;
+    }
+    .swatch-high { background: var(--bad); }
+    .swatch-medium { background: var(--warn); }
+    .swatch-good { background: var(--good); }
+    .swatch-auto { background: var(--good); }
+    .swatch-agent { background: var(--plot-fill-2); }
+    .swatch-human { background: var(--warn); }
+    .spark {
+      width: 100%;
+      height: 72px;
+      display: block;
+    }
+    .spark .axis { stroke: var(--grid-line); stroke-width: 1; }
+    .spark .dot { fill: var(--plot-fill); }
+    .spark .line { fill: none; stroke: var(--plot-fill); stroke-width: 2; }
+    .spark .area { fill: color-mix(in srgb, var(--plot-fill) 22%, transparent); }
+    table.fleet {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.92rem;
+    }
+    table.fleet th, table.fleet td {
+      text-align: left;
+      padding: 0.55rem 0.4rem;
+      border-bottom: 1px solid var(--line);
+      color: var(--ink);
+    }
+    table.fleet th { color: var(--muted); font-weight: 600; }
+    .steps {
+      white-space: pre-wrap;
+      font-family: inherit;
+      color: var(--ink);
+      margin: 0.5rem 0;
+      background: var(--chip);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 0.75rem 0.9rem;
+    }
+    footer { margin-top: 2.5rem; color: var(--muted); font-size: 0.85rem; }
+    code { font-family: "IBM Plex Mono", ui-monospace, Consolas, monospace; font-size: 0.88em; color: var(--ink); }
+    @media (prefers-reduced-motion: no-preference) {
+      body, .card, .stat, .theme-toggle, .bar > span, .hbar-row .track > i {
+        transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+      }
+    }
   </style>
+  <script>
+    (function () {
+      try {
+        var saved = localStorage.getItem("argus-report-theme");
+        if (saved === "light" || saved === "dark") {
+          document.documentElement.setAttribute("data-theme", saved);
+        }
+      } catch (e) {}
+    })();
+  </script>
 </head>
 <body>
-  <header>
-    <h1>Argus</h1>
-    <p class="summary">
-      {% if human_count == 0 %}
-        Nothing needs you right now.
-      {% elif human_count == 1 %}
-        Argus needs you for 1 small task.
-      {% else %}
-        Argus needs you for {{ human_count }} small tasks.
+  <div class="wrap">
+    <header>
+      <div class="header-row">
+        <div>
+          <h1>Argus Portfolio Report</h1>
+          <p class="sub">
+            {{ view.target_label }} · generated {{ view.generated_at }} · mode {{ view.mode }}
+            {% if view.read_only %}· read-only{% endif %}
+          </p>
+        </div>
+        <button type="button" class="theme-toggle" id="theme-toggle" aria-pressed="false" title="Toggle light / dark theme">
+          <svg class="ico label-dark" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12Zm0 4a1 1 0 0 1-1-1v-1a1 1 0 1 1 2 0v1a1 1 0 0 1-1 1Zm0-18a1 1 0 0 1-1-1V2a1 1 0 1 1 2 0v1a1 1 0 0 1-1 1Zm10 8h-1a1 1 0 1 1 0-2h1a1 1 0 1 1 0 2ZM4 12H3a1 1 0 1 1 0-2h1a1 1 0 1 1 0 2Zm13.66 6.66-.7-.7a1 1 0 0 1 1.4-1.42l.71.71a1 1 0 0 1-1.41 1.41ZM6.34 6.34l-.7-.7A1 1 0 0 1 7.05 4.2l.7.71A1 1 0 1 1 6.34 6.34Zm11.32-1.42.7-.71a1 1 0 1 1 1.42 1.42l-.71.7a1 1 0 0 1-1.41-1.41ZM5.63 18.66a1 1 0 0 1-1.41-1.41l.7-.71a1 1 0 0 1 1.42 1.41l-.71.71Z"/></svg>
+          <svg class="ico label-light" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M21 14.3A8.5 8.5 0 0 1 9.7 3 7 7 0 1 0 21 14.3Z"/></svg>
+          <span class="label-dark">Light</span>
+          <span class="label-light">Dark</span>
+        </button>
+      </div>
+      {% if view.report_banner %}
+      <div class="banner">{{ view.report_banner }}</div>
       {% endif %}
-    </p>
-    {% if report_banner %}
-      <div class="banner">{{ report_banner }}</div>
-    {% endif %}
-  </header>
-  <main>
-    {% for plan in plans %}
-      <section class="repo">
-        <h2>{{ plan.repo.full_name }}</h2>
-        <p class="meta">
-          {% if plan.score.confidence.value == 'low' %}
-            <span class="low">Needs a human read</span> — raw score {{ plan.score.attention }}/100
-          {% else %}
-            Attention {{ plan.score.attention }}/100 ({{ plan.score.confidence.value }} confidence)
-          {% endif %}
-          · status {{ plan.repo.status.value }}
-        </p>
+    </header>
 
-        {% if plan.human_fixes %}
-          <h3>Your tasks</h3>
-          {% for m in plan.human_fixes %}
-            <div class="task">
-              <h3>H{{ loop.index }}. {{ m.fix.title }}</h3>
-              <p class="why">{{ m.fix.why }}</p>
-              <pre style="white-space:pre-wrap;font-family:inherit;margin:0.5rem 0;">{{ m.fix.human_steps }}</pre>
-              <div class="done"><strong>Done when:</strong> {{ m.fix.gate or 'The steps above are complete.' }}</div>
-            </div>
+    <div class="stats" data-testid="summary-grid">
+      <div class="stat"><div class="n">{{ view.stats.repos }}</div><div class="l">Repositories</div></div>
+      <div class="stat"><div class="n">{{ view.stats.active }}</div><div class="l">Active</div></div>
+      <div class="stat"><div class="n">{{ view.stats.open_fixes }}</div><div class="l">Open fixes</div></div>
+      <div class="stat"><div class="n">{{ view.stats.mean_attention }}</div><div class="l">Mean attention</div></div>
+      <div class="stat"><div class="n">{{ view.stats.human_fixes }}</div><div class="l">Human tasks</div></div>
+      <div class="stat"><div class="n">{{ view.stats.archived }}</div><div class="l">Archived</div></div>
+    </div>
+
+    <h2>Charts</h2>
+    <div class="charts" data-testid="charts-grid">
+      <div class="card chart-card">
+        <h3>Attention distribution</h3>
+        <div class="hist" role="img" aria-label="Histogram of attention scores">
+          {% for b in view.charts.attention_hist %}
+          <div class="hist-col">
+            <span class="cnt">{{ b.count }}</span>
+            <div class="col" style="height: {{ b.pct if b.pct > 0 else 3 }}%"></div>
+            <span class="lab">{{ b.label }}</span>
+          </div>
           {% endfor %}
-        {% endif %}
+        </div>
+      </div>
 
-        {% if plan.agent_fixes %}
-          <h3>Agent work queued</h3>
-          <ul>
-            {% for m in plan.agent_fixes %}
-              <li><code>{{ m.fix.id }}</code> — {{ m.fix.title }}</li>
+      <div class="card chart-card">
+        <h3>Attention bands</h3>
+        {% set bands = view.charts.bands %}
+        <div class="donut-wrap">
+          <div class="donut"
+               style="--p-high: {{ bands[0].pct }}; --p-medium: {{ bands[1].pct }}; --p-good: {{ bands[2].pct }};"
+               role="img"
+               aria-label="Band mix high {{ bands[0].count }}, medium {{ bands[1].count }}, good {{ bands[2].count }}"></div>
+          <ul class="legend">
+            {% for b in bands %}
+            <li><span class="swatch swatch-{{ b.key }}"></span> {{ b.key }} · {{ b.count }} ({{ b.pct }}%)</li>
             {% endfor %}
           </ul>
-          <p class="meta">Full gated prompt is in <code>dist/runbook.md</code>.</p>
-        {% endif %}
+        </div>
+      </div>
 
-        {% if plan.auto_fixes and not plan.report_only %}
-          <h3>Safe auto-fixes</h3>
-          <ul>
-            {% for m in plan.auto_fixes %}
-              <li><code>{{ m.fix.id }}</code> — {{ m.fix.title }}</li>
-            {% endfor %}
-          </ul>
-        {% endif %}
+      <div class="card chart-card">
+        <h3>Open fixes by class</h3>
+        <div class="hbar">
+          {% for row in view.charts.fix_classes %}
+          <div class="hbar-row cls-{{ row.key }}">
+            <span class="lab">{{ row.label }}</span>
+            <div class="track"><i style="width: {{ row.pct if view.stats.open_fixes else 0 }}%"></i></div>
+            <span class="val">{{ row.count }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
 
-        {% if not plan.human_fixes and not plan.agent_fixes and not plan.auto_fixes %}
-          <p class="meta">No open work.</p>
+      <div class="card chart-card">
+        <h3>Top open fix ids</h3>
+        {% if view.charts.top_fixes %}
+        <div class="hbar">
+          {% for row in view.charts.top_fixes %}
+          <div class="hbar-row">
+            <span class="lab" title="{{ row.label }}"><code>{{ row.label }}</code></span>
+            <div class="track"><i style="width: {{ row.pct }}%"></i></div>
+            <span class="val">{{ row.value }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="meta">No open fixes to chart.</p>
         {% endif %}
-      </section>
+      </div>
+
+      <div class="card chart-card">
+        <h3>Languages</h3>
+        {% if view.charts.languages %}
+        <div class="hbar">
+          {% for row in view.charts.languages %}
+          <div class="hbar-row">
+            <span class="lab">{{ row.label }}</span>
+            <div class="track"><i style="width: {{ row.pct }}%; background: var(--plot-fill-3)"></i></div>
+            <span class="val">{{ row.value }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="meta">No language data.</p>
+        {% endif %}
+      </div>
+
+      <div class="card chart-card">
+        <h3>Priority attention sparkline</h3>
+        {% set spark = view.charts.priority_attention %}
+        {% if spark.points %}
+        <svg class="spark" viewBox="0 0 320 72" preserveAspectRatio="none" role="img" aria-label="Priority repo attention sparkline">
+          <line class="axis" x1="0" y1="66" x2="320" y2="66" />
+          <path class="area" d="{{ spark.area }}" />
+          <path class="line" d="{{ spark.line }}" />
+          {% for p in spark.points %}
+            <circle class="dot" cx="{{ p.x }}" cy="{{ p.y }}" r="2.5">
+              <title>{{ p.label }}: {{ p.value }}</title>
+            </circle>
+          {% endfor %}
+        </svg>
+        <div class="hbar" style="margin-top:0.75rem">
+          {% for p in spark.points %}
+          <div class="hbar-row band-{{ p.band }}">
+            <span class="lab">{{ p.label }}</span>
+            <div class="track"><i style="width: {{ p.value }}%"></i></div>
+            <span class="val">{{ p.value }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="meta">No priority repos.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <h2>Overall Assessment</h2>
+    <div class="card">
+      {% if view.attention_blurb %}
+      <p class="meta" style="margin:0 0 0.85rem"><strong>How attention works.</strong> {{ view.attention_blurb }}</p>
+      {% endif %}
+      <ul class="assessment">
+        {% for b in view.assessment_bullets %}
+        <li>{{ b }}</li>
+        {% endfor %}
+      </ul>
+      {% if view.strong %}
+      <p class="meta" style="margin-top:1rem">Strengths</p>
+      <ul class="assessment">
+        {% for s in view.strong %}
+        <li>{{ s }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+    </div>
+
+    {% if view.grandma_tasks %}
+    <h2>Needs you</h2>
+    {% for t in view.grandma_tasks %}
+    <div class="card">
+      <h3>{{ t.index }}. {{ t.title }}</h3>
+      <p class="why meta">{{ t.why }}</p>
+      <pre class="steps">{{ t.steps }}</pre>
+      <p class="meta"><strong>Done when:</strong> {{ t.gate }}</p>
+      <p><a href="{{ t.url }}">Open repo</a></p>
+    </div>
     {% endfor %}
-  </main>
-  <footer>Generated by Argus. Silent when nothing needs you.</footer>
+    {% endif %}
+
+    <h2>Priority Attention</h2>
+    {% for c in view.priority_cards %}
+    <div class="card priority-card">
+      <h3>
+        <span class="badge badge-{{ c.band }}">{{ c.band }}</span>
+        <span class="badge badge-{{ c.status }}">{{ c.status }}</span>
+        <a href="{{ c.url }}">{{ c.full_name }}</a>
+      </h3>
+      <p class="meta">{{ c.meta }} · attention {{ c.attention }}/100</p>
+      {% if c.categories_line %}
+      <p class="meta">Top categories: {{ c.categories_line }}</p>
+      {% endif %}
+      {% if c.description %}<p>{{ c.description }}</p>{% endif %}
+      <div class="bar bar-{{ c.band }}" title="attention {{ c.attention }}/100"><span style="width:{{ c.bar_width }}%"></span></div>
+      {% if c.issues %}
+      <ul class="issues">
+        {% for i in c.issues %}<li>{{ i }}</li>{% endfor %}
+      </ul>
+      {% else %}
+      <p class="meta">No open Argus fixes.</p>
+      {% endif %}
+    </div>
+    {% else %}
+    <div class="card"><p class="meta">No priority repos in this scan.</p></div>
+    {% endfor %}
+
+    {% if view.archived_cards %}
+    <h2>Archived</h2>
+    {% for a in view.archived_cards %}
+    <div class="card">
+      <h3><span class="badge badge-archived">archived</span> <a href="{{ a.url }}">{{ a.full_name }}</a></h3>
+      <p class="meta">{{ a.meta }}</p>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    {% if view.fleet %}
+    <h2>Rest of fleet</h2>
+    <div class="card">
+      <table class="fleet">
+        <thead><tr><th>Repo</th><th>Lang</th><th>Issues</th><th>Attention</th></tr></thead>
+        <tbody>
+          {% for r in view.fleet %}
+          <tr>
+            <td><a href="{{ r.url }}">{{ r.name }}</a></td>
+            <td>{{ r.lang }}</td>
+            <td>{{ r.issues }}</td>
+            <td>{{ r.attention }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+
+    <footer>
+      Deterministic Argus report — no LLM narrative.
+      Public Pages stay status-only; this HTML is for download / private runner / email.
+      Theme preference is stored locally in this browser.
+    </footer>
+  </div>
+  <script>
+    (function () {
+      var root = document.documentElement;
+      var btn = document.getElementById("theme-toggle");
+      function sync() {
+        var theme = root.getAttribute("data-theme") || "dark";
+        btn.setAttribute("aria-pressed", theme === "light" ? "true" : "false");
+        btn.setAttribute("aria-label", theme === "dark" ? "Switch to light mode" : "Switch to dark mode");
+      }
+      sync();
+      btn.addEventListener("click", function () {
+        var next = (root.getAttribute("data-theme") === "light") ? "dark" : "light";
+        root.setAttribute("data-theme", next);
+        try { localStorage.setItem("argus-report-theme", next); } catch (e) {}
+        sync();
+      });
+    })();
+  </script>
 </body>
 </html>

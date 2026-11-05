@@ -1,4 +1,6 @@
 # Hygiene constitution + fix catalogue. Behaviour lives here, not in Python.
+# Prefer new auto_safe rows (+ executable gate) over Grok/LLM mutators. YOLO only
+# accelerates gated apply — see docs/YOLO.md and docs/GROK_BOTS.md.
 fixes:
   - id: HYGIENE-GITATTRIBUTES
     class: auto_safe

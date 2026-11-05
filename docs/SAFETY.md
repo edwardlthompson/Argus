@@ -34,6 +34,15 @@
 
 Edit `config/safety.yaml`, `config/allowlist.yaml`, and `config/inbox.yaml` to tighten further.
 
+## Apply modes
+
+| Mode | Behavior |
+|------|----------|
+| `normal` (default) | Dry-run or `apply=true` opens `auto_safe` PRs; **human merges** |
+| `yolo` | Same apply path, but policy prefers **auto-merge** when gate + required CI are green (Dependabot **patch** optional). Kill switch: set `apply_mode: normal` |
+
+Hard floors above still apply under YOLO. Grok Bots never merge — see [`GROK_BOTS.md`](GROK_BOTS.md) and [`YOLO.md`](YOLO.md). Prefer new Argus `auto_safe` matchers over LLM mutators.
+
 ## Permissions
 
 - Report-only: read token (or public rate limits).

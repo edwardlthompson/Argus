@@ -54,3 +54,7 @@ Retune in YAML (not Python):
 Hand-crafted banner: commit your own `assets/argus-banner.svg` in `YOU/YOU` (self-hosted SVG only; avoid third-party stats widgets).
 
 Default hygiene profile is **`generic`**. `config/profiles/edward.yaml` is maintainer-stricter for this product’s author — only use `--profile edward` if you want those extra rules.
+
+## Optional Grok Bots + YOLO
+
+Attention digests and draft release notes: [`docs/GROK_BOTS.md`](GROK_BOTS.md) (skills under `docs/grok-bots/`). Optional auto-merge policy after you trust `apply`: [`docs/YOLO.md`](YOLO.md). Argus remains the only code mutator; Grok does not merge.

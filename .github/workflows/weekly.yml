@@ -6,9 +6,9 @@ on:
   workflow_dispatch:
     inputs:
       apply:
-        description: "Set true to allow non-dry-run auto-apply"
+        description: "true=apply, false=dry-run, empty=respect safety.yaml (YOLO implies apply)"
         required: false
-        default: "false"
+        default: ""
 
 jobs:
   run:
@@ -42,10 +42,14 @@ jobs:
           fi
           REPORT_FLAG=""
           if [ -n "$ARGUS_REPORT_URL" ]; then REPORT_FLAG="--report-url $ARGUS_REPORT_URL"; fi
-          if [ "${{ inputs.apply }}" = "true" ]; then
+          APPLY="${{ inputs.apply }}"
+          if [ "$APPLY" = "true" ]; then
             argus run --apply $REPORT_FLAG
-          else
+          elif [ "$APPLY" = "false" ]; then
             argus run --dry-run $REPORT_FLAG
+          else
+            # schedule / unset: YOLO implies apply (docs/YOLO.md)
+            argus run $REPORT_FLAG
           fi
       - name: Upload private artifacts
         uses: actions/upload-artifact@v4

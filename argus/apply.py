@@ -110,21 +110,34 @@ def _content_pr(
         allow_write=True,
         json=payload,
     )
-    pr = client.post(
-        f"/repos/{owner}/{name}/pulls",
-        allow_write=True,
-        json={
-            "title": f"chore(argus): {matched.fix.title}",
-            "head": branch,
-            "base": default,
-            "body": (
-                f"Argus auto-safe `{matched.fix.id}`\n\n"
-                f"**Why:** {matched.fix.why}\n\n"
-                f"**Gate:** `{matched.fix.gate}`\n"
-            ),
-        },
-    )
-    return str(pr.get("html_url") or "")
+    try:
+        pr = client.post(
+            f"/repos/{owner}/{name}/pulls",
+            allow_write=True,
+            json={
+                "title": f"chore(argus): {matched.fix.title}",
+                "head": branch,
+                "base": default,
+                "body": (
+                    f"Argus auto-safe `{matched.fix.id}`\n\n"
+                    f"**Why:** {matched.fix.why}\n\n"
+                    f"**Gate:** `{matched.fix.gate}`\n"
+                ),
+            },
+        )
+        return str(pr.get("html_url") or "")
+    except GitHubError as exc:
+        if "422" not in str(exc):
+            raise
+        # PR already open for this Argus branch — treat as success.
+        head = f"{owner}:{branch}"
+        existing = client.get(
+            f"/repos/{owner}/{name}/pulls",
+            params={"state": "open", "head": head, "per_page": 5},
+        )
+        if isinstance(existing, list) and existing:
+            return str(existing[0].get("html_url") or f"existing-pr:{head}")
+        return f"existing-pr:{head}"
 
 
 def _handler_file_pr(client: GitHubClient, plan: RepoPlan, matched: MatchedFix) -> str:

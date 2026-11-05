@@ -9,8 +9,9 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from argus.models import Confidence, FixClass, MatchedFix, RepoPlan
+from argus.models import Confidence, MatchedFix, RepoPlan
 from argus.paths import DIST_DIR, TEMPLATES_DIR, ensure_runtime_dirs
+from argus.report_view import build_report_view
 from argus.status_page import write_status_artifacts
 
 
@@ -28,7 +29,6 @@ def _topo_phases(fixes: list[MatchedFix]) -> dict[int, list[MatchedFix]]:
                 remaining.remove(fid)
                 progress = True
         if not progress:
-            # Cycle — append rest sorted by phase then id
             ordered.extend(sorted((by_id[i] for i in remaining), key=lambda m: (m.fix.phase, m.fix.id)))
             break
     phases: dict[int, list[MatchedFix]] = defaultdict(list)
@@ -75,7 +75,6 @@ def _agent_prompt_block(
             body_lines.append("")
 
         gate = items[-1].fix.gate or "true"
-        # Prefer an explicit verify-style gate on last fix; always emit GATE
         body_lines.append(f"GATE: {gate}")
         body_lines.append("")
 
@@ -86,7 +85,6 @@ def _agent_prompt_block(
         parts.extend(body_lines)
         included.extend(items)
 
-    # Final verify phase always
     parts.extend(
         [
             "## Phase final — verify & PR",
@@ -170,25 +168,54 @@ def compose_runbook(
     return "\n".join(lines).rstrip() + "\n"
 
 
+def _jinja_env() -> Environment:
+    ensure_runtime_dirs()
+    return Environment(
+        loader=FileSystemLoader(str(TEMPLATES_DIR)),
+        autoescape=select_autoescape(["html", "xml"]),
+    )
+
+
 def compose_html(
     plans: list[RepoPlan],
     *,
     report_banner: str | None = None,
+    health_delta: dict | None = None,
+    target_label: str = "portfolio",
+    mode: str = "run",
+    read_only: bool = False,
 ) -> str:
-    ensure_runtime_dirs()
-    env = Environment(
-        loader=FileSystemLoader(str(TEMPLATES_DIR)),
-        autoescape=select_autoescape(["html", "xml"]),
-    )
-    template = env.get_template("report.html.j2")
-    human_count = sum(len(p.human_fixes) for p in plans)
-    return template.render(
-        plans=plans,
-        human_count=human_count,
+    view = build_report_view(
+        plans,
+        target_label=target_label,
+        mode=mode,
         report_banner=report_banner,
-        FixClass=FixClass,
-        Confidence=Confidence,
+        health_delta=health_delta,
+        read_only=read_only,
     )
+    return _jinja_env().get_template("report.html.j2").render(view=view)
+
+
+def compose_portfolio_markdown(
+    plans: list[RepoPlan],
+    *,
+    report_banner: str | None = None,
+    health_delta: dict | None = None,
+    target_label: str = "portfolio",
+    mode: str = "run",
+    read_only: bool = False,
+) -> str:
+    view = build_report_view(
+        plans,
+        target_label=target_label,
+        mode=mode,
+        report_banner=report_banner,
+        health_delta=health_delta,
+        read_only=read_only,
+    )
+    # Markdown template: disable HTML autoescape noise for MD
+    env = Environment(loader=FileSystemLoader(str(TEMPLATES_DIR)), autoescape=False)
+    return env.get_template("portfolio_report.md.j2").render(view=view)
 
 
 def compose_private_inbox_json(plans: list[RepoPlan]) -> dict:
@@ -219,20 +246,45 @@ def write_artifacts(
     *,
     max_prompt_chars: int = 12000,
     report_banner: str | None = None,
+    health_delta: dict | None = None,
     dist_dir: Path | None = None,
-) -> tuple[Path, Path]:
+    target_label: str = "portfolio",
+    mode: str = "run",
+    read_only: bool = False,
+) -> dict[str, Path]:
     ensure_runtime_dirs()
     out = dist_dir or DIST_DIR
     out.mkdir(parents=True, exist_ok=True)
     runbook = compose_runbook(plans, max_prompt_chars=max_prompt_chars, report_banner=report_banner)
-    html = compose_html(plans, report_banner=report_banner)
+    html = compose_html(
+        plans,
+        report_banner=report_banner,
+        health_delta=health_delta,
+        target_label=target_label,
+        mode=mode,
+        read_only=read_only,
+    )
+    portfolio_md = compose_portfolio_markdown(
+        plans,
+        report_banner=report_banner,
+        health_delta=health_delta,
+        target_label=target_label,
+        mode=mode,
+        read_only=read_only,
+    )
     md_path = out / "runbook.md"
     html_path = out / "report.html"
+    portfolio_path = out / "portfolio-report.md"
     md_path.write_text(runbook, encoding="utf-8")
     html_path.write_text(html, encoding="utf-8")
+    portfolio_path.write_text(portfolio_md, encoding="utf-8")
     (out / "inbox.json").write_text(
         json.dumps(compose_private_inbox_json(plans), indent=2) + "\n",
         encoding="utf-8",
     )
     write_status_artifacts(plans, dist_dir=out)
-    return md_path, html_path
+    return {
+        "runbook": md_path,
+        "report": html_path,
+        "portfolio": portfolio_path,
+    }

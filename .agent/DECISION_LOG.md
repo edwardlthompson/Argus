@@ -1,5 +1,17 @@
 # Decision log
 
+## 2026-11-05 — Ship v0.4.0 (YOLO + portfolio reports)
+
+- **Decision:** Release hands-off YOLO, health/rate-limit, apply history, shareable reports, and Grok draft pack as **0.4.0**.
+- **Gates:** `update-deps` + `verify` (96 tests); template Release Please / full pre-release-gate remain N/A (G12/G14).
+- **Ops note:** Mass YOLO merges + runner CodeQL on history sync can exhaust free Actions minutes — thin runner CI on `argus-history/**` when needed.
+
+## 2026-11-05 — Grok Bots draft/digest + optional YOLO
+
+- **Decision:** Grok Bots = notice/draft/`argus-inbox` handoff only (no merge). Argus + Dependabot = sole mutators. Optional `apply_mode: yolo` auto-merges green gated/`auto_safe` (+ Dependabot patch) with hard floors intact.
+- **Docs:** `docs/GROK_BOTS.md`, `docs/YOLO.md`, `docs/grok-bots/*`, ADR `docs/adr/0001-grok-bots-draft-digest-and-yolo.md`.
+- **Prefer:** grow Argus `auto_safe` matchers over LLM code edits.
+
 ## 2026-11-05 — Ship v0.3.0 (Sequential A–L)
 
 - **Decision:** Release dual-plane + profile Overview + operator/auto_safe expansion as **0.3.0** (not 0.2.x) after empty-board cleanup.

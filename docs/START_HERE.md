@@ -67,4 +67,6 @@ Archived repos skipped unless `--include-archived`.
 ## Next reading
 
 - [FORKING.md](FORKING.md) · [PUBLISH.md](PUBLISH.md) · [RUNNER.md](RUNNER.md) · [WEEKLY_APPLY.md](WEEKLY_APPLY.md)
-- [SAFETY.md](SAFETY.md) · [THREAT_MODEL.md](THREAT_MODEL.md) · [FIRST_30_DAYS.md](FIRST_30_DAYS.md) · [GRANDMA_MODE.md](GRANDMA_MODE.md)
+- [SAFETY.md](SAFETY.md) · [RATE_LIMIT.md](RATE_LIMIT.md) · [YOLO.md](YOLO.md) · [GROK_BOTS.md](GROK_BOTS.md)
+- [THREAT_MODEL.md](THREAT_MODEL.md)
+- [FIRST_30_DAYS.md](FIRST_30_DAYS.md) · [GRANDMA_MODE.md](GRANDMA_MODE.md)

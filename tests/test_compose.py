@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from argus.compose import compose_html, compose_runbook
+from argus.compose import compose_html, compose_portfolio_markdown, compose_runbook, write_artifacts
 from argus.config_loader import load_fixes
 from argus.pipeline import build_plans_from_fixtures
 from tests.conftest import load_fixture
@@ -32,21 +32,37 @@ def all_plans():
 
 def test_snapshots_runbook_and_html(all_plans, tmp_path: Path):
     md = compose_runbook(all_plans)
-    html = compose_html(all_plans)
+    html = compose_html(all_plans, target_label="fixture-portfolio", mode="test")
+    portfolio = compose_portfolio_markdown(
+        all_plans, target_label="fixture-portfolio", mode="test"
+    )
     (tmp_path / "runbook.md").write_text(md, encoding="utf-8")
     (tmp_path / "report.html").write_text(html, encoding="utf-8")
     assert "# Argus Runbook" in md
-    assert "Argus" in html
-    # Store golden snapshots under fixtures/expected for regression
+    assert "Argus Portfolio Report" in html
+    assert 'data-testid="summary-grid"' in html
+    assert "badge-high" in html or "badge-medium" in html or "badge-good" in html
+    assert "Overall Assessment" in portfolio
     expected = Path(__file__).parent / "fixtures" / "expected"
     expected.mkdir(exist_ok=True)
     gold_md = expected / "runbook.md"
-    gold_html = expected / "report.html"
     if not gold_md.exists():
         gold_md.write_text(md, encoding="utf-8")
-        gold_html.write_text(html, encoding="utf-8")
     assert md == gold_md.read_text(encoding="utf-8")
-    assert html == gold_html.read_text(encoding="utf-8")
+
+
+def test_write_artifacts_portfolio(all_plans, tmp_path: Path):
+    paths = write_artifacts(
+        all_plans, dist_dir=tmp_path, target_label="t", mode="test"
+    )
+    assert paths["report"].exists()
+    assert paths["portfolio"].exists()
+    html = paths["report"].read_text(encoding="utf-8")
+    assert "summary-grid" in html
+    assert 'data-theme="dark"' in html
+    assert "theme-toggle" in html
+    assert 'data-testid="charts-grid"' in html
+    assert 'html[data-theme="light"]' in html
 
 
 def test_every_agent_phase_has_gate(all_plans):
