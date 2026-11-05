@@ -43,7 +43,7 @@ jobs:
           if [ ! -f _site/index.html ]; then
             printf '%s\n' '<!DOCTYPE html><html><body><h1>Argus</h1><p>No status yet. Run the scan or weekly workflow.</p></body></html>' > _site/index.html
           fi
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: _site
 
