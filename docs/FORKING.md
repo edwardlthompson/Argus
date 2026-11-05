@@ -35,4 +35,4 @@ Open PRs against the **public** product. Do not commit secrets or real portfolio
 
 ## Profile Overview
 
-Argus can PR an updated GitHub profile README into public `YOU/YOU` (see START_HERE). That repo must stay **public** for GitHub to show the Overview.
+Argus can PR an updated GitHub profile README into public `YOU/YOU` (see START_HERE), including `assets/argus-banner.svg`. That repo must stay **public** for GitHub to show the Overview. Retune `config/profile_readme.yaml` for your voice, or clear `roles`/`capabilities` to use `config/profile_skills.yaml` auto cards from live languages/topics.

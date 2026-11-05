@@ -11,6 +11,12 @@ from argus.config_loader import load_yaml
 from argus.models import RepoPlan
 from argus.paths import CONFIG_DIR, TEMPLATES_DIR
 from argus.profile_featured import select_featured
+from argus.profile_skills import (
+    auto_about,
+    bio_is_distinct,
+    resolve_roles_and_capabilities,
+)
+from argus.profile_stack import ranked_languages
 
 MARKER = "<!-- argus:profile-readme -->"
 
@@ -23,21 +29,14 @@ def load_profile_readme_config(path: Path | None = None) -> dict[str, Any]:
     return data if isinstance(data, dict) else {"enabled": False}
 
 
-def _lang_counts(plans: list[RepoPlan]) -> list[str]:
-    # Prefer topics + repo names as a stand-in until language API is wired per-repo.
-    counts: dict[str, int] = {}
+def _language_totals(plans: list[RepoPlan]) -> dict[str, int]:
+    totals: dict[str, int] = {}
     for plan in plans:
-        if plan.repo.private or plan.repo.archived or plan.repo.fork:
-            continue
-        if plan.repo.owner == plan.repo.name:
-            continue
-        for t in plan.repo.topics:
-            key = t.strip()
-            if len(key) < 2:
-                continue
-            counts[key] = counts.get(key, 0) + 1
-    ranked = sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))
-    return [k for k, _ in ranked]
+        langs = (plan.repo.raw or {}).get("argus_languages") or {}
+        if isinstance(langs, dict):
+            for name, nbytes in langs.items():
+                totals[str(name)] = totals.get(str(name), 0) + int(nbytes)
+    return totals
 
 
 def compose_profile_readme(
@@ -49,38 +48,45 @@ def compose_profile_readme(
     cfg = config or load_profile_readme_config()
     max_lang = int(cfg.get("max_languages") or 8)
     max_feat = int(cfg.get("max_featured_repos") or 6)
-    languages = _lang_counts(plans)[:max_lang]
+    lang_rows = ranked_languages(_language_totals(plans), limit=max_lang)
     featured = select_featured(plans, max_feat)
-    topics = []
-    seen = set()
-    for plan in plans:
-        for t in plan.repo.topics:
-            if t not in seen and plan.repo.owner != plan.repo.name:
-                seen.add(t)
-                topics.append(t)
-            if len(topics) >= 12:
-                break
+    roles, capabilities, used_auto = resolve_roles_and_capabilities(plans, cfg)
+    about = (cfg.get("about") or "").strip()
+    if not about:
+        about = auto_about(
+            [r["name"] for r in lang_rows],
+            [f["short"] for f in featured],
+        )
+    bio = (user.get("bio") or "").strip()
+    show_bio = bio_is_distinct(about, bio)
     env = Environment(
         loader=FileSystemLoader(str(TEMPLATES_DIR)),
         autoescape=select_autoescape([]),
+        trim_blocks=True,
+        lstrip_blocks=True,
     )
     template = env.get_template("profile_readme.md.j2")
     login = str(user.get("login") or "")
     return template.render(
         display_name=user.get("name") or login or "GitHub user",
         tagline=cfg.get("tagline") or "",
-        about=(cfg.get("about") or "").strip(),
-        bio=(user.get("bio") or "").strip(),
+        about=about,
+        bio=bio if show_bio else "",
         location=user.get("location") or "",
         blog=user.get("blog") or "",
         twitter=user.get("twitter_username") or "",
-        roles=list(cfg.get("roles") or []),
-        capabilities=list(cfg.get("capabilities") or []),
+        email=(cfg.get("email") or "").strip(),
+        roles=roles,
+        capabilities=capabilities,
+        used_auto_skills=used_auto,
         principles=(cfg.get("principles") or "").strip(),
         open_to=(cfg.get("open_to") or "").strip(),
-        languages=languages,
-        topics=topics[:12],
+        languages=lang_rows,
         featured=featured,
+        banner_path="./assets/argus-banner.svg",
+        include_badges=bool(cfg.get("include_badges", True)),
+        banner_carries_identity=bool(cfg.get("banner_carries_identity", True)),
+        featured_card_width=int(cfg.get("featured_card_width") or 280),
     )
 
 
@@ -89,5 +95,4 @@ def needs_profile_update(existing: str | None, new_body: str) -> bool:
         return True
     if MARKER not in existing:
         return True
-    # Compare without trailing whitespace drift
     return existing.strip() != new_body.strip()

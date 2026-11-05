@@ -1,29 +1,24 @@
 # Operator voice for the public GitHub profile Overview (USERNAME/USERNAME).
-# Live languages/topics/projects come from the API — do not invent achievements here.
+# Live languages/projects come from the API — do not invent achievements here.
+# Empty roles/capabilities → Argus auto-fills from config/profile_skills.yaml
+# using portfolio languages + topics.
 enabled: true
-tagline: "Building useful, maintainable tools."
+tagline: "Building clean, secure, maintainable apps."
 about: |
-  I build software that turns messy workflows into systems people can run, monitor, and improve.
-roles:
-  - title: Problem Solver
-    blurb: Turning complex workflows into clear solutions.
-  - title: Builder
-    blurb: Creating tools people can use every day.
-  - title: Automator
-    blurb: Removing repetitive work and saving time.
-capabilities:
-  - title: Automation Systems
-    blurb: Scheduled work, validation, sync, and background processing.
-  - title: Web & API Development
-    blurb: Maintainable backends and clean integrations.
-  - title: Internal Tools
-    blurb: Ops, auditing, configuration, and access-friendly admin surfaces.
+  Software developer from Puerto Rico. I turn messy workflows into systems
+  people can run, monitor, and improve — a living portfolio of skills across
+  automation, Android/desktop apps, and FOSS tooling.
+# Leave empty for auto skill cards from live portfolio evidence:
+roles: []
+capabilities: []
 principles: >
   Build for real users. Protect data integrity. Automate repetitive work.
-  Keep interfaces understandable. Prefer maintainable solutions.
-open_to: "Software development, internal tools, automation, and technical collaborations."
+  Prefer FOSS, local-first, and maintainable solutions.
+open_to: "Software development, automation, FOSS collaboration, and clean secure apps."
 max_languages: 8
-# Featured = public non-fork repos ranked by stars, then traffic (views+clones). Not attention score.
 max_featured_repos: 6
 include_badges: true
-# App icons: Argus looks for icon.png / logo.png / fastlane icon / etc.; else Open Graph image.
+# When true, skip repeating the H1/tagline under the banner (banner already has both).
+banner_carries_identity: true
+# Featured visuals: wide OG cards when no app icon; traffic stays ranking-only.
+featured_card_width: 280

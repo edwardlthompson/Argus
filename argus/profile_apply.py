@@ -68,7 +68,14 @@ def sync_profile_readme(
                 f"{login}/{login}", "PROF-README", ttl_days=7, source="profile"
             )
             return result
-        url = open_readme_pr(client, login, body, sha=sha)
+        url = open_readme_pr(
+            client,
+            login,
+            body,
+            sha=sha,
+            display_name=str(me.get("name") or login),
+            tagline=str(cfg.get("tagline") or ""),
+        )
         result.action = "pr"
         result.url = url
         store.record_resolution(

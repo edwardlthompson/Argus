@@ -10,20 +10,29 @@ from argus.models import RepoPlan, RepoRecord
 # Common launcher / brand asset paths (checked in order).
 _ICON_PATHS = (
     "icon.png",
+    "icon.svg",
     "logo.png",
     "logo.svg",
     "app-icon.png",
+    "app_icon.png",
+    "brand.png",
     "assets/icon.png",
     "assets/logo.png",
+    "assets/logo.svg",
+    "assets/brand.png",
     "docs/icon.png",
     "docs/logo.png",
     "images/icon.png",
     "img/icon.png",
     "media/icon.png",
+    "branding/icon.png",
+    "res/icon.png",
     "fastlane/metadata/android/en-US/images/icon.png",
+    "metadata/en-US/images/icon.png",
     "app/ic_launcher-playstore.png",
     "android/app/src/main/ic_launcher-playstore.png",
     "src/main/ic_launcher-playstore.png",
+    "composeApp/ic_launcher-playstore.png",
 )
 
 
@@ -53,6 +62,12 @@ def icon_of(repo: RepoRecord) -> str:
     return f"https://opengraph.githubassets.com/argus/{repo.owner}/{repo.name}"
 
 
+def has_app_icon(repo: RepoRecord) -> bool:
+    """True when we resolved a repo asset (not OG placeholder)."""
+    url = str((repo.raw or {}).get("argus_icon_url") or "")
+    return bool(url) and "opengraph.githubassets.com" not in url
+
+
 def select_featured(plans: list[RepoPlan], limit: int) -> list[dict[str, str]]:
     """Rank public non-fork apps by stars, then traffic (views+clones)."""
     cands = [p for p in plans if _eligible(p.repo)]
@@ -65,15 +80,17 @@ def select_featured(plans: list[RepoPlan], limit: int) -> list[dict[str, str]]:
     )
     out: list[dict[str, str]] = []
     for p in cands[:limit]:
+        app_icon = has_app_icon(p.repo)
         out.append(
             {
                 "name": p.repo.full_name,
                 "short": p.repo.name,
                 "html_url": p.repo.html_url or f"https://github.com/{p.repo.full_name}",
-                "description": (p.repo.description or "")[:160],
+                "description": (p.repo.description or "")[:120],
                 "stars": str(stars_of(p.repo)),
                 "traffic": str(traffic_of(p.repo)),
                 "icon_url": icon_of(p.repo),
+                "visual": "icon" if app_icon else "og",
             }
         )
     return out
@@ -92,8 +109,10 @@ def _resolve_icon(client: GitHubClient, repo: RepoRecord) -> str | None:
     return None
 
 
-def enrich_plans_for_profile(client: GitHubClient, plans: list[RepoPlan]) -> None:
-    """Fill stargazers, traffic, and icon URLs on plan.repo.raw (best-effort)."""
+def enrich_plans_for_profile(client: GitHubClient, plans: list[RepoPlan]) -> dict[str, int]:
+    """Fill stargazers, traffic, icons, and language bytes. Returns language totals."""
+    from argus.profile_stack import collect_language_bytes
+
     for plan in plans:
         repo = plan.repo
         if not _eligible(repo):
@@ -127,3 +146,4 @@ def enrich_plans_for_profile(client: GitHubClient, plans: list[RepoPlan]) -> Non
                 f"https://opengraph.githubassets.com/argus/{repo.owner}/{repo.name}"
             )
         repo.raw = raw
+    return collect_language_bytes(client, plans)

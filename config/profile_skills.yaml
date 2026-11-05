@@ -1,0 +1,35 @@
+# Auto skill cards when profile_readme.yaml leaves roles/capabilities empty.
+# match: lowercase language names and/or topics. Deterministic — no LLM.
+roles:
+  - title: Problem Solver
+    blurb: Turning complex workflows into clear, maintainable solutions.
+    match: [python, automation, typescript, go, kotlin]
+  - title: Builder
+    blurb: Shipping tools people can run every day.
+    match: [kotlin, android, javascript, typescript, dart, swift, csharp]
+  - title: Automator
+    blurb: Removing repetitive work with CI, bots, and scheduled systems.
+    match: [python, shell, powershell, github-actions, docker, automation]
+  - title: Privacy-minded
+    blurb: Preferring local-first, FOSS, and data-respectful designs.
+    match: [privacy, fdroid, foss, security, vault]
+
+capabilities:
+  - title: Mobile apps
+    blurb: Android and cross-platform apps with clear UX and local vaults when needed.
+    match: [kotlin, java, android, dart, flutter, jetpack-compose]
+  - title: Automation systems
+    blurb: Scheduled work, validation, sync, bots, and background processing.
+    match: [python, automation, shell, cron, github-actions, bot]
+  - title: Web and APIs
+    blurb: Maintainable backends, PWAs, and clean integrations.
+    match: [typescript, javascript, html, css, php, go, python]
+  - title: Desktop and systems
+    blurb: Local utilities for Windows, Linux, and developer workflows.
+    match: [rust, c, c++, csharp, tauri, electron, powershell, kotlin]
+  - title: Internal tools
+    blurb: Ops, auditing, configuration, and access-friendly admin surfaces.
+    match: [python, typescript, admin, monitoring, hygiene]
+  - title: Data and reporting
+    blurb: Import, transform, and present structured information safely.
+    match: [python, r, sql, sqlite, pandas, reporting]

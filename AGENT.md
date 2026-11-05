@@ -1,7 +1,7 @@
 # Argus — product brief (do not drift)
 
 **Product:** Argus  
-**Purpose:** Controller repository for autonomous multi-repo hygiene, scoring, safe auto-apply, gated agentic execution, and grandma-simple notifications.  
+**Purpose:** Controller repository for autonomous multi-repo hygiene, scoring, safe auto-apply, gated agentic execution, grandma-simple notifications, and a public skills portfolio Overview generated from live repo evidence.  
 **License:** MIT  
 **Stack:** Python 3.11+  
 **Parent:** [edwardlthompson/agent-project-bootstrap](https://github.com/edwardlthompson/agent-project-bootstrap) (product child — see `docs/PARENT_GAP_LIST.md`)  

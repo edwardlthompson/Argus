@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Profile Overview portfolio polish: live languages + FOSS devicons, auto skill cards (`profile_skills.yaml`), centered HTML hero/banner, featured icon grid (no traffic/pins/topics dump).
+- Profile redesign pass: banner-carried identity (no H1/tagline dupe), skip throwaway bios, wide OG featured cards + captions, richer banner, empty YAML roles → live auto cards.
+
 ## [0.3.0] — 2026-11-05
 
 ### Added
