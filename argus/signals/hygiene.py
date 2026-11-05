@@ -22,6 +22,7 @@ def collect(client: GitHubClient, repo: RepoRecord) -> dict[str, Any]:
     except GitHubError:
         pass
 
+    brand = _brand_icon(client, repo)
     return {
         "security_md": _exists(client, repo, "SECURITY.md"),
         "contributing_md": _exists(client, repo, "CONTRIBUTING.md"),
@@ -39,6 +40,7 @@ def collect(client: GitHubClient, repo: RepoRecord) -> dict[str, Any]:
         "stale_branch_count": _stale_branches(client, repo),
         "branch_protection": _branch_protection(client, repo),
         "actions_runs_30d": _actions_runs(client, repo),
+        **brand,
     }
 
 
@@ -48,6 +50,43 @@ def _exists(client: GitHubClient, repo: RepoRecord, path: str) -> bool:
         return True
     except GitHubError:
         return False
+
+
+def _brand_icon(client: GitHubClient, repo: RepoRecord) -> dict[str, Any]:
+    """Canonical Overview icons — see config/profile_icons.yaml."""
+    from argus.profile_icon_policy import canonical_paths, stub_paths, stub_svg_max
+
+    max_stub = stub_svg_max()
+    stub = False
+    for path in canonical_paths():
+        try:
+            data = client.get(f"/repos/{repo.owner}/{repo.name}/contents/{path}")
+        except GitHubError:
+            continue
+        if not isinstance(data, dict):
+            continue
+        size = int(data.get("size") or 0)
+        if str(path).lower().endswith(".svg") and size <= max_stub:
+            stub = True
+            continue
+        return {
+            "brand_icon_ok": True,
+            "brand_icon_path": path,
+            "brand_icon_stub_svg": False,
+        }
+    for path in stub_paths():
+        try:
+            data = client.get(f"/repos/{repo.owner}/{repo.name}/contents/{path}")
+        except GitHubError:
+            continue
+        if isinstance(data, dict) and int(data.get("size") or 0) <= max_stub:
+            stub = True
+            break
+    return {
+        "brand_icon_ok": False,
+        "brand_icon_path": None,
+        "brand_icon_stub_svg": stub,
+    }
 
 
 def _stale_branches(client: GitHubClient, repo: RepoRecord) -> int:

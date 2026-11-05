@@ -44,7 +44,9 @@ argus doctor
 
 ## Profile Overview
 
-When enabled, Argus opens a PR on public `YOU/YOU` with a **skills portfolio** README: centered hero + banner (`assets/argus-banner.svg`), About, Focus / What I build (YAML voice, or auto skill cards from `config/profile_skills.yaml` when those lists are empty), **live languages** as FOSS [devicons](https://github.com/devicons/devicon), and **featured** icon+caption grid. Featured ranking uses **stars, then traffic** (views + clones) privately — traffic and pin suggestions are **not** printed on the Overview. Clear `roles`/`capabilities` in `config/profile_readme.yaml` for full auto cards. Marker: `<!-- argus:profile-readme -->`.
+Icons: put a square PNG at a canonical path (see [`docs/PROFILE_ICONS.md`](PROFILE_ICONS.md) / `config/profile_icons.yaml`). Hygiene flags `BRAND-ICON-MISSING` when missing or still a Golden Path stub.
+
+When enabled, Argus opens a PR on public `YOU/YOU` with a **skills portfolio** README: centered hero + banner (`assets/argus-banner.svg`), About, Focus / What I build (YAML or auto from `config/profile_skills.yaml`), grouped **tech stack** (`config/profile_stack.yaml`), curated **featured** repos (`featured_repos` in `profile_readme.yaml`, else stars→traffic), current focus, and open-to cards. Icons: repo assets / tree scan / `icon_overrides`, else wide OG. Traffic and pins stay off the Overview. Banner drop-in: replace `assets/argus-banner.svg` in `YOU/YOU` (e.g. [ryme.md](https://ryme.md/) or [profile-signal-kit](https://github.com/saroo98/profile-signal-kit)); a later Argus refresh PR may regenerate it — keep a local copy if you hand-craft. No remote stats/snake/visitor widgets (threat model). Marker: `<!-- argus:profile-readme -->`.
 
 ## Notifications
 

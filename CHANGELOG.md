@@ -2,10 +2,16 @@
 
 ## [Unreleased]
 
+### Added
+
+- Portfolio icon standard (`config/profile_icons.yaml`, `docs/PROFILE_ICONS.md`) + hygiene `BRAND-ICON-MISSING` for missing/stub marks.
+- Featured showcase stats under each app name (stars · watches · forks); `max_featured_repos: 0` shows all eligible projects.
+
 ### Changed
 
 - Profile Overview portfolio polish: live languages + FOSS devicons, auto skill cards (`profile_skills.yaml`), centered HTML hero/banner, featured icon grid (no traffic/pins/topics dump).
 - Profile redesign pass: banner-carried identity (no H1/tagline dupe), skip throwaway bios, wide OG featured cards + captions, richer banner, empty YAML roles → live auto cards.
+- Profile gap close: curated `featured_repos` + icon tree scan/`icon_overrides`, grouped stack (`profile_stack.yaml`), richer self-hosted banner + drop-in docs, GitHub contact badge, `current_focus` / `open_to_cards`, featured star captions.
 
 ## [0.3.0] — 2026-11-05
 

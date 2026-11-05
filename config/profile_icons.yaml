@@ -1,0 +1,40 @@
+# Canonical portfolio app icons (Argus Overview + hygiene BRAND-ICON-MISSING).
+# Prefer PNG. Tiny Golden Path stub SVGs (≤ stub_svg_max_bytes) do not count.
+#
+# Put the square product mark here (highest priority first):
+canonical:
+  - branding/assets/app-icon-512.png
+  - branding/assets/logo-mark.png
+  - docs/brand/logo-official.png
+  - docs/assets/app-icon-512.png
+  - docs/assets/icon.png
+  # Real product SVG (≥ stub_svg_max_bytes) is OK when PNG is not ready yet:
+  - branding/assets/app-icon-512.svg
+#
+# Labels / naming:
+#   app-icon-512.png — 512×512 (or larger) square app icon, no wordmark
+#   logo-mark.png    — square brand mark for README / Overview
+#   logo-official.png — product brand plate under docs/brand/
+#   app-icon-512.svg — same as PNG when file is a real mark (not Golden Path stub)
+#
+# Acceptable fallbacks (still discovered, but hygiene prefers canonical):
+fallbacks:
+  - branding/template/logo-mark.png
+  - examples/desktop/src-tauri/icons/icon.png
+  - examples/desktop/src-tauri/icons/128x128.png
+  - examples/desktop/src-tauri/icons/app-icon.png
+  - apps/desktop/public/continuum-mark.png
+  - apps/mobile/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+  - examples/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+  - docs/assets/readme/app-icon.png
+  - docs/design/icon-reference-512.png
+  - docs/brand/logo-neon-3d.png
+  - docs/brand/continuum-mark.png
+  - fastlane/metadata/android/en-US/images/icon.png
+  - metadata/en-US/images/icon.png
+  - examples/android/metadata/en-US/images/icon.png
+  - apps/mobile/fastlane/metadata/android/en-US/images/icon.png
+stub_svg_max_bytes: 400
+# Paths checked for Golden Path stubs when no canonical mark passes size rules:
+stub_paths:
+  - branding/assets/app-icon-512.svg

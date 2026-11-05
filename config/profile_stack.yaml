@@ -1,0 +1,15 @@
+# Grouped tech stack for the Overview. Signals = language names + topics (lowercase).
+# Icons use FOSS devicons via jsDelivr. Deterministic — no LLM.
+groups:
+  - title: Languages
+    limit: 8
+    match: [python, kotlin, java, javascript, typescript, csharp, rust, go, dart, swift, shell, powershell, html, css, c, c++]
+  - title: Mobile and apps
+    limit: 6
+    match: [android, kotlin, java, jetpack-compose, flutter, dart, fdroid]
+  - title: Automation and tools
+    limit: 6
+    match: [python, automation, github-actions, docker, shell, powershell, bot, ci]
+  - title: Web and data
+    limit: 6
+    match: [typescript, javascript, html, css, php, sqlite, sql, pandas, reporting]

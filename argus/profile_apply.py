@@ -7,7 +7,8 @@ from typing import Any
 
 from argus.github_client import GitHubClient, GitHubError
 from argus.models import RepoPlan
-from argus.profile_featured import enrich_plans_for_profile
+from argus.profile_enrich import enrich_plans_for_profile
+from argus.profile_featured import apply_icon_overrides
 from argus.profile_github import ensure_profile_repo, get_readme, open_readme_pr
 from argus.profile_readme import (
     compose_profile_readme,
@@ -53,6 +54,9 @@ def sync_profile_readme(
         return result
 
     enrich_plans_for_profile(client, plans)
+    overrides = cfg.get("icon_overrides")
+    if isinstance(overrides, dict):
+        apply_icon_overrides(plans, {str(k): str(v) for k, v in overrides.items()})
     body = compose_profile_readme(user=me, plans=plans, config=cfg)
     if dry_run:
         result.action = "dry_run"

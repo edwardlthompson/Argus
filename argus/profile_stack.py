@@ -1,42 +1,43 @@
-"""Aggregate live GitHub languages and map them to FOSS devicon slugs."""
+"""Aggregate live GitHub languages and map them to FOSS devicon stack groups."""
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
+from argus.config_loader import load_yaml
 from argus.github_client import GitHubClient, GitHubError
 from argus.models import RepoPlan, RepoRecord
+from argus.paths import CONFIG_DIR
 
-# GitHub language name -> devicons slug (jsDelivr). Unknowns are omitted from icons.
-_DEVICON: dict[str, str] = {
-    "Python": "python",
-    "Kotlin": "kotlin",
-    "Java": "java",
-    "JavaScript": "javascript",
-    "TypeScript": "typescript",
-    "HTML": "html5",
-    "CSS": "css3",
-    "Go": "go",
-    "Rust": "rust",
-    "C": "c",
-    "C++": "cplusplus",
-    "C#": "csharp",
-    "PHP": "php",
-    "Ruby": "ruby",
-    "Swift": "swift",
-    "Dart": "dart",
-    "Shell": "bash",
-    "PowerShell": "powershell",
-    "Lua": "lua",
-    "R": "r",
-    "Scala": "scala",
-    "Vue": "vuejs",
-    "Dockerfile": "docker",
-    "SCSS": "sass",
-    "Svelte": "svelte",
-    "Elixir": "elixir",
-    "Haskell": "haskell",
-    "Zig": "zig",
+# Signal (language/topic, lower) -> devicons slug.
+_DEVICON = {
+    "python": "python",
+    "kotlin": "kotlin",
+    "java": "java",
+    "javascript": "javascript",
+    "typescript": "typescript",
+    "html": "html5",
+    "html5": "html5",
+    "css": "css3",
+    "css3": "css3",
+    "go": "go",
+    "rust": "rust",
+    "c": "c",
+    "c++": "cplusplus",
+    "c#": "csharp",
+    "csharp": "csharp",
+    "php": "php",
+    "swift": "swift",
+    "dart": "dart",
+    "shell": "bash",
+    "bash": "bash",
+    "powershell": "powershell",
+    "docker": "docker",
+    "dockerfile": "docker",
+    "android": "android",
+    "git": "git",
+    "sqlite": "sqlite",
 }
 
 
@@ -49,8 +50,21 @@ def _eligible(repo: RepoRecord) -> bool:
     )
 
 
+def _icon_row(signal: str, display: str | None = None) -> dict[str, str] | None:
+    slug = _DEVICON.get(signal.lower())
+    if not slug:
+        return None
+    return {
+        "name": display or signal,
+        "slug": slug,
+        "icon_url": (
+            f"https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/"
+            f"{slug}/{slug}-original.svg"
+        ),
+    }
+
+
 def collect_language_bytes(client: GitHubClient, plans: list[RepoPlan]) -> dict[str, int]:
-    """Sum language bytes across eligible repos; stash per-repo on raw."""
     totals: dict[str, int] = {}
     for plan in plans:
         repo = plan.repo
@@ -70,37 +84,58 @@ def collect_language_bytes(client: GitHubClient, plans: list[RepoPlan]) -> dict[
     return totals
 
 
-def ranked_languages(
-    totals: dict[str, int], *, limit: int = 8
-) -> list[dict[str, str]]:
-    """Return [{name, slug, icon_url}] for languages with a known devicon."""
-    ranked = sorted(totals.items(), key=lambda kv: (-kv[1], kv[0]))
+def ranked_languages(totals: dict[str, int], *, limit: int = 8) -> list[dict[str, str]]:
     out: list[dict[str, str]] = []
-    for name, _ in ranked:
-        slug = _DEVICON.get(name)
-        if not slug:
-            continue
-        out.append(
-            {
-                "name": name,
-                "slug": slug,
-                "icon_url": (
-                    f"https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/"
-                    f"{slug}/{slug}-original.svg"
-                ),
-            }
-        )
+    for name, _ in sorted(totals.items(), key=lambda kv: (-kv[1], kv[0])):
+        row = _icon_row(name, name)
+        if row:
+            out.append(row)
         if len(out) >= limit:
             break
     return out
 
 
-def language_names_from_plans(plans: list[RepoPlan]) -> list[str]:
-    """Offline/tests: use bytes already on raw without API."""
-    totals: dict[str, int] = {}
+def load_stack_groups(path: Path | None = None) -> list[dict[str, Any]]:
+    path = path or (CONFIG_DIR / "profile_stack.yaml")
+    if not path.exists():
+        return []
+    data = load_yaml(path)
+    if not isinstance(data, dict):
+        return []
+    return [g for g in (data.get("groups") or []) if isinstance(g, dict) and g.get("title")]
+
+
+def portfolio_signals(plans: list[RepoPlan], totals: dict[str, int]) -> set[str]:
+    signals = {str(n).lower() for n in totals}
     for plan in plans:
-        langs = (plan.repo.raw or {}).get("argus_languages") or {}
-        if isinstance(langs, dict):
-            for name, nbytes in langs.items():
-                totals[str(name)] = totals.get(str(name), 0) + int(nbytes)
-    return [row["name"] for row in ranked_languages(totals, limit=20)]
+        if _eligible(plan.repo):
+            signals.update(str(t).strip().lower() for t in plan.repo.topics)
+    return signals
+
+
+def grouped_stack(
+    plans: list[RepoPlan],
+    totals: dict[str, int],
+    *,
+    groups: list[dict[str, Any]] | None = None,
+) -> list[dict[str, Any]]:
+    signals = portfolio_signals(plans, totals)
+    canon = {n.lower(): n for n in totals}
+    out: list[dict[str, Any]] = []
+    for group in groups if groups is not None else load_stack_groups():
+        limit = int(group.get("limit") or 8)
+        icons: list[dict[str, str]] = []
+        seen: set[str] = set()
+        for m in (str(x).lower() for x in (group.get("match") or [])):
+            if m not in signals or m in seen:
+                continue
+            row = _icon_row(m, canon.get(m) or m.replace("-", " ").title())
+            if not row:
+                continue
+            icons.append(row)
+            seen.add(m)
+            if len(icons) >= limit:
+                break
+        if icons:
+            out.append({"title": str(group["title"]), "icons": icons})
+    return out

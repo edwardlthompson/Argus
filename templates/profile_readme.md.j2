@@ -9,8 +9,11 @@
 {% if tagline %}_{{ tagline }}_{% endif %}
 {% endif %}
 
-{% if include_badges and (location or blog or twitter or email) %}
+{% if include_badges %}
 <p>
+{% if login %}
+<a href="https://github.com/{{ login }}"><img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub" /></a>
+{% endif %}
 {% if location %}
 <img src="https://img.shields.io/badge/{{ location | replace(' ', '_') }}-location-0ea5e9?style=for-the-badge" alt="{{ location }}" />
 {% endif %}
@@ -69,35 +72,65 @@ _{{ bio }}_
 </table>
 {% endif %}
 
-## Tech stack
-
-<div align="center">
-{% if languages %}
-{% for lang in languages %}
-<img src="{{ lang.icon_url }}" alt="{{ lang.name }}" width="48" height="48" title="{{ lang.name }}" />
-{% endfor %}
-{% else %}
-_Languages appear after Argus scans your public repos._
-{% endif %}
-</div>
-
 ## Featured projects
 
 <div align="center">
-{% if featured %}
+{% if featured_rows %}
+<table>
+{% for row in featured_rows %}
+<tr>
+{% for repo in row %}
+<td align="center" valign="top" width="{{ (100 / featured_columns) | int }}%">
+{% if repo %}
+<a href="{{ repo.html_url }}">
+<img src="{{ repo.icon_url }}" alt="{{ repo.short }}" width="{{ featured_icon_size }}" />
+</a><br/>
+<a href="{{ repo.html_url }}"><sub>{{ repo.short }}</sub></a>
+{% if show_featured_stats %}
+<br/><sub>★{{ repo.stars }} · Watch {{ repo.watches }} · Fork {{ repo.forks }}</sub>
+{% endif %}
+{% endif %}
+</td>
+{% endfor %}
+</tr>
+{% endfor %}
+</table>
+{% else %}
+_Featured public repositories will appear here after a portfolio scan._
+{% endif %}
+</div>
+
+## Tech stack
+
+{% if stack_groups %}
+{% for group in stack_groups %}
+### {{ group.title }}
+
+<div align="center">
+{% for icon in group.icons %}
+<img src="{{ icon.icon_url }}" alt="{{ icon.name }}" width="40" height="40" title="{{ icon.name }}" />
+{% endfor %}
+</div>
+{% endfor %}
+{% elif languages %}
+<div align="center">
+{% for lang in languages %}
+<img src="{{ lang.icon_url }}" alt="{{ lang.name }}" width="48" height="48" title="{{ lang.name }}" />
+{% endfor %}
+</div>
+{% else %}
+_Languages appear after Argus scans your public repos._
+{% endif %}
+
+{% if current_focus %}
+## Current focus
+
 <table>
 <tr>
-{% for repo in featured %}
-<td align="center" valign="top" width="{% if repo.visual == 'icon' %}140{% else %}{{ featured_card_width }}{% endif %}">
-<a href="{{ repo.html_url }}">
-{% if repo.visual == 'icon' %}
-<img src="{{ repo.icon_url }}" alt="{{ repo.short }}" width="96" height="96" />
-{% else %}
-<img src="{{ repo.icon_url }}" alt="{{ repo.short }}" width="{{ featured_card_width }}" />
-{% endif %}
-</a><br/>
-<strong><a href="{{ repo.html_url }}">{{ repo.short }}</a></strong>
-{% if repo.description %}<br/><sub>{{ repo.description }}</sub>{% endif %}
+{% for item in current_focus %}
+<td width="{{ (100 / (current_focus|length)) | int }}%" valign="top" align="center">
+<strong>{{ item.title }}</strong><br/>
+{{ item.blurb }}
 </td>
 {% if loop.index % 2 == 0 and not loop.last %}
 </tr><tr>
@@ -105,10 +138,7 @@ _Languages appear after Argus scans your public repos._
 {% endfor %}
 </tr>
 </table>
-{% else %}
-_Featured public repositories will appear here after a portfolio scan._
 {% endif %}
-</div>
 
 {% if principles %}
 ## Development principles
@@ -116,7 +146,23 @@ _Featured public repositories will appear here after a portfolio scan._
 > {{ principles }}
 {% endif %}
 
-{% if open_to %}
+{% if open_to_cards %}
+## Also open to
+
+<table>
+<tr>
+{% for item in open_to_cards %}
+<td width="{{ (100 / (open_to_cards|length)) | int }}%" valign="top" align="center">
+<strong>{{ item.title }}</strong><br/>
+{{ item.blurb }}
+</td>
+{% if loop.index % 2 == 0 and not loop.last %}
+</tr><tr>
+{% endif %}
+{% endfor %}
+</tr>
+</table>
+{% elif open_to %}
 ## Also open to
 
 {{ open_to }}

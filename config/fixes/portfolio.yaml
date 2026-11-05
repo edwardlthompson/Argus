@@ -109,6 +109,30 @@ fixes:
     profiles: [generic, edward]
     resolution_ttl_days: 180
 
+  - id: BRAND-ICON-MISSING
+    class: human
+    title: Add canonical portfolio app icon
+    why: Overview showcase needs a real square brand mark, not a Golden Path stub or Open Graph card.
+    applies_when: "hygiene.get('brand_icon_ok') is False"
+    phase: 3
+    depends_on: []
+    confidence: high
+    auto_safe: false
+    human_steps: |
+      1. Add a square mark at a canonical path (preferred first):
+         - branding/assets/app-icon-512.png
+         - branding/assets/logo-mark.png
+         - docs/brand/logo-official.png
+         - docs/assets/app-icon-512.png
+         - docs/assets/icon.png
+         - branding/assets/app-icon-512.svg (real mark only; not the ≤400B Golden Path stub)
+      2. Do not leave branding/assets/app-icon-512.svg as the tiny Golden Path triangle stub.
+      3. See config/profile_icons.yaml and docs/PROFILE_ICONS.md in Argus.
+      4. Re-run Argus profile sync so the Overview picks up the new icon.
+    gate: "Canonical brand icon exists per config/profile_icons.yaml (PNG or non-stub SVG)"
+    profiles: [generic, edward]
+    resolution_ttl_days: 60
+
   - id: HUMAN-PARK-INACTIVE
     class: human
     title: Park or archive a long-inactive active repo
