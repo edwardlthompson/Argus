@@ -205,6 +205,16 @@ def upgrade_repo(token: str, repo: str, *, dry_run: bool = False) -> dict:
             f"chore(argus): sync {path} from {PARENT}@{PARENT_REF}",
             BRANCH,
         )
+    # Keep TEMPLATE_INDEX / version sync CI green when the child still ships an index.
+    try:
+        from argus.github_client import GitHubClient
+        from argus.yolo_upgrade_heal import heal_template_index
+
+        owner, name = repo.split("/", 1)
+        with GitHubClient(token=token) as client:
+            heal_template_index(client, owner, name, BRANCH, target_ver=TARGET_VER)
+    except Exception:  # noqa: BLE001
+        pass
     body = (
         f"## Parent upgrade `{PARENT_REF}`\n\n"
         f"Argus automatic child upgrade (canon rules + markers).\n\n"

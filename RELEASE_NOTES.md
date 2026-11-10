@@ -1,17 +1,16 @@
-# Release notes — Argus 0.5.0
+# Release notes — Argus 0.6.0
 
 ## Highlights
 
-- **Dual-plane YOLO** — Public product ships `apply_mode: normal` (safe to share). Private runner bootstrap arms `yolo.on` + hands-off micromanage. Kill switches: delete `yolo.on`, `YOLO-OFF.md`, `argus off`.
-- **Signals (S9)** — Brand icon states (`owned`/`inherited`/`missing`/`placeholder`) with brief-only PRs (no PNG generation); orphans probe; UX rule loader; `CONTRACT-STALE` / `SEC-RELEASE-TOKEN-MISSING`; Grok budget + circuit breaker (`config/grok_bots.yaml`).
-- **Staging + triage (S10)** — UX rollout observe→soft→enforce; `argus triage` / `--fleet`; YOLO consumes agent-class deterministic handlers only.
-- **Rules → fleet → remote (S11–S15)** — `argus.upstream.json` + `argus rules sync|diff|bump`; `RULES-STALE` blocks YOLO; fleet plan/execute/drift/revert/halt + action ledger; `argus.remote.json` readonly by default; CLI `digest` / `focus` / `cost` / `fleet` / `rules` / `off`.
+- **Hands-off upgrade YOLO** — Scheduled runs fix + soft-merge parent-upgrade PRs (`fix_upgrade_prs`, `soft_merge_upgrade_noise`). Operator CLI: `argus fix-upgrades` / `merge-upgrades --fix --soft-allowlist`.
+- **Tuesday cadence** — `argus-weekly` cron moved to **Tuesday 14:00 UTC** (after Monday Dependabot). Sync `weekly.yml` to private `argus-runner`.
+- **Tuesday Steward** — Grok digest skill + `argus grok pack tuesday-steward` one-paste bootstrap (no create-Bot API). Optional webhook after weekly.
+- **Health infographic** — Every scan writes `dist/health-infographic.svg|.html` and `health-hotspots.json` (hottest fix ids / repos before→after).
 
 ## Upgrade notes
 
-- Re-bootstrap or manually add `yolo.on` on the **private runner** only. Do not arm YOLO on the public product template.
-- After pulling rule/config changes: `argus rules sync` so `RULES-STALE` clears.
-- Grok digests honor daily caps in `config/grok_bots.yaml`; clear `GROK-OFF.md` only after reviewing breaker trips.
-- Prefer `python scripts/agent-run.py verify` before merge.
+- Re-bootstrap or copy `config/safety.yaml` YOLO flags onto the **private runner** only.
+- Paste `dist/grok-bots/tuesday-steward-bootstrap.md` into Grok once; set `GROK_STEWARD_WEBHOOK_*` on the runner if you want auto-ping.
+- Security/Trivy/CodeQL/Feature Gate leftovers still need human judgment — soft-merge never bypasses those.
 
 See `CHANGELOG.md` for the full list.

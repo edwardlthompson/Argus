@@ -190,21 +190,43 @@ def write_health_artifacts(
     delta: dict[str, Any],
     dist_dir: Path | None = None,
 ) -> dict[str, str]:
+    from argus.health_viz import (
+        compose_infographic_html,
+        compose_infographic_svg,
+        hotspots_from_snapshot,
+    )
+
     ensure_runtime_dirs()
     out = dist_dir or DIST_DIR
     out.mkdir(parents=True, exist_ok=True)
+    hotspots = {
+        "before": hotspots_from_snapshot(before),
+        "after": hotspots_from_snapshot(after),
+    }
     paths = {
         "health_before": out / "health-before.json",
         "health_after": out / "health-after.json",
         "health_delta_json": out / "health-delta.json",
         "health_delta_md": out / "health-delta.md",
         "health": out / "health.json",
+        "health_hotspots": out / "health-hotspots.json",
+        "health_infographic_svg": out / "health-infographic.svg",
+        "health_infographic_html": out / "health-infographic.html",
     }
     paths["health_before"].write_text(json.dumps(before, indent=2) + "\n", encoding="utf-8")
     paths["health_after"].write_text(json.dumps(after, indent=2) + "\n", encoding="utf-8")
     paths["health"].write_text(json.dumps(after, indent=2) + "\n", encoding="utf-8")
     paths["health_delta_json"].write_text(json.dumps(delta, indent=2) + "\n", encoding="utf-8")
     paths["health_delta_md"].write_text(compose_delta_markdown(delta), encoding="utf-8")
+    paths["health_hotspots"].write_text(json.dumps(hotspots, indent=2) + "\n", encoding="utf-8")
+    paths["health_infographic_svg"].write_text(
+        compose_infographic_svg(before, after, delta, hotspots["before"]),
+        encoding="utf-8",
+    )
+    paths["health_infographic_html"].write_text(
+        compose_infographic_html(before, after, delta, hotspots["before"]),
+        encoding="utf-8",
+    )
     prev = out / "health-previous.json"
     prev.write_text(json.dumps(after, indent=2) + "\n", encoding="utf-8")
     return {k: str(v) for k, v in paths.items()}

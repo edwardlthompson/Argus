@@ -69,11 +69,14 @@ Prefer growing Argus matchers/`auto_safe` over giving Grok write power.
 
 | Bot | Trigger | Writes | YOLO |
 |-----|---------|--------|------|
+| **Tuesday Steward** | Tuesday schedule (after Monday Dependabot + Argus weekly) | One `steward-digest YYYY-MM-DD`; optional single `argus-inbox` handoff | Digest only — Argus YOLO already fixed/merged what policy allows |
 | **Stale PR Nudge** | Weekly | One Slack/chat table (metadata only) | Argus may close abandoned *bot* PRs per policy; human PRs stay listed |
 | **Security / Dependabot digest** | Weekly | Grandma checklist (titles + severity + URL, cap 15) | Dependabot patch auto-merge via GitHub; Grok does not bump |
 | **Argus Inbox Translator** | Weekly or on-demand | ≤15 checklist lines from private `argus-inbox` | Less needed if Argus already applying; still useful for human leftovers |
 | **Incident postmortem stub** | `@mention` only | Timeline draft | Never auto |
 | **Docs / CHANGELOG helper** | `@mention` or after Release Notes | Keep-a-Changelog draft | Same Bot as Release Notes (second skill); draft only |
+
+Skill body: [`docs/grok-bots/09-tuesday-steward.md`](grok-bots/09-tuesday-steward.md).
 
 ## Handoff format (CI / repro → Argus)
 
@@ -105,3 +108,14 @@ When YOLO or apply mode should pick up work, Grok opens/updates a **private** ru
 4. Add Wave B after a quiet week.
 5. Keep Dependabot + `argus fix` / runner `apply` for mutators.
 6. Optional later: [`docs/YOLO.md`](YOLO.md) for auto-merge.
+
+### Automate Tuesday Steward pack
+
+xAI has **no create-Bot API**. Argus packs a one-paste bootstrap:
+
+```bash
+argus grok pack tuesday-steward --allowlist YOU/Argus
+# → dist/grok-bots/tuesday-steward-bootstrap.md
+```
+
+Paste that file into a new Grok Bot chat (creates skill + Tuesday routine). After Argus weekly runs, open Actions artifact `health-infographic.html` / `health-hotspots.json` for before→after problem hotspots. Optional: set runner secrets `GROK_STEWARD_WEBHOOK_URL` + `GROK_STEWARD_WEBHOOK_KEY` so `argus-weekly` pings the Steward routine.

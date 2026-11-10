@@ -590,6 +590,137 @@ def fleet_halt_cmd(reason: str) -> None:
     click.echo(json.dumps({"halt": str(halt(reason))}, indent=2))
 
 
+@main.command("fix-upgrades")
+@click.option("--max", "max_repos", default=80, show_default=True)
+@click.option(
+    "--allow-unarmed",
+    is_flag=True,
+    default=False,
+    help="Allow from public product clone.",
+)
+def fix_upgrades_cmd(max_repos: int, allow_unarmed: bool) -> None:
+    """Mechanical fixers on open parent-upgrade PR heads."""
+    import os
+
+    from argus.config_loader import load_safety
+    from argus.github_client import GitHubClient
+    from argus.yolo_arm import is_yolo_armed
+    from argus.yolo_upgrade_fix import fix_open_upgrade_prs
+
+    token = os.environ.get("GITHUB_TOKEN") or os.environ.get("ARGUS_GITHUB_TOKEN") or ""
+    if not token:
+        raise SystemExit("GITHUB_TOKEN is not set")
+    safety = load_safety()
+    if not allow_unarmed and not is_yolo_armed(safety):
+        raise SystemExit("YOLO not armed — pass --allow-unarmed or run on the private runner")
+    with GitHubClient(token=token) as client:
+        click.echo(json.dumps(fix_open_upgrade_prs(client, max_repos=max_repos), indent=2))
+
+
+@main.command("merge-upgrades")
+@click.option("--max", "max_merges", default=80, show_default=True)
+@click.option(
+    "--allow-unarmed",
+    is_flag=True,
+    default=False,
+    help="Allow from public product clone (still requires CI green + hard floors).",
+)
+@click.option("--heal", "do_heal", is_flag=True, default=False, help="Patch TEMPLATE_INDEX on open upgrade heads first")
+@click.option("--fix", "do_fix", is_flag=True, default=False, help="Run mechanical fixers before merge")
+@click.option(
+    "--soft-allowlist/--no-soft-allowlist",
+    "soft_allowlist",
+    default=True,
+    show_default=True,
+    help="Merge when only allowlisted template noise remains (operator default on).",
+)
+@click.option("--loop", "loops", default=1, show_default=True, help="Retry passes for pending CI")
+@click.option("--sleep", "sleep_s", default=45, show_default=True)
+def merge_upgrades_cmd(
+    max_merges: int,
+    allow_unarmed: bool,
+    do_heal: bool,
+    do_fix: bool,
+    soft_allowlist: bool,
+    loops: int,
+    sleep_s: int,
+) -> None:
+    """YOLO: squash-merge open parent-upgrade PRs (chore/argus-upgrade-*)."""
+    import os
+    import time
+
+    from argus.config_loader import load_safety
+    from argus.github_client import GitHubClient
+    from argus.yolo import merge_upgrade_prs
+    from argus.yolo_arm import is_yolo_armed
+    from argus.yolo_upgrade_fix import fix_open_upgrade_prs
+    from argus.yolo_upgrade_heal import heal_open_upgrade_prs
+
+    token = os.environ.get("GITHUB_TOKEN") or os.environ.get("ARGUS_GITHUB_TOKEN") or ""
+    if not token:
+        raise SystemExit("GITHUB_TOKEN is not set")
+    safety = load_safety()
+    if not allow_unarmed and not is_yolo_armed(safety):
+        raise SystemExit("YOLO not armed — pass --allow-unarmed or run on the private runner")
+    payload: dict = {}
+    with GitHubClient(token=token) as client:
+        if do_fix:
+            payload["fix"] = fix_open_upgrade_prs(client, max_repos=max_merges)
+        elif do_heal:
+            payload["heal"] = heal_open_upgrade_prs(client, max_repos=max_merges)
+        rounds: list[dict] = []
+        leftovers: list[str] = []
+        remaining = max_merges
+        for i in range(max(1, loops)):
+            out = merge_upgrade_prs(
+                client,
+                max_merges=remaining,
+                require_armed=not allow_unarmed,
+                soft_allowlist=soft_allowlist,
+            )
+            rounds.append({
+                "pass": i + 1,
+                "merged": out.merged,
+                "skipped": out.skipped,
+                "errors": out.errors,
+            })
+            remaining = max(0, remaining - len(out.merged))
+            leftovers = [s for s in out.skipped if "ci_green" in s and ":pending" not in s]
+            pending = any(":pending" in s for s in out.skipped)
+            if not pending or remaining <= 0 or i + 1 >= loops:
+                break
+            time.sleep(max(5, sleep_s))
+        payload["rounds"] = rounds
+        payload["leftovers"] = leftovers
+    click.echo(json.dumps(payload, indent=2))
+
+
+@main.group("grok")
+def grok_group() -> None:
+    """Grok Bot pack helpers (paste-ready; no remote create API)."""
+
+
+@grok_group.command("pack")
+@click.argument("bot_id", default="tuesday-steward")
+@click.option(
+    "--allowlist",
+    multiple=True,
+    help="owner/name allowlist entries (repeatable)",
+)
+def grok_pack_cmd(bot_id: str, allowlist: tuple[str, ...]) -> None:
+    """Write dist/grok-bots/*-bootstrap.md for one-paste Bot + routine setup."""
+    from argus.grok_pack import STEWARD_ID, pack_tuesday_steward
+
+    if bot_id not in (STEWARD_ID, "tuesday_steward", "steward"):
+        raise SystemExit(f"unknown bot pack id: {bot_id} (supported: {STEWARD_ID})")
+    click.echo(
+        json.dumps(
+            pack_tuesday_steward(allowlist=list(allowlist) or None),
+            indent=2,
+        )
+    )
+
+
 @main.group("rules")
 def rules_group() -> None:
     """Parent rule sync (pin / diff / bump)."""

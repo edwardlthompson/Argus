@@ -1,6 +1,6 @@
 [project]
 name = "argus"
-version = "0.5.0"
+version = "0.6.0"
 description = "One controller to rule them all — multi-repo hygiene, scoring, safe auto-apply, and gated agentic execution."
 readme = "README.md"
 license = { text = "MIT" }

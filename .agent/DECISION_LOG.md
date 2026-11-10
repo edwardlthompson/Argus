@@ -1,5 +1,11 @@
 # Decision log
 
+## 2026-11-10 — Ship v0.6.0 (hands-off upgrade YOLO + Tuesday Steward)
+
+- **Decision:** Soft-merge allowlisted template noise + mechanical upgrade fixers are **on** for scheduled YOLO; Tuesday weekly after Monday Dependabot; Grok Tuesday Steward is digest-only (pack bootstrap, no create API).
+- **Gates:** `update-deps` (click 8.5.1) + `verify` (132 tests); template Release Please / full pre-release-gate N/A (G12).
+- **Ops:** Sync `weekly.yml` + `safety.yaml` YOLO flags to `argus-runner`; paste Steward bootstrap once.
+
 ## 2026-11-05 — Ship v0.4.0 (YOLO + portfolio reports)
 
 - **Decision:** Release hands-off YOLO, health/rate-limit, apply history, shareable reports, and Grok draft pack as **0.4.0**.

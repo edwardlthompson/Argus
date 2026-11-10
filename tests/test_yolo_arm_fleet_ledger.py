@@ -53,6 +53,23 @@ def test_pre_merge_six_checks(tmp_path: Path):
     assert "not_profile_sacred" in failed2
 
 
+def test_upgrade_title_passes_policy(tmp_path: Path):
+    (tmp_path / "yolo.on").write_text("1\n", encoding="utf-8")
+    ok, failed = evaluate_pre_merge(
+        safety={
+            "apply_mode": "normal",
+            "never_force_push": True,
+            "never_delete_repos": True,
+            "prefer_pull_requests": True,
+        },
+        title="chore(argus): upgrade parent rules to 1.13.0",
+        ci_green=True,
+        is_profile_repo=False,
+        root=tmp_path,
+    )
+    assert ok and not failed
+
+
 def test_action_ledger_and_fleet_revert(tmp_path: Path):
     append_action(
         actor="yolo",

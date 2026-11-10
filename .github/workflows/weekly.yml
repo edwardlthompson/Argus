@@ -2,7 +2,8 @@ name: argus-weekly
 
 on:
   schedule:
-    - cron: "0 14 * * 1" # Mondays 14:00 UTC
+    # Tuesday after Monday Dependabot: YOLO maintenance (fix/merge upgrades + patches).
+    - cron: "0 14 * * 2" # Tuesdays 14:00 UTC
   workflow_dispatch:
     inputs:
       apply:
@@ -57,3 +58,36 @@ jobs:
           name: argus-dist
           path: dist/
           retention-days: 30
+      - name: Ping Tuesday Steward (optional Grok webhook)
+        env:
+          GROK_STEWARD_WEBHOOK_URL: ${{ secrets.GROK_STEWARD_WEBHOOK_URL }}
+          GROK_STEWARD_WEBHOOK_KEY: ${{ secrets.GROK_STEWARD_WEBHOOK_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${GROK_STEWARD_WEBHOOK_URL:-}" ]; then
+            echo "GROK_STEWARD_WEBHOOK_URL unset — skip Steward ping"
+            exit 0
+          fi
+          BODY=$(python - <<'PY'
+          import json, pathlib
+          d = pathlib.Path("dist")
+          payload = {
+            "event": "after-argus-weekly",
+            "artifacts": {
+              "health_delta": (d / "health-delta.md").exists(),
+              "health_hotspots": (d / "health-hotspots.json").exists(),
+              "health_infographic": (d / "health-infographic.svg").exists(),
+            },
+            "instruction": (
+              "Run Tuesday Steward portfolio digest. Prefer health-delta.md, "
+              "health-hotspots.json, and health-infographic.svg from this run."
+            ),
+          }
+          print(json.dumps(payload))
+          PY
+          )
+          HDR=(-H "Content-Type: application/json")
+          if [ -n "${GROK_STEWARD_WEBHOOK_KEY:-}" ]; then
+            HDR+=(-H "Authorization: Bearer ${GROK_STEWARD_WEBHOOK_KEY}")
+          fi
+          curl -fsS -X POST "${GROK_STEWARD_WEBHOOK_URL}" "${HDR[@]}" -d "$BODY" || true

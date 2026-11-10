@@ -6,7 +6,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_parent_lineage_files_exist():
-    assert (ROOT / ".template-version").read_text(encoding="utf-8").strip() == "1.12.0"
+    assert (ROOT / ".template-version").read_text(encoding="utf-8").strip() == "1.13.0"
     update = (ROOT / ".template-update.json").read_text(encoding="utf-8")
     assert "edwardlthompson/agent-project-bootstrap" in update
     assert (ROOT / "bootstrap.config.json").exists()

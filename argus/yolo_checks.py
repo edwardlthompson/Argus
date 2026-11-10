@@ -24,19 +24,26 @@ def evaluate_pre_merge(
     ci_green: bool,
     is_profile_repo: bool,
     skip_profile: bool = True,
+    require_armed: bool = True,
     root=None,
 ) -> tuple[bool, list[str]]:
     """Return (ok, failed_check_ids)."""
     failed: list[str] = []
     safety = safety or {}
-    if not is_yolo_armed(safety, root=root):
+    if require_armed and not is_yolo_armed(safety, root=root):
         failed.append("armed")
     if not safety.get("never_force_push", True) or not safety.get("never_delete_repos", True):
         failed.append("hard_floors")
     if not safety.get("prefer_pull_requests", True):
         failed.append("prefer_prs")
     t = (title or "").lower()
-    ok_title = t.startswith("chore(argus)") or "bump " in t or t.startswith("chore(deps)")
+    ok_title = (
+        t.startswith("chore(argus)")
+        or t.startswith("chore/argus")
+        or "upgrade parent" in t
+        or "bump " in t
+        or t.startswith("chore(deps)")
+    )
     if not ok_title:
         failed.append("title_policy")
     if not ci_green:

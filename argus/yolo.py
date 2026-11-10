@@ -364,50 +364,79 @@ def apply_yolo_extras(
     return result
 
 
-def _pr_ci_green(client: GitHubClient, owner: str, name: str, sha: str | None) -> bool:
+def pr_ci_detail(
+    client: GitHubClient, owner: str, name: str, sha: str | None
+) -> dict[str, Any]:
+    """Return {state, failed, pending} for commit check-runs."""
     if not sha:
-        return False
+        return {"state": "unknown", "failed": [], "pending": False}
     try:
         status = client.get(f"/repos/{owner}/{name}/commits/{sha}/status")
         state = str((status or {}).get("state") or "")
         if state == "success":
-            return True
+            # still inspect check-runs for partial failures
+            pass
         if state in ("failure", "error"):
-            return False
+            # fall through for names
+            pass
     except GitHubError:
         pass
     try:
         runs = client.get(
             f"/repos/{owner}/{name}/commits/{sha}/check-runs",
-            params={"per_page": 20},
+            params={"per_page": 100},
         )
         items = (runs or {}).get("check_runs") if isinstance(runs, dict) else None
         if not items:
-            return True  # no checks configured → allow gated chore merges
-        conclusions = [str(c.get("conclusion") or "") for c in items]
-        if any(c in ("failure", "timed_out", "cancelled", "action_required") for c in conclusions):
-            return False
-        return all(c in ("success", "neutral", "skipped") for c in conclusions if c)
+            return {"state": "green", "failed": [], "pending": False}
+        pending = any(str(c.get("status") or "") != "completed" for c in items)
+        failed = [
+            str(c.get("name") or "?")
+            for c in items
+            if str(c.get("status") or "") == "completed"
+            and str(c.get("conclusion") or "")
+            in ("failure", "timed_out", "cancelled", "action_required")
+        ]
+        if pending:
+            return {"state": "pending", "failed": failed, "pending": True}
+        if failed:
+            return {"state": "failed", "failed": failed, "pending": False}
+        return {"state": "green", "failed": [], "pending": False}
     except GitHubError:
-        return False
+        return {"state": "unknown", "failed": [], "pending": False}
 
 
-def merge_argus_prs(
+def _pr_ci_status(client: GitHubClient, owner: str, name: str, sha: str | None) -> str:
+    """Return green | pending | failed | unknown (no sha)."""
+    return str(pr_ci_detail(client, owner, name, sha).get("state") or "unknown")
+
+
+def _pr_ci_green(client: GitHubClient, owner: str, name: str, sha: str | None) -> bool:
+    return _pr_ci_status(client, owner, name, sha) == "green"
+
+
+def _squash_merge_search(
     client: GitHubClient,
     *,
+    query: str,
     max_merges: int,
-    login: str | None = None,
-    safety: dict[str, Any] | None = None,
+    login: str | None,
+    safety: dict[str, Any],
+    head_prefixes: tuple[str, ...] | None = None,
+    require_armed: bool = True,
+    soft_allowlist: bool = False,
 ) -> YoloResult:
-    """Squash-merge open PRs titled chore(argus) for the authenticated user."""
-    from argus.config_loader import load_safety
+    from argus.yolo_arm import is_yolo_armed
     from argus.yolo_checks import evaluate_pre_merge
+    from argus.yolo_upgrade_fix import soft_merge_ok
 
     result = YoloResult()
     if client.report_only:
         result.skipped.append("report_only")
         return result
-    safety = safety or load_safety()
+    if require_armed and not is_yolo_armed(safety):
+        result.skipped.append("yolo_not_armed")
+        return result
     try:
         me = login or str((client.whoami() or {}).get("login") or "")
     except GitHubError as exc:
@@ -419,10 +448,7 @@ def merge_argus_prs(
     try:
         data = client.get(
             "/search/issues",
-            params={
-                "q": f"user:{me} is:pr is:open chore/argus in:title",
-                "per_page": min(100, max_merges),
-            },
+            params={"q": query.replace("{me}", me), "per_page": min(100, max(1, max_merges))},
         )
     except GitHubError as exc:
         result.errors.append(str(exc))
@@ -440,21 +466,38 @@ def merge_argus_prs(
         num = int(it["number"])
         title = str(it.get("title") or "chore(argus)")
         sha = None
+        head_ref = ""
         try:
             pr = client.get(f"/repos/{owner}/{name}/pulls/{num}")
             sha = str(((pr or {}).get("head") or {}).get("sha") or "") or None
+            head_ref = str(((pr or {}).get("head") or {}).get("ref") or "")
         except GitHubError:
             pass
+        if head_prefixes and not any(head_ref.startswith(p) for p in head_prefixes):
+            result.skipped.append(f"{owner}/{name}#{num}:head={head_ref or '?'}")
+            continue
         is_profile = owner.lower() == name.lower()
+        detail = pr_ci_detail(client, owner, name, sha)
+        ci_state = str(detail.get("state") or "unknown")
+        failed_names = list(detail.get("failed") or [])
+        ci_ok = ci_state == "green"
+        if not ci_ok and soft_allowlist and ci_state == "failed" and soft_merge_ok(failed_names):
+            ci_ok = True
+            ci_state = "soft_allowlist"
         ok, failed = evaluate_pre_merge(
             safety=safety,
             title=title,
-            ci_green=_pr_ci_green(client, owner, name, sha),
+            ci_green=ci_ok,
             is_profile_repo=is_profile,
             skip_profile=skip_profile,
+            require_armed=require_armed,
         )
         if not ok:
-            result.skipped.append(f"{owner}/{name}#{num}:checks={','.join(failed)}")
+            tag = ",".join(failed)
+            if "ci_green" in failed:
+                extra = ",".join(failed_names[:5]) if failed_names else ci_state
+                tag = f"{tag}:{ci_state}:{extra}"
+            result.skipped.append(f"{owner}/{name}#{num}:checks={tag}")
             continue
         try:
             client.put(
@@ -463,25 +506,72 @@ def merge_argus_prs(
                 json={"merge_method": "squash", "commit_title": title},
             )
             result.merged.append(f"{owner}/{name}#{num}")
-            append_action = None
             try:
-                from argus.action_ledger import append_action as _append
+                from argus.action_ledger import append_action
 
-                append_action = _append
-            except ImportError:
-                pass
-            if append_action:
                 append_action(
                     actor="yolo",
                     repo=f"{owner}/{name}",
                     action="squash_merge",
-                    detail=title,
+                    detail=title if ci_state != "soft_allowlist" else f"{title} (soft)",
                     pr_url=str(it.get("html_url") or ""),
                     sha_after=sha,
                 )
+            except Exception:  # noqa: BLE001
+                pass
         except GitHubError as exc:
             result.errors.append(f"{owner}/{name}#{num}:{exc}")
     return result
+
+
+def merge_argus_prs(
+    client: GitHubClient,
+    *,
+    max_merges: int,
+    login: str | None = None,
+    safety: dict[str, Any] | None = None,
+) -> YoloResult:
+    """Squash-merge open PRs titled chore(argus) for the authenticated user."""
+    from argus.config_loader import load_safety
+
+    safety = safety or load_safety()
+    return _squash_merge_search(
+        client,
+        query='user:{me} is:pr is:open "chore(argus)" in:title',
+        max_merges=max_merges,
+        login=login,
+        safety=safety,
+        head_prefixes=("chore/argus",),
+        require_armed=True,
+    )
+
+
+def merge_upgrade_prs(
+    client: GitHubClient,
+    *,
+    max_merges: int,
+    login: str | None = None,
+    safety: dict[str, Any] | None = None,
+    require_armed: bool = True,
+    soft_allowlist: bool | None = None,
+) -> YoloResult:
+    """Squash-merge parent-upgrade PRs (chore/argus-upgrade-*)."""
+    from argus.config_loader import load_safety
+
+    safety = safety or load_safety()
+    yolo_cfg = safety.get("yolo") or {}
+    if soft_allowlist is None:
+        soft_allowlist = bool(yolo_cfg.get("soft_merge_upgrade_noise", False))
+    return _squash_merge_search(
+        client,
+        query='user:{me} is:pr is:open "upgrade parent rules" in:title',
+        max_merges=max_merges,
+        login=login,
+        safety=safety,
+        head_prefixes=("chore/argus-upgrade-",),
+        require_armed=require_armed,
+        soft_allowlist=bool(soft_allowlist),
+    )
 
 
 def merge_dependabot_patch_prs(

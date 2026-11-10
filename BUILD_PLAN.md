@@ -33,7 +33,7 @@ Argus is the enforcer: multi-repo hygiene, scoring, gated apply, and (on the pri
 
 **Excluded:** `agent-project-bootstrap`, `edwardlthompson` (profile), `argus-runner`.
 
-**Next (human/CI):** merge open `chore/argus-upgrade-1.13.0` PRs after checks green. `/upgrade` may still list Mixed/Sacred gaps (product README, AGENTS.md) — those stay human.
+**YOLO hands-off:** fix+soft-merge on scheduled run; `argus-weekly` = Tuesday 14:00 UTC; Grok **Tuesday Steward** digests leftovers (never merges). Sync `weekly.yml` to private `argus-runner`. Leftovers = Security/Trivy/CodeQL/Feature Gate — human.
 
 ## Parallel (after Sequential)
 

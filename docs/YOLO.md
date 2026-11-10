@@ -48,6 +48,19 @@ When YOLO is armed, `argus run` / `argus fix` **apply** unless you pass `--dry-r
 
 Before squash-merge: armed · hard floors · prefer PRs · title policy · CI green · not sacred profile.
 
+## Parent upgrade merges
+
+When `yolo.auto_merge_upgrade_prs: true` (default), YOLO also squash-merges open PRs titled `upgrade parent rules` on heads `chore/argus-upgrade-*` after CI is green (or no checks). Operator one-shot from a product clone:
+
+```bash
+argus fix-upgrades --allow-unarmed
+argus merge-upgrades --allow-unarmed --fix --soft-allowlist --loop 10 --sleep 180
+```
+
+`--fix` runs heal plus mechanical fixers (markdown table pipes, F-Droid changelog stubs). `--soft-allowlist` squash-merges when the only remaining failures are template noise (`Template Upgrade Simulation`, `Validate Bootstrap Artifacts`, …; umbrella `CI` ignored). Security/Trivy/CodeQL/Gitleaks/Dependency Review and product Feature Gate/build failures still block.
+
+**Hands-off defaults** (`config/safety.yaml` → `yolo`): `fix_upgrade_prs: true`, `soft_merge_upgrade_noise: true`, `auto_merge_upgrade_prs: true`. Scheduled YOLO on the private runner runs fix → soft-merge upgrades without an operator flag. Cadence: Monday Dependabot → Tuesday `argus-weekly` (14:00 UTC) → optional **Tuesday Steward** Grok digest ([GROK_BOTS.md](GROK_BOTS.md)).
+
 ## Quiet posture (don’t bother the creator)
 
 - One log line per run (`argus <family>: findings=… outcome=…`)

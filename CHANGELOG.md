@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+## [0.6.0] — 2026-11-10
+
+### Added
+
+- YOLO parent-upgrade merges: `yolo.auto_merge_upgrade_prs` + `argus merge-upgrades` (squash-merge `chore/argus-upgrade-*` after six pre-merge checks; `--loop` retries pending CI).
+- Upgrade heal: `--heal` / `yolo.heal_upgrade_prs` patches `TEMPLATE_INDEX.json` on open upgrade heads (version sync, index Argus workflows, retarget `AGENT_MEMORY.md`).
+- Upgrade auto-fix: `argus fix-upgrades` / `merge-upgrades --fix --soft-allowlist` (markdown table pipes, F-Droid changelog stubs; soft-merge allowlisted template noise only).
+- Hands-off YOLO defaults: `fix_upgrade_prs` + `soft_merge_upgrade_noise` on; `argus-weekly` cron Tuesday 14:00 UTC (after Monday Dependabot); Grok **Tuesday Steward** digest skill (`docs/grok-bots/09-tuesday-steward.md`).
+- Health before/after **infographic** (`dist/health-infographic.svg|.html`) + `health-hotspots.json` (hottest fix ids / repos); `argus grok pack tuesday-steward` one-paste Bot bootstrap; optional Steward webhook after weekly.
+
 ## [0.5.0] — 2026-11-09
 
 ### Added

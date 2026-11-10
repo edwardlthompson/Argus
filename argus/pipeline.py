@@ -37,7 +37,12 @@ from argus.score import score_repo
 from argus.signals import collect_signals, fixture_bundle
 from argus.state import StateStore
 from argus.triage import fleet_rollup, summarize_triage
-from argus.yolo import apply_yolo_extras, merge_argus_prs, merge_dependabot_patch_prs
+from argus.yolo import (
+    apply_yolo_extras,
+    merge_argus_prs,
+    merge_dependabot_patch_prs,
+    merge_upgrade_prs,
+)
 from argus.yolo_arm import is_yolo_armed
 from argus.yolo_digest import collect_judgment_items, sync_report_files, upsert_yolo_digest
 
@@ -295,6 +300,47 @@ def run_pipeline(
                                 max_merges=int(yolo_cfg.get("max_auto_merges_per_day") or 20),
                                 login=profile_login or None,
                             )
+                        if (
+                            not dry_run
+                            and yolo_cfg.get("auto_merge_upgrade_prs", True)
+                        ):
+                            try:
+                                max_up = int(yolo_cfg.get("max_auto_merges_per_day") or 20)
+                                if yolo_cfg.get("fix_upgrade_prs", True):
+                                    from argus.yolo_upgrade_fix import fix_open_upgrade_prs
+
+                                    fix_open_upgrade_prs(
+                                        client,
+                                        login=profile_login or None,
+                                        max_repos=max_up,
+                                    )
+                                elif yolo_cfg.get("heal_upgrade_prs", True):
+                                    from argus.yolo_upgrade_heal import heal_open_upgrade_prs
+
+                                    heal_open_upgrade_prs(
+                                        client,
+                                        login=profile_login or None,
+                                        max_repos=max_up,
+                                    )
+                            except Exception:  # noqa: BLE001
+                                pass
+                            rem_up = int(yolo_cfg.get("max_auto_merges_per_day") or 20)
+                            if yolo_merge:
+                                rem_up = max(0, rem_up - len(yolo_merge.merged))
+                            up = merge_upgrade_prs(
+                                client,
+                                max_merges=rem_up,
+                                login=profile_login or None,
+                                soft_allowlist=bool(
+                                    yolo_cfg.get("soft_merge_upgrade_noise", False)
+                                ),
+                            )
+                            if yolo_merge is None:
+                                yolo_merge = up
+                            else:
+                                yolo_merge.merged.extend(up.merged)
+                                yolo_merge.skipped.extend(up.skipped)
+                                yolo_merge.errors.extend(up.errors)
                         if (
                             not dry_run
                             and yolo_cfg.get("auto_merge_dependabot_patch", True)
