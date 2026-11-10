@@ -1,13 +1,17 @@
 {
+  "transport": "grok-bot",
   "enabled": false,
-  "mode": "readonly",
-  "allowlist_user_ids": [],
-  "card_ttl_seconds": 900,
-  "quiet_hours": {
-    "start_hour_local": 22,
-    "end_hour_local": 8,
-    "always_allow": ["main_red"]
-  },
-  "two_step_destructive": true,
-  "notes": "Product ships disabled+readonly. Private runner may arm later."
+  "channel": "",
+  "allow": [],
+  "readonly": true,
+  "card_ttl_s": 1800,
+  "quiet_hours": "23:00-07:00",
+  "notify": {
+    "digest": "weekly",
+    "main_red": "immediate",
+    "yolo_off": "immediate",
+    "wave_result": "per-wave",
+    "release_ready": "immediate",
+    "decision_needed": "immediate"
+  }
 }
