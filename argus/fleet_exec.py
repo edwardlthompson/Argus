@@ -37,7 +37,11 @@ def execute_plan(
     approve: bool = False,
     dist_dir: Path | None = None,
     root: Path | None = None,
+    client: Any | None = None,
+    wait_checks: bool = True,
 ) -> dict[str, Any]:
+    from argus.fleet import halt
+    from argus.fleet_apply import apply_wave, pr_checks_green
     from argus.rules_sync import block_mutations
 
     ensure_runtime_dirs()
@@ -53,24 +57,76 @@ def execute_plan(
     if not (plan.get("verify") or "").strip():
         return {"status": "verify_required", "brief_id": brief_id}
     waves = wave_batches(list(plan.get("repos") or []), cfg.get("caps") or {})
+    if not (approve and cfg.get("enabled")):
+        result = {
+            "status": "dry_run",
+            "brief_id": brief_id,
+            "verify": plan.get("verify"),
+            "waves": [{"repos": w, "ok": True} for w in waves],
+            "auto": bool(plan.get("auto")),
+        }
+        write_brief_receipt(brief_id, {"kind": "execute", **result}, dist_dir=dist_dir)
+        return result
+
+    if client is None:
+        return {"status": "client_required", "brief_id": brief_id}
+
+    wave_results: list[dict[str, Any]] = []
+    for i, wave in enumerate(waves):
+        if is_halted(root):
+            wave_results.append({"repos": wave, "ok": False, "status": "halted"})
+            break
+        applied = apply_wave(client, wave, brief_id=brief_id, root=root)
+        entry: dict[str, Any] = {
+            "repos": wave,
+            "opened": applied.opened,
+            "skipped": applied.skipped,
+            "errors": applied.errors,
+            "digest": applied.digest,
+            "ok": not applied.errors,
+        }
+        if applied.errors:
+            wave_results.append(entry)
+            break
+        if wait_checks and applied.opened and i == 0:
+            # Canary: require green (or no checks) before later waves
+            for item in applied.opened:
+                url = item.split(":", 1)[-1] if "http" in item else ""
+                if not url.startswith("http"):
+                    continue
+                check = pr_checks_green(client, url)
+                if check is False:
+                    halt(f"canary checks red: {url}", root=root)
+                    entry["ok"] = False
+                    entry["status"] = "canary_red"
+                    wave_results.append(entry)
+                    result = {
+                        "status": "halted_canary",
+                        "brief_id": brief_id,
+                        "waves": wave_results,
+                    }
+                    write_brief_receipt(brief_id, {"kind": "execute", **result}, dist_dir=dist_dir)
+                    return result
+                entry["canary_check"] = "green" if check else "pending_or_none"
+        wave_results.append(entry)
+
     result = {
-        "status": "dry_run" if not (approve and cfg.get("enabled")) else "executed_receipt",
+        "status": "executed",
         "brief_id": brief_id,
         "verify": plan.get("verify"),
-        "waves": [{"repos": w, "ok": True} for w in waves],
+        "waves": wave_results,
         "auto": bool(plan.get("auto")),
     }
     write_brief_receipt(brief_id, {"kind": "execute", **result}, dist_dir=dist_dir)
-    if approve and cfg.get("enabled"):
-        append_action(
-            actor="fleet",
-            repo="-",
-            action="execute",
-            detail=brief_id,
-            brief_id=brief_id,
-            verify_result="pending",
-            dist_dir=dist_dir,
-        )
+    append_action(
+        actor="fleet",
+        repo="-",
+        action="execute",
+        detail=brief_id,
+        brief_id=brief_id,
+        verify_result=result["status"],
+        dist_dir=dist_dir,
+    )
     return result
 
 

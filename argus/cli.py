@@ -539,10 +539,30 @@ def fleet_plan_cmd(brief_id: str, repos: tuple[str, ...], verify: str, auto: boo
 @fleet_group.command("execute")
 @click.argument("brief_id")
 @click.option("--approve", is_flag=True, default=False)
-def fleet_execute_cmd(brief_id: str, approve: bool) -> None:
-    from argus.fleet_exec import execute_plan
+@click.option("--no-wait-checks", is_flag=True, default=False)
+def fleet_execute_cmd(brief_id: str, approve: bool, no_wait_checks: bool) -> None:
+    import os
 
-    click.echo(json.dumps(execute_plan(brief_id, approve=approve), indent=2))
+    from argus.fleet_exec import execute_plan
+    from argus.github_client import GitHubClient
+
+    client = None
+    token = os.environ.get("GITHUB_TOKEN") or os.environ.get("ARGUS_GITHUB_TOKEN") or ""
+    if approve and token:
+        client = GitHubClient(token=token)
+    try:
+        click.echo(json.dumps(
+            execute_plan(
+                brief_id,
+                approve=approve,
+                client=client,
+                wait_checks=not no_wait_checks,
+            ),
+            indent=2,
+        ))
+    finally:
+        if client is not None:
+            client.close()
 
 
 @fleet_group.command("drift")
