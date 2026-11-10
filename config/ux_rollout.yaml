@@ -1,0 +1,11 @@
+# UX rule rollout stages (observe → soft → enforce).
+# Runtime state: state/ux_rollout.json
+default_stage: observe
+promote_fp_rate_max: 0.05
+demote_fp_rate_min: 0.20
+min_samples_for_promote: 10
+min_samples_for_demote: 5
+stages:
+  - observe   # record findings only; never block / never PR
+  - soft      # report + low-severity baseline PR; no YOLO consume
+  - enforce   # findings participate in triage / gated apply

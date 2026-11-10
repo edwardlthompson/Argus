@@ -9,8 +9,9 @@ never_delete_repos: true
 never_force_push: true
 attention_threshold_for_agents: 60
 
-# yolo = hands-off apply + handlers + merge (docs/YOLO.md). Kill switch: normal.
-apply_mode: yolo
+# Public product / template: normal (YOLO off). Private runner: bootstrap sets yolo + yolo.on.
+# See docs/YOLO.md dual-plane.
+apply_mode: normal
 
 yolo:
   skip_profile: true

@@ -13,7 +13,9 @@ pwsh -File scripts/bootstrap-argus-runner.ps1
 # or: bash scripts/bootstrap-argus-runner.sh
 ```
 
-That creates `YOU/argus-runner` (private), pushes code, sets `ARGUS_GITHUB_TOKEN`, points `config/inbox.yaml` at the runner with `security_issues: true`, and queues a dry-run scan.
+That creates `YOU/argus-runner` (private), pushes code, sets `ARGUS_GITHUB_TOKEN`, points `config/inbox.yaml` at the runner with `security_issues: true`, **arms YOLO** (`yolo.on` + runner `apply_mode: yolo`), and queues a dry-run scan.
+
+The **public product** stays `apply_mode: normal` (YOLO off). Only the private runner is hands-off YOLO.
 
 3. Watch Actions on the **private** runner. When the dry-run looks sane, re-run **argus-scan** with `apply=true` (or weekly input).
 4. Live in: private Issues (`argus-inbox`) + Actions artifacts + optional Discord/Telegram digests.

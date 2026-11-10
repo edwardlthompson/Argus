@@ -1,17 +1,17 @@
-# Release notes — Argus 0.4.0
+# Release notes — Argus 0.5.0
 
 ## Highlights
 
-- **Hands-off YOLO** — `apply_mode: yolo` applies gated fixes, merges `chore(argus)` + Dependabot **patch** PRs, closes stale bot PRs, optional in-process second pass, and opens one private `yolo-digest` Issue for judgment leftovers. Profile Overview stays sacred (`skip_profile`).
-- **Shareable portfolio reports** — Dark (default) / light HTML with charts + theme toggle; matching Markdown; dated copies under private `argus-history/reports/`.
-- **Health + rate limits** — Before/after health deltas every run; GitHub core budget pacing, wait-until-reset, batched discovery (`docs/RATE_LIMIT.md`).
-- **Apply history** — Append-only local + private-runner `argus-history/` sync.
-- **Grok Bots pack** — Draft/digest skills only; Argus remains the sole mutator (ADR 0001).
+- **Dual-plane YOLO** — Public product ships `apply_mode: normal` (safe to share). Private runner bootstrap arms `yolo.on` + hands-off micromanage. Kill switches: delete `yolo.on`, `YOLO-OFF.md`, `argus off`.
+- **Signals (S9)** — Brand icon states (`owned`/`inherited`/`missing`/`placeholder`) with brief-only PRs (no PNG generation); orphans probe; UX rule loader; `CONTRACT-STALE` / `SEC-RELEASE-TOKEN-MISSING`; Grok budget + circuit breaker (`config/grok_bots.yaml`).
+- **Staging + triage (S10)** — UX rollout observe→soft→enforce; `argus triage` / `--fleet`; YOLO consumes agent-class deterministic handlers only.
+- **Rules → fleet → remote (S11–S15)** — `argus.upstream.json` + `argus rules sync|diff|bump`; `RULES-STALE` blocks YOLO; fleet plan/execute/drift/revert/halt + action ledger; `argus.remote.json` readonly by default; CLI `digest` / `focus` / `cost` / `fleet` / `rules` / `off`.
 
 ## Upgrade notes
 
-- Private runner: leave `apply_mode: yolo` or set `normal` as kill switch. Weekly/scan with unset apply follows safety.yaml (YOLO implies apply); pass `apply=false` for explicit dry-run.
-- Expect Actions minute burn from mass merges + CodeQL; thin CI on `argus-history/**` pushes if minutes are tight.
-- Prefer `python scripts/agent-run.py verify` before merge. Template Release Please / full pre-release-gate remain N/A (G12).
+- Re-bootstrap or manually add `yolo.on` on the **private runner** only. Do not arm YOLO on the public product template.
+- After pulling rule/config changes: `argus rules sync` so `RULES-STALE` clears.
+- Grok digests honor daily caps in `config/grok_bots.yaml`; clear `GROK-OFF.md` only after reviewing breaker trips.
+- Prefer `python scripts/agent-run.py verify` before merge.
 
 See `CHANGELOG.md` for the full list.

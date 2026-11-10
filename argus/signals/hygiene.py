@@ -1,14 +1,30 @@
-"""Hygiene: license SPDX, community files, stale branches, CODEOWNERS."""
+"""Hygiene: license SPDX, community files, stale branches, CODEOWNERS, brand icon state."""
 
 from __future__ import annotations
 
+import base64
+import hashlib
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
 
 from argus.github_client import GitHubClient, GitHubError
 from argus.models import RepoRecord
 
 _STALE_DAYS = 90
+_PLACEHOLDER_BYTES = 400
+_REJECT_BASE = frozenset({
+    "social-preview",
+    "splash",
+    "readme-hero",
+    "favicon",
+    "wordmark",
+    "lockup",
+    "foreground",
+    "round",
+    "og-image",
+    "twitter-card",
+})
 
 
 def collect(client: GitHubClient, repo: RepoRecord) -> dict[str, Any]:
@@ -52,13 +68,73 @@ def _exists(client: GitHubClient, repo: RepoRecord, path: str) -> bool:
         return False
 
 
+def _basename_stem(path: str) -> str:
+    return Path(path).stem.lower().replace("_", "-")
+
+
+def _is_rejected_basename(path: str) -> bool:
+    stem = _basename_stem(path)
+    return any(token in stem for token in _REJECT_BASE)
+
+
+def _sha256_content(data: dict[str, Any]) -> str | None:
+    raw = data.get("content")
+    if not isinstance(raw, str):
+        return None
+    try:
+        blob = base64.b64decode(raw)
+    except (TypeError, ValueError):
+        return None
+    return hashlib.sha256(blob).hexdigest()
+
+
+def _parent_icon_hashes() -> set[str]:
+    """Optional parent manifest of inherited icon digests (config/parent_icons.sha256)."""
+    from argus.paths import ROOT
+
+    path = ROOT / "config" / "parent_icons.sha256"
+    if not path.is_file():
+        return set()
+    out: set[str] = set()
+    for line in path.read_text(encoding="utf-8").splitlines():
+        bit = line.strip().split()[0] if line.strip() and not line.strip().startswith("#") else ""
+        if len(bit) == 64:
+            out.add(bit.lower())
+    return out
+
+
+def classify_brand_icon(
+    *,
+    path: str | None,
+    size: int,
+    sha256: str | None,
+    parent_hashes: set[str],
+    stub_svg_max: int,
+) -> str:
+    """Pure classifier for tests: owned | inherited | missing | placeholder."""
+    if not path:
+        return "missing"
+    if _is_rejected_basename(path):
+        return "placeholder"
+    if size < _PLACEHOLDER_BYTES:
+        return "placeholder"
+    if path.lower().endswith(".svg") and size <= stub_svg_max:
+        return "placeholder"
+    if sha256 and sha256.lower() in parent_hashes:
+        return "inherited"
+    return "owned"
+
+
 def _brand_icon(client: GitHubClient, repo: RepoRecord) -> dict[str, Any]:
-    """Canonical Overview icons — see config/profile_icons.yaml."""
+    """Canonical Overview icons — owned only passes. See docs/PROFILE_ICONS.md."""
     from argus.profile_icon_policy import canonical_paths, stub_paths, stub_svg_max
 
     max_stub = stub_svg_max()
-    stub = False
+    parent_hashes = _parent_icon_hashes()
+    seen_placeholder = False
     for path in canonical_paths():
+        if _is_rejected_basename(path):
+            continue
         try:
             data = client.get(f"/repos/{repo.owner}/{repo.name}/contents/{path}")
         except GitHubError:
@@ -66,13 +142,23 @@ def _brand_icon(client: GitHubClient, repo: RepoRecord) -> dict[str, Any]:
         if not isinstance(data, dict):
             continue
         size = int(data.get("size") or 0)
-        if str(path).lower().endswith(".svg") and size <= max_stub:
-            stub = True
+        digest = _sha256_content(data)
+        state = classify_brand_icon(
+            path=path,
+            size=size,
+            sha256=digest,
+            parent_hashes=parent_hashes,
+            stub_svg_max=max_stub,
+        )
+        if state == "placeholder":
+            seen_placeholder = True
             continue
         return {
-            "brand_icon_ok": True,
+            "brand_icon_ok": state == "owned",
+            "brand_icon_state": state,
             "brand_icon_path": path,
-            "brand_icon_stub_svg": False,
+            "brand_icon_stub_svg": state == "placeholder",
+            "brand_icon_sha256": digest,
         }
     for path in stub_paths():
         try:
@@ -80,12 +166,15 @@ def _brand_icon(client: GitHubClient, repo: RepoRecord) -> dict[str, Any]:
         except GitHubError:
             continue
         if isinstance(data, dict) and int(data.get("size") or 0) <= max_stub:
-            stub = True
+            seen_placeholder = True
             break
+    state = "placeholder" if seen_placeholder else "missing"
     return {
         "brand_icon_ok": False,
+        "brand_icon_state": state,
         "brand_icon_path": None,
-        "brand_icon_stub_svg": stub,
+        "brand_icon_stub_svg": seen_placeholder,
+        "brand_icon_sha256": None,
     }
 
 
@@ -130,7 +219,6 @@ def _branch_protection(client: GitHubClient, repo: RepoRecord) -> bool | None:
 
 
 def _actions_runs(client: GitHubClient, repo: RepoRecord) -> int | None:
-    """Heuristic: workflow runs in last page (cost proxy, not billing API)."""
     try:
         data = client.get(
             f"/repos/{repo.owner}/{repo.name}/actions/runs",

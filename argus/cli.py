@@ -390,7 +390,16 @@ def doctor_cmd() -> None:
         if not safety.get(key, True):
             problems.append(f"safety.yaml disables hard safety default: {key}")
 
-    if str(safety.get("apply_mode") or "") == "yolo":
+    from argus.grok_budget import breaker_open, load_grok_config
+    from argus.yolo_arm import is_yolo_armed, yolo_off_marker, yolo_on_path
+
+    armed = is_yolo_armed(safety)
+    click.echo(
+        f"yolo_arm: {'armed' if armed else 'off'} "
+        f"(yolo.on={yolo_on_path().is_file()} YOLO-OFF={yolo_off_marker().is_file()} "
+        f"apply_mode={safety.get('apply_mode', 'normal')})"
+    )
+    if armed:
         click.echo("yolo: enabled (see docs/YOLO.md) — hard floors still required")
         yolo = safety.get("yolo") or {}
         try:
@@ -398,7 +407,28 @@ def doctor_cmd() -> None:
         except (TypeError, ValueError):
             cap = 0
         if cap < 1:
-            problems.append("yolo.max_auto_merges_per_day must be >= 1 when apply_mode is yolo")
+            problems.append("yolo.max_auto_merges_per_day must be >= 1 when YOLO is armed")
+
+    grok_cfg = load_grok_config()
+    click.echo(
+        f"grok_budget: enabled={bool(grok_cfg.get('enabled', True))} "
+        f"max_runs/day={grok_cfg.get('max_total_bot_runs_per_day')} "
+        f"token_cap={grok_cfg.get('max_estimated_tokens_per_day')} "
+        f"breaker={'OPEN' if breaker_open(grok_cfg) else 'closed'}"
+    )
+    from argus.ux.rollout import load_config as load_ux_rollout_cfg
+    from argus.ux.rollout import load_state as load_ux_rollout_state
+
+    ux_cfg = load_ux_rollout_cfg()
+    ux_st = load_ux_rollout_state()
+    click.echo(
+        f"ux_rollout: default={ux_cfg.get('default_stage')} "
+        f"rules_tracked={len(ux_st.get('rules') or {})}"
+    )
+    if os.environ.get("RELEASE_TOKEN") or os.environ.get("ARGUS_RELEASE_TOKEN"):
+        click.echo("release_token: set")
+    else:
+        click.echo("release_token: missing (SEC-RELEASE-TOKEN-MISSING when release workflows exist)")
 
     allow = load_allowlist()
     click.echo(f"allowlist mode: {allow.get('mode')}")
@@ -437,6 +467,182 @@ def doctor_cmd() -> None:
         raise SystemExit(1)
     click.echo("doctor: all checks passed")
     click.echo(f"root: {PROJECT_ROOT}")
+
+
+@main.command("cost")
+def cost_cmd() -> None:
+    """Report Argus action + Grok budget counters."""
+    from argus.cost import report
+
+    click.echo(json.dumps(report(), indent=2))
+
+
+@main.command("off")
+@click.argument("reason")
+def off_cmd(reason: str) -> None:
+    """Disarm YOLO + remote (sticky ARGUS-OFF.md)."""
+    from argus.remote import argus_off
+
+    click.echo(json.dumps(argus_off(reason), indent=2))
+
+
+@main.command("digest")
+@click.option("--from-dist", is_flag=True, default=True, show_default=True)
+def digest_cmd(from_dist: bool) -> None:
+    """Show last triage/yolo digest summary from dist/."""
+    from argus.paths import DIST_DIR
+
+    triage = DIST_DIR / "triage.json"
+    if from_dist and triage.is_file():
+        data = json.loads(triage.read_text(encoding="utf-8"))
+        click.echo(json.dumps({
+            "counts": data.get("counts"),
+            "human": (data.get("by_class") or {}).get("human", [])[:20],
+            "agent": (data.get("by_class") or {}).get("agent", [])[:20],
+        }, indent=2))
+        return
+    raise SystemExit("no dist/triage.json — run argus run first")
+
+
+@main.command("focus")
+@click.argument("fix_id")
+@click.option("--from-dist", is_flag=True, default=True)
+def focus_cmd(fix_id: str, from_dist: bool) -> None:
+    """List repos matching one fix id from last triage."""
+    from argus.paths import DIST_DIR
+
+    path = DIST_DIR / "triage.json"
+    if not (from_dist and path.is_file()):
+        raise SystemExit("no dist/triage.json — run argus run first")
+    data = json.loads(path.read_text(encoding="utf-8"))
+    repos = (data.get("by_fix_id") or {}).get(fix_id) or []
+    click.echo(json.dumps({"fix_id": fix_id, "repos": repos}, indent=2))
+
+
+@main.group("fleet")
+def fleet_group() -> None:
+    """Fleet upgrade-wave rails (plan / execute / drift / revert / halt)."""
+
+
+@fleet_group.command("plan")
+@click.argument("brief_id")
+@click.option("--repo", "repos", multiple=True, required=True)
+@click.option("--verify", required=True, help="Mandatory verify command")
+@click.option("--auto", is_flag=True, default=False)
+def fleet_plan_cmd(brief_id: str, repos: tuple[str, ...], verify: str, auto: bool) -> None:
+    from argus.fleet import write_plan
+
+    path = write_plan(brief_id, list(repos), verify=verify, auto=auto)
+    click.echo(json.dumps({"plan": str(path), "repos": list(repos)}, indent=2))
+
+
+@fleet_group.command("execute")
+@click.argument("brief_id")
+@click.option("--approve", is_flag=True, default=False)
+def fleet_execute_cmd(brief_id: str, approve: bool) -> None:
+    from argus.fleet_exec import execute_plan
+
+    click.echo(json.dumps(execute_plan(brief_id, approve=approve), indent=2))
+
+
+@fleet_group.command("drift")
+@click.argument("brief_id")
+def fleet_drift_cmd(brief_id: str) -> None:
+    from argus.fleet_exec import drift_report
+
+    click.echo(json.dumps(drift_report(brief_id), indent=2))
+
+
+@fleet_group.command("revert")
+@click.argument("brief_id")
+@click.option("--apply", "do_apply", is_flag=True, default=False)
+def fleet_revert_cmd(brief_id: str, do_apply: bool) -> None:
+    from argus.fleet import revert_brief
+
+    click.echo(json.dumps(revert_brief(brief_id, dry_run=not do_apply), indent=2))
+
+
+@fleet_group.command("halt")
+@click.argument("reason")
+def fleet_halt_cmd(reason: str) -> None:
+    from argus.fleet import halt
+
+    click.echo(json.dumps({"halt": str(halt(reason))}, indent=2))
+
+
+@main.group("rules")
+def rules_group() -> None:
+    """Parent rule sync (pin / diff / bump)."""
+
+
+@rules_group.command("diff")
+def rules_diff_cmd() -> None:
+    """Show locked vs current rules tree sha."""
+    from argus.rules_sync import status_payload
+
+    click.echo(json.dumps(status_payload(), indent=2))
+
+
+@rules_group.command("sync")
+def rules_sync_cmd() -> None:
+    """Refresh argus.rules.lock to the current local rules tree."""
+    from argus.rules_sync import sync_lock
+
+    click.echo(json.dumps(sync_lock(), indent=2))
+
+
+@rules_group.command("bump")
+@click.argument("ref")
+def rules_bump_cmd(ref: str) -> None:
+    """Pin argus.upstream.json to REF (mode=pinned)."""
+    from argus.rules_sync import bump_ref, status_payload
+
+    bump_ref(ref)
+    click.echo(json.dumps(status_payload(), indent=2))
+
+
+@main.command("triage")
+@click.option("--fleet", is_flag=True, default=False, help="Cross-repo rollup by fix id")
+@click.option("--profile", default="generic", show_default=True)
+@click.option(
+    "--from-dist",
+    is_flag=True,
+    default=False,
+    help="Read dist/triage.json from last run (no network)",
+)
+def triage_cmd(fleet: bool, profile: str, from_dist: bool) -> None:
+    """Group open fixes by class (agent / human / auto_safe)."""
+    from argus.paths import DIST_DIR
+
+    ensure_runtime_dirs()
+    triage_path = DIST_DIR / "triage.json"
+    if from_dist:
+        if not triage_path.is_file():
+            raise SystemExit("no dist/triage.json — run argus run/fix first")
+        data = json.loads(triage_path.read_text(encoding="utf-8"))
+        if fleet:
+            click.echo(json.dumps({
+                "mode": "fleet",
+                "repos": data.get("repos"),
+                "counts": data.get("counts"),
+                "by_fix_id": data.get("by_fix_id"),
+                "agent_deterministic_count": len(data.get("yolo_eligible_agent") or []),
+                "human_count": (data.get("counts") or {}).get("human", 0),
+                "auto_safe_count": (data.get("counts") or {}).get("auto_safe", 0),
+            }, indent=2))
+        else:
+            click.echo(json.dumps(data, indent=2))
+        return
+    summary = run_pipeline(
+        dry_run=True,
+        profile=profile,
+        notify=False,
+        include_archived=False,
+    )
+    payload = summary.details.get("triage") or {}
+    if not fleet and triage_path.is_file():
+        payload = json.loads(triage_path.read_text(encoding="utf-8"))
+    click.echo(json.dumps(payload, indent=2))
 
 
 @main.command()

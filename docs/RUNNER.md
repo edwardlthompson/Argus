@@ -6,7 +6,7 @@ The **private** runner (`YOU/argus-runner`) owns scheduled scans and apply. The 
 
 | Workflow | Trigger | Default |
 |----------|---------|---------|
-| `argus-weekly` | Monday cron + `workflow_dispatch` | Prefer apply when `apply_mode: yolo` |
+| `argus-weekly` | Monday cron + `workflow_dispatch` | Prefer apply when YOLO armed (`yolo.on` / `apply_mode: yolo`) |
 | `argus-scan` | `workflow_dispatch` | Choose `apply` / `notify` inputs |
 | `ci` | push/PR | tests only |
 | `pages` | after weekly/scan success | status-only if enabled |
@@ -14,14 +14,14 @@ The **private** runner (`YOU/argus-runner`) owns scheduled scans and apply. The 
 ### Apply input
 
 - Explicit `--dry-run` / `apply=false` — discover, score, artifacts only (no writes).
-- Apply / YOLO default — when `config/safety.yaml` has `apply_mode: yolo`, omitting the dry-run flag **implies apply** (`docs/YOLO.md`).
+- Apply / YOLO default — when the runner is YOLO-armed (`yolo.on` or `apply_mode: yolo`), omitting the dry-run flag **implies apply** (`docs/YOLO.md`).
 - `apply=true` / `--apply` — always mutative when token allows.
 
 First week on a new runner: run once with `--dry-run`, inspect artifacts, then leave YOLO to apply on the schedule.
 
 ### YOLO
 
-Set `apply_mode: yolo` on the private runner (shipped default). Loop: apply → handlers → merge chore/Dependabot patch → optional second pass → private **yolo-digest** Issue for judgment leftovers. Profile Overview stays sacred via `yolo.skip_profile: true`. Grok digests never merge. Full policy: [YOLO.md](YOLO.md) · [GROK_BOTS.md](GROK_BOTS.md).
+Bootstrap writes `yolo.on` and sets runner `apply_mode: yolo` (public product template stays `normal`). Loop: apply → handlers → six pre-merge checks → squash chore/Dependabot patch → action ledger → optional second pass → private **yolo-digest** Issue for judgment leftovers only (no per-finding creator pings). Profile Overview stays sacred via `yolo.skip_profile: true`. Grok digests never merge. Kill: delete `yolo.on` or add `YOLO-OFF.md`. Full policy: [YOLO.md](YOLO.md) · [GROK_BOTS.md](GROK_BOTS.md).
 
 ### Shareable reports
 

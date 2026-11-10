@@ -1,0 +1,17 @@
+# Grok Bots budget — single source of truth (docs/GROK_BOTS.md preamble must match).
+enabled: true
+allowlist_max_repos: 3
+max_runs_per_bot_per_day: 2
+max_total_bot_runs_per_day: 8
+max_output_lines: 40
+max_prs_per_run: 30
+max_issues_per_run: 15
+max_estimated_tokens_per_day: 50000
+cooldown_hours: 20
+circuit_breaker:
+  empty_or_error_trips: 3
+  off_marker: GROK-OFF.md
+quiet_hours:
+  # Digests suppressed except @mention / main_red (remote).
+  start_hour_local: 22
+  end_hour_local: 8

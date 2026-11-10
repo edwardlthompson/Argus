@@ -2,6 +2,20 @@
 
 ## [Unreleased]
 
+## [0.5.0] — 2026-11-09
+
+### Added
+
+- S9 signals: brand icon states (`owned`/`inherited`/`missing`/`placeholder`), orphans probe, UX rule loader, `CONTRACT-STALE` / `SEC-RELEASE-TOKEN-MISSING`, `config/grok_bots.yaml` budget + breaker.
+- Dual-plane YOLO: product `apply_mode: normal`; runner bootstrap arms `yolo.on`; quiet one-line run log; action ledger + fleet plan/halt/revert receipts; six pre-merge checks.
+- S10 staging + triage: `config/ux_rollout.yaml` + `state/ux_rollout.json` observe→soft→enforce; `argus triage` / `--fleet`; `dist/triage.json`.
+- S11–S15: `argus.upstream.json` + rules sync/diff/bump + RULES-STALE; fleet plan/execute/drift/revert/halt; `argus.remote.json` + `argus off`; CLI `digest`/`focus`/`cost`/`fleet`/`rules`.
+
+### Changed
+
+- YOLO brand handler opens design-brief PR only (no PNG generation). Hands-off YOLO skips per-finding inbox/notify (digest leftovers only).
+- YOLO extras consume **agent-class** deterministic handlers only; human-class handler ids go to digest.
+
 ## [0.4.0] — 2026-11-05
 
 ### Added

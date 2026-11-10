@@ -4,6 +4,22 @@ Optional [Grok Bots](https://docs.x.ai/grok-bot/skills-routines-and-automations)
 
 Policy ADR: [`docs/adr/0001-grok-bots-draft-digest-and-yolo.md`](adr/0001-grok-bots-draft-digest-and-yolo.md). YOLO (auto-merge gated PRs): [`docs/YOLO.md`](YOLO.md).
 
+## Budget (enforced)
+
+Single source of truth: [`config/grok_bots.yaml`](../config/grok_bots.yaml). Counters live in `dist/grok-budget.json`. Circuit breaker writes sticky `GROK-OFF.md`.
+
+| Control | Default |
+|---------|---------|
+| Allowlist max repos | 3 |
+| `max_runs_per_bot_per_day` | 2 (1 scheduled + 1 on-demand) |
+| `max_total_bot_runs_per_day` | 8 |
+| `max_output_lines` / PRs / issues | ≤40 / ≤30 / ≤15 |
+| `max_estimated_tokens_per_day` | 50000 |
+| `cooldown_hours` | 20 |
+| Circuit breaker | 3 empty/error digests → `GROK-OFF.md` |
+
+`argus doctor` reports budget file + breaker state. Identity stays comment-only PAT; **never** merge; separate from `ARGUS_GITHUB_TOKEN`.
+
 ## Shared foundation
 
 | Piece | Rule |
@@ -12,15 +28,17 @@ Policy ADR: [`docs/adr/0001-grok-bots-draft-digest-and-yolo.md`](adr/0001-grok-b
 | Plugin | Grok GitHub plugin (separate from `ARGUS_GITHUB_TOKEN` on the private runner). |
 | Allowlist | Start with `YOU/Argus` + at most two product apps. Expand only after a quiet week. |
 | Output | ≤40 lines markdown. Prefer links over pasted blobs. |
-| Caps | ≤80 log lines; ≤30 PRs; ≤15 issues/alerts per run. |
+| Caps | See `config/grok_bots.yaml` (≤40 lines; ≤30 PRs; ≤15 issues). |
 | Test | Three supervised Test runs before enabling each routine. |
 
-**Shared skill preamble** (paste into every skill):
+**Shared skill preamble** (paste into every skill — numbers must match `config/grok_bots.yaml`):
 
 ```text
 Repos allowlist only. Never merge, never push to default branch, never change Settings/secrets.
 If data missing: say so; do not invent. Prefer links over pasted blobs.
-Hard caps: ≤80 log lines; ≤30 PRs; ≤15 issues/alerts; output ≤40 lines.
+Hard caps (config/grok_bots.yaml): max_runs_per_bot_per_day=2; max_total_bot_runs_per_day=8;
+max_output_lines=40; max_prs_per_run=30; max_issues_per_run=15; max_estimated_tokens_per_day=50000;
+cooldown_hours=20. Stop if GROK-OFF.md exists.
 Draft / digest / handoff only. Argus applies gated fixes; you do not.
 ```
 

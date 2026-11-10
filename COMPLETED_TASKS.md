@@ -2,6 +2,16 @@
 
 Archived BUILD_PLAN rows (newest first).
 
+## Signals → fleet → YOLO → remote S9–S15 (2026-11-09)
+
+- ✅ `[AGENT][LOCAL]` — scope: `argus/,config/,docs/,scripts/,tests/` | **S9 Signals** — brand states, orphans, UX baseline, contract/token, grok budget, dual-plane YOLO defaults
+- ✅ `[AGENT][LOCAL]` — scope: `argus/,config/,state/` | **S10 Staging + triage** — ux_rollout observe→soft→enforce; `argus triage` / `--fleet`
+- ✅ `[AGENT][LOCAL]` — scope: `argus/,config/` | **S11 Rule sync** — `argus.upstream.json`, cache, RULES-STALE, lock/diff/bump
+- ✅ `[AGENT][LOCAL]` — scope: `argus/,config/,docs/` | **S12 Fleet + audit/undo** — plan/execute/drift/revert/halt + action ledger
+- ✅ `[AGENT][LOCAL]` — scope: `argus/,docs/,scripts/` | **S13 YOLO arming (runner)** — `yolo.on`, six checks, undo ladder, hands-off digest
+- ✅ `[AGENT][LOCAL]` — scope: `argus/,config/` | **S14 Remote readonly→arm** — remote.json, cards, quiet_hours, `argus off`
+- ✅ `[AGENT][LOCAL]` — scope: `argus/cli.py,docs/` | **S15 Command surface** — digest/focus/fleet/rules/cost verbs
+
 ## Dual-plane + profile + Sequential A–L (2026-11-05)
 
 - ✅ `[AUTO][LOCAL]` — scope: dual-plane-runner | **A1.** Private `edwardlthompson/argus-runner` created; secret set; inbox pointed; scan dry-run queued — `scripts/bootstrap-argus-runner.*`

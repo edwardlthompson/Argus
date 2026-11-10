@@ -8,10 +8,12 @@ from argus.github_client import GitHubClient, GitHubError
 from argus.models import RepoRecord, SignalBundle
 from argus.signals import (
     ci,
+    contract,
     deps,
     hygiene,
     lineage,
     momentum,
+    orphans,
     presentation,
     prs,
     releases,
@@ -36,6 +38,8 @@ def collect_signals(client: GitHubClient, repo: RepoRecord) -> SignalBundle:
         "prs": prs.collect,
         "releases": releases.collect,
         "traffic": traffic.collect,
+        "orphans": orphans.collect,
+        "contract": contract.collect,
     }
     for name, fn in collectors.items():
         try:
@@ -58,4 +62,6 @@ def fixture_bundle(data: dict[str, Any]) -> SignalBundle:
         prs=data.get("prs"),
         releases=data.get("releases"),
         traffic=data.get("traffic"),
+        orphans=data.get("orphans"),
+        contract=data.get("contract"),
     )

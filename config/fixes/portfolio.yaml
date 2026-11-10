@@ -111,25 +111,23 @@ fixes:
 
   - id: BRAND-ICON-MISSING
     class: human
-    title: Add canonical portfolio app icon
-    why: Overview showcase needs a real square brand mark, not a Golden Path stub or Open Graph card.
-    applies_when: "hygiene.get('brand_icon_ok') is False"
+    title: Add owned portfolio app icon
+    why: Overview needs an owned square mark — not missing, placeholder, or inherited parent icon.
+    applies_when: "hygiene.get('brand_icon_state') in ('missing', 'placeholder', 'inherited') or hygiene.get('brand_icon_ok') is False"
     phase: 3
     depends_on: []
     confidence: high
     auto_safe: false
     human_steps: |
-      1. Add a square mark at a canonical path (preferred first):
-         - branding/assets/app-icon-512.png
+      1. Add a square owned mark (≥512px PNG) at a canonical path:
+         - branding/assets/app-icon-512.png (preferred)
          - branding/assets/logo-mark.png
          - docs/brand/logo-official.png
-         - docs/assets/app-icon-512.png
-         - docs/assets/icon.png
-         - branding/assets/app-icon-512.svg (real mark only; not the ≤400B Golden Path stub)
-      2. Do not leave branding/assets/app-icon-512.svg as the tiny Golden Path triangle stub.
-      3. See config/profile_icons.yaml and docs/PROFILE_ICONS.md in Argus.
-      4. Re-run Argus profile sync so the Overview picks up the new icon.
-    gate: "Canonical brand icon exists per config/profile_icons.yaml (PNG or non-stub SVG)"
+      2. Do not use social-preview, splash, favicon, wordmark, lockup, or stub SVG (<400B).
+      3. Do not copy the parent template icon unchanged (Argus marks that as inherited).
+      4. Argus will not generate artwork — YOLO opens a design brief only.
+      5. See config/profile_icons.yaml and docs/PROFILE_ICONS.md.
+    gate: "hygiene.brand_icon_state == owned"
     profiles: [generic, edward]
     resolution_ttl_days: 60
 
@@ -169,3 +167,55 @@ fixes:
       4. To park without archiving: ask Argus `argus park owner/repo`.
     gate: "Repo is parked, archived, or you noted keep-active on the report"
     profiles: [generic, edward]
+    resolution_ttl_days: 90
+
+  - id: RULES-STALE
+    class: human
+    title: Re-sync parent rules lock (blocks YOLO / fanout)
+    why: Local rules tree sha no longer matches argus.rules.lock; mutations stay off until sync.
+    applies_when: "contract.get('rules_stale') is True or contract.get('RULES-STALE') is True"
+    phase: 1
+    depends_on: []
+    confidence: high
+    auto_safe: false
+    human_steps: |
+      1. Run `argus rules diff` and review changes.
+      2. After review: `argus rules sync` to refresh the lock (or pin via `argus rules bump <ref>`).
+      3. Confirm RULES-STALE clears before re-arming YOLO.
+    gate: "argus rules diff shows stale=false"
+    profiles: [generic, edward]
+    resolution_ttl_days: 7
+
+  - id: CONTRACT-STALE
+    class: human
+    title: Sync .argus/contract.json with parent contract hash
+    why: Contract hash mismatch means the repo is behind (or ahead of) the pinned parent contract.
+    applies_when: "contract.get('contract_stale') is True or contract.get('CONTRACT-BEHIND') is True"
+    phase: 2
+    depends_on: []
+    confidence: high
+    auto_safe: false
+    human_steps: |
+      1. Run `argus rules sync` (or copy parent contract) on the private runner.
+      2. Refresh `.argus/contract.json` so its content sha256 matches config/contract.sha256.
+      3. Open a PR; do not invent contract fields.
+    gate: "contract.contract_stale is false"
+    profiles: [generic, edward]
+    resolution_ttl_days: 14
+
+  - id: SEC-RELEASE-TOKEN-MISSING
+    class: human
+    title: Set RELEASE_TOKEN for release automation
+    why: Release cuts need a dedicated token separate from day-to-day apply.
+    applies_when: "contract.get('has_release_workflow') is True and contract.get('release_token_set') is False"
+    phase: 4
+    depends_on: []
+    confidence: medium
+    auto_safe: false
+    human_steps: |
+      1. Create a fine-grained PAT or Actions secret named RELEASE_TOKEN (contents: write releases).
+      2. Add it only on the private runner secrets — never commit the value.
+      3. Re-run `argus doctor` until SEC-RELEASE-TOKEN-MISSING clears.
+    gate: "RELEASE_TOKEN or ARGUS_RELEASE_TOKEN is set in the runner environment"
+    profiles: [generic, edward]
+    resolution_ttl_days: 30

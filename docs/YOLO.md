@@ -1,15 +1,31 @@
-# YOLO mode (hands-off)
+# YOLO mode (hands-off — private runner only)
 
 YOLO is Argus’s **private-runner apply policy**: gated `auto_safe` + mechanical handlers + squash-merge of Argus/Dependabot **patch** PRs in one loop. It is **not** “Grok can push anything.”
 
+## Dual-plane (locked)
+
+| Plane | YOLO |
+|-------|------|
+| **Public product / template** (`edwardlthompson/Argus`) | **Off** — `apply_mode: normal`, no `yolo.on` |
+| **Private operator runner** (`YOU/argus-runner`) | **On** — bootstrap writes `yolo.on` + runner `apply_mode: yolo` |
+
 See [`docs/GROK_BOTS.md`](GROK_BOTS.md) and [ADR 0001](adr/0001-grok-bots-draft-digest-and-yolo.md).
 
-## Config
+## Arming
 
-[`config/safety.yaml`](../config/safety.yaml):
+Preferred arm file on the **runner**: `yolo.on` (created by `scripts/bootstrap-argus-runner.*`).
+
+Sticky kill switches:
+
+- Delete `yolo.on` and/or write `YOLO-OFF.md`
+- Or set runner `apply_mode: normal`
+
+Public product must stay `apply_mode: normal` so forks/scanners are dry-run safe by default.
+
+## Config (runner)
 
 ```yaml
-apply_mode: yolo   # normal | yolo
+apply_mode: yolo   # normal | yolo — product ships normal
 
 yolo:
   skip_profile: true
@@ -24,11 +40,20 @@ yolo:
   second_pass_if_budget: true
 ```
 
-Shipped product default is **`apply_mode: yolo`** for the private controller. Kill switch: set `apply_mode: normal`.
-
 ### YOLO implies apply
 
-When `apply_mode: yolo`, `argus run` / `argus fix` **apply** unless you pass an explicit `--dry-run`. You do not need a separate “remember apply=true” step. Pass `--with-profile` only if you intentionally want Overview mutations (default skips `YOU/YOU`).
+When YOLO is armed, `argus run` / `argus fix` **apply** unless you pass `--dry-run`. Pass `--with-profile` only if you intentionally want Overview mutations (default skips `YOU/YOU`).
+
+## Six pre-merge checks
+
+Before squash-merge: armed · hard floors · prefer PRs · title policy · CI green · not sacred profile.
+
+## Quiet posture (don’t bother the creator)
+
+- One log line per run (`argus <family>: findings=… outcome=…`)
+- No per-finding Issues / channel pings under YOLO
+- Judgment leftovers → one private **yolo-digest** Issue
+- Unprompted surfaces: `YOLO-OFF.md` / `GROK-OFF.md` and remote `main_red` only
 
 ## Hard floors (never lifted)
 
@@ -38,16 +63,17 @@ Same as [`docs/SAFETY.md`](SAFETY.md) / `safety.yaml`:
 - Every `auto_safe` / agent fix still needs an executable **gate**
 - No secret / `.env` commits; no auto-archive; no Grok merges
 - No force-close of human-authored PRs
+- **Brand icons:** brief-only PR (`docs/BRAND_ICON_BRIEF.md`) — Argus never generates PNG assets
 
 ## Pipeline loop
 
 1. Batched discover + score (rate-limit aware).
 2. `auto_safe` apply.
 3. YOLO handlers (`argus/yolo.py`) for human/agent ids that are API-safe.
-4. Squash-merge `chore(argus)*` PRs + Dependabot **patch/minor** PRs.
-5. Health delta + apply history + shareable portfolio HTML/MD (`dist/` + private `argus-history/reports/`).
-6. Optional **second pass** in-process when budget remains and YOLO-eligible work is left.
-7. One private **yolo-digest YYYY-MM-DD** Issue for leftovers (CI judgment, park/archive candidates, human stale PRs).
+4. Squash-merge `chore(argus)*` PRs + Dependabot **patch/minor** PRs (after six checks).
+5. Health delta + apply history + action ledger (`dist/actions.jsonl`).
+6. Optional **second pass** when budget remains.
+7. One private **yolo-digest YYYY-MM-DD** Issue for leftovers.
 
 ## Handlers
 
@@ -55,23 +81,12 @@ Same as [`docs/SAFETY.md`](SAFETY.md) / `safety.yaml`:
 |--------|--------|
 | `SEC-CODEQL` | Code Scanning default setup |
 | `SEC-OPEN-DEPENDABOT-ALERTS` | Enable automated security fixes |
-| `BRAND-ICON-MISSING` | PNG PR |
+| `BRAND-ICON-MISSING` | Design brief PR only (no generated asset) |
 | `LINEAGE-RECOMMEND-UPGRADE` | Lineage bump PR |
 | `AGENT-WHAT-NOT` / `AGENT-MEMORY-LAYOUT` | README / `.agent/` PRs |
 | `PR-STALE` | Close bot/`chore/argus-*` idle PRs; nudge comment only on human PRs |
 | `CI-LATEST-FAILED` | Digest only (no invented patches) |
 | `HUMAN-PARK-INACTIVE` / `HUMAN-ARCHIVE-JUDGMENT` | Digest only (never archive) |
-
-## Workload under YOLO
-
-| Work | Who |
-|------|-----|
-| Hygiene `auto_safe` | Argus PR → squash-merge |
-| Dependabot **patch/minor** | Squash-merge; majors stay human |
-| Stale bot / `chore/argus-*` PRs | Close after idle days |
-| Stale human PRs | Nudge + digest |
-| CI red / park / archive | Digest Issue only |
-| Profile Overview | Skipped when `skip_profile: true` |
 
 ## Prefer Argus autoload over Grok mutators
 

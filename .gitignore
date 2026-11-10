@@ -35,5 +35,10 @@ data/*.db
 data/notifications.json
 data/worktrees/
 !data/.gitkeep
+state/*.json
+state/*.log
+!state/*.json.example
+!state/.gitkeep
+.argus/cache/
 .cursor-session-state.json
 .cursor-session-state

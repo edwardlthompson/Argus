@@ -79,6 +79,8 @@ class SignalBundle:
     prs: dict[str, Any] | None = None
     releases: dict[str, Any] | None = None
     traffic: dict[str, Any] | None = None
+    orphans: dict[str, Any] | None = None
+    contract: dict[str, Any] | None = None
 
     def missing_categories(self) -> list[str]:
         # Core categories affect confidence; lineage/prs/releases/traffic are additive.
@@ -106,6 +108,8 @@ class SignalBundle:
             "prs": self.prs,
             "releases": self.releases,
             "traffic": self.traffic,
+            "orphans": self.orphans,
+            "contract": self.contract,
         }
 
 

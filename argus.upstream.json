@@ -1,0 +1,10 @@
+{
+  "mode": "pinned",
+  "parent": "edwardlthompson/agent-project-bootstrap",
+  "ref": "v1.12.0",
+  "rules_paths": [
+    "config/fixes",
+    "argus/ux/rules"
+  ],
+  "notes": "Pin before any fleet upgrade wave. mode: live | pinned | vendored"
+}

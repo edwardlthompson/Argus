@@ -16,7 +16,7 @@ def test_load_fixes_constitution():
 
 def test_load_safety_yolo_defaults():
     safety = load_safety()
-    assert safety["apply_mode"] in ("normal", "yolo")
+    assert safety["apply_mode"] == "normal"  # public product dual-plane default
     assert safety["never_force_push"] is True
     assert safety["prefer_pull_requests"] is True
     yolo = safety["yolo"]

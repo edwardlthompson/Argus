@@ -28,6 +28,16 @@ def test_yolo_handlers_cover_cleanup_ids():
         assert fid in YOLO_HANDLERS
 
 
+def test_brand_handler_is_brief_only_not_png_gen():
+    import inspect
+
+    from argus.yolo import _brand_icon
+
+    src = inspect.getsource(_brand_icon)
+    assert "generate_icon_png" not in src
+    assert "design brief" in src.lower() or "BRAND_ICON_BRIEF" in src
+
+
 def test_dependabot_patch_filter():
     assert is_dependabot_patch_title(
         "Bump requests from 2.31.0 to 2.32.1",

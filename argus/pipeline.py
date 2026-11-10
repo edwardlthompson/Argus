@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from argus.action_ledger import record_actions
 from argus.agent_dispatch import (
     execute_dispatches,
     prepare_dispatches,
@@ -30,11 +31,14 @@ from argus.match import match_fixes
 from argus.models import FixClass, RepoPlan
 from argus.notify import send_notifications
 from argus.profile_apply import ProfileApplyResult, sync_profile_readme
+from argus.quiet_log import emit_run_line
 from argus.rate_limit import CoreQuota
 from argus.score import score_repo
 from argus.signals import collect_signals, fixture_bundle
 from argus.state import StateStore
+from argus.triage import fleet_rollup, summarize_triage
 from argus.yolo import apply_yolo_extras, merge_argus_prs, merge_dependabot_patch_prs
+from argus.yolo_arm import is_yolo_armed
 from argus.yolo_digest import collect_judgment_items, sync_report_files, upsert_yolo_digest
 
 
@@ -137,13 +141,16 @@ def _score_batch(
 
 
 def _yolo_eligible_left(plans: list[RepoPlan]) -> bool:
-    from argus.yolo import YOLO_HANDLERS
+    from argus.yolo import YOLO_HANDLERS, is_yolo_deterministic_agent
 
     for plan in plans:
-        for m in (*plan.human_fixes, *plan.agent_fixes, *plan.auto_fixes):
-            if m.fix.id in YOLO_HANDLERS or m.fix.id == "PR-STALE":
+        for m in plan.auto_fixes:
+            if m.fix.class_ == FixClass.AUTO_SAFE:
                 return True
-            if m.fix.class_ == FixClass.AUTO:
+        for m in plan.agent_fixes:
+            if is_yolo_deterministic_agent(m):
+                return True
+            if m.fix.id in YOLO_HANDLERS or m.fix.id == "PR-STALE":
                 return True
     return False
 
@@ -167,7 +174,7 @@ def run_pipeline(
     rubric = load_rubric()
     fixes = load_fixes()
     yolo_cfg = safety.get("yolo") or {}
-    yolo_on = str(safety.get("apply_mode") or "") == "yolo"
+    yolo_on = is_yolo_armed(safety)
 
     # YOLO implies apply unless caller passed an explicit dry_run=True.
     # CLI uses dry_run=None when neither --dry-run nor --apply was set.
@@ -385,6 +392,10 @@ def run_pipeline(
                     mode=mode,
                     sync_remote=not discovery.report_only,
                 )
+                ledger_rows: list[dict[str, Any]] = []
+                if not (dry_run or discovery.report_only):
+                    actor = "yolo" if yolo_on else "auto_safe"
+                    ledger_rows = record_actions(apply_summary, actor=actor)
 
                 profile_result: ProfileApplyResult | None = None
                 if skip_profile:
@@ -466,13 +477,15 @@ def run_pipeline(
 
                 inbox_result = None
                 project_result = None
-                if not discovery.report_only:
+                # Hands-off YOLO: judgment leftovers → one digest Issue only (no per-finding inbox spam).
+                if not discovery.report_only and not yolo_on:
                     inbox_result = sync_inbox_issues(
                         client, store, plans, dry_run=dry_run
                     )
                     project_result = sync_inbox_project(client, dry_run=dry_run)
                 notify_result = None
-                if notify and not discovery.report_only:
+                # Quiet posture under YOLO: no creator channel pings (digest + YOLO-OFF / main_red only).
+                if notify and not discovery.report_only and not yolo_on:
                     notify_result = send_notifications(plans, report_url=report_url)
 
                 merged_all = list(yolo_merge.merged if yolo_merge else []) + list(
@@ -568,6 +581,8 @@ def run_pipeline(
                             "errors": yolo_errors,
                             "second_pass": second_pass,
                         },
+                        "action_ledger": {"rows": len(ledger_rows)},
+                        "triage": fleet_rollup(plans),
                     },
                 )
                 store.add_history(
@@ -577,6 +592,26 @@ def run_pipeline(
                         "human_tasks": summary.human_tasks,
                         "dry_run": dry_run,
                     },
+                )
+                try:
+                    import json as _json
+
+                    from argus.paths import DIST_DIR
+
+                    triage_path = DIST_DIR / "triage.json"
+                    triage_path.write_text(
+                        _json.dumps(summarize_triage(plans), indent=2) + "\n",
+                        encoding="utf-8",
+                    )
+                    summary.artifacts["triage"] = str(triage_path)
+                except OSError:
+                    pass
+                outcome = "dry_run" if dry_run else ("yolo" if yolo_on else "ok")
+                emit_run_line(
+                    family=mode,
+                    plans=plans,
+                    checks=len(plans),
+                    outcome=outcome,
                 )
                 return summary
             finally:

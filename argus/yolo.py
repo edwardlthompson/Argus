@@ -11,7 +11,6 @@ from typing import Any
 from argus.apply import _content_pr, _lineage_version
 from argus.github_client import GitHubClient, GitHubError
 from argus.models import MatchedFix, RepoPlan
-from argus.profile_icon_gen import generate_icon_png
 from argus.state import StateStore
 
 _VERSION_BUMP_RE = re.compile(
@@ -131,14 +130,33 @@ def _dependabot_security_updates(client: GitHubClient, plan: RepoPlan, _m: Match
 
 
 def _brand_icon(client: GitHubClient, plan: RepoPlan, matched: MatchedFix) -> str:
-    png = generate_icon_png(plan.repo.name, plan.repo.description)
-    return _binary_pr(
+    """No generation — open a brief-only PR that documents the design ask."""
+    state = "missing"
+    try:
+        from argus.signals.hygiene import _brand_icon as probe
+
+        probe_out = probe(client, plan.repo)
+        state = str(probe_out.get("brand_icon_state") or "missing")
+    except Exception:  # noqa: BLE001
+        pass
+    body = (
+        f"# Brand icon brief — `{plan.repo.full_name}`\n\n"
+        f"Argus state: **{state}** (only `owned` passes).\n\n"
+        "## Design brief\n\n"
+        "- Provide a **square** app mark (PNG ≥512px) at `branding/assets/app-icon-512.png` "
+        "(or another canonical path in `config/profile_icons.yaml`).\n"
+        "- Do **not** use social-preview, splash, favicon, wordmark, lockup, or stub SVG.\n"
+        "- Do **not** copy the parent template icon unchanged (that is `inherited`).\n"
+        "- Argus will not generate or invent artwork.\n"
+    )
+    path = "docs/BRAND_ICON_BRIEF.md"
+    return _content_pr(
         client,
         plan,
         matched,
-        "branding/assets/app-icon-512.png",
-        png,
-        "chore(argus): add canonical app-icon-512.png",
+        path,
+        body,
+        "chore(argus): brand icon design brief (no generated asset)",
     )
 
 
@@ -258,6 +276,21 @@ YOLO_HANDLERS = {
     "AGENT-MEMORY-LAYOUT": _memory_layout,
 }
 
+# S10: YOLO/fanout consume agent-class deterministic handlers only (not human class).
+YOLO_AGENT_HANDLERS = frozenset({
+    "AGENT-WHAT-NOT",
+    "AGENT-MEMORY-LAYOUT",
+    "PR-STALE",
+})
+
+
+def is_yolo_deterministic_agent(matched: MatchedFix) -> bool:
+    from argus.models import FixClass
+
+    return matched.fix.class_ == FixClass.AGENT and (
+        matched.fix.id in YOLO_AGENT_HANDLERS or matched.fix.id in YOLO_HANDLERS
+    )
+
 
 def apply_yolo_extras(
     client: GitHubClient,
@@ -268,21 +301,23 @@ def apply_yolo_extras(
     max_actions: int,
     yolo_cfg: dict[str, Any] | None = None,
 ) -> YoloResult:
-    """Run YOLO handlers for human + agent fixes that have API automation."""
+    """Run YOLO handlers for agent-class deterministic fixes only (S10)."""
+    from argus.models import FixClass
+
     cfg = yolo_cfg or {}
     idle = int(cfg.get("stale_pr_idle_days") or cfg.get("close_stale_bot_prs_days") or 30)
     result = YoloResult()
     if client.report_only or dry_run:
         for plan in plans:
-            for m in (*plan.human_fixes, *plan.agent_fixes):
-                if m.fix.id in YOLO_HANDLERS or m.fix.id == "PR-STALE":
+            for m in plan.agent_fixes:
+                if is_yolo_deterministic_agent(m) or m.fix.id == "PR-STALE":
                     result.skipped.append(f"{plan.repo.full_name}:{m.fix.id}:dry_run")
         return result
     n = 0
     for plan in plans:
         if not plan.repo.can_write:
             continue
-        for m in list(plan.human_fixes) + list(plan.agent_fixes):
+        for m in list(plan.human_fixes):
             if m.fix.id in ("CI-LATEST-FAILED", "HUMAN-PARK-INACTIVE", "HUMAN-ARCHIVE-JUDGMENT"):
                 result.digest_notes.append(
                     f"- `{plan.repo.full_name}` · `{m.fix.id}` — {m.fix.title}"
@@ -292,11 +327,19 @@ def apply_yolo_extras(
                 )
                 result.applied.append(f"{plan.repo.full_name}:{m.fix.id}")
                 n += 1
+            elif m.fix.id in YOLO_HANDLERS:
+                # Human-class: never auto-apply under S10 — digest only.
+                result.digest_notes.append(
+                    f"- `{plan.repo.full_name}` · `{m.fix.id}` — {m.fix.title} (human; not YOLO)"
+                )
+                result.skipped.append(f"{plan.repo.full_name}:{m.fix.id}:human_class")
+        for m in list(plan.agent_fixes):
+            if m.fix.class_ != FixClass.AGENT:
                 continue
             if m.fix.id == "PR-STALE":
                 handler = None
             else:
-                handler = YOLO_HANDLERS.get(m.fix.id)
+                handler = YOLO_HANDLERS.get(m.fix.id) if m.fix.id in YOLO_AGENT_HANDLERS else None
             if m.fix.id != "PR-STALE" and not handler:
                 continue
             if n >= max_actions:
@@ -321,17 +364,50 @@ def apply_yolo_extras(
     return result
 
 
+def _pr_ci_green(client: GitHubClient, owner: str, name: str, sha: str | None) -> bool:
+    if not sha:
+        return False
+    try:
+        status = client.get(f"/repos/{owner}/{name}/commits/{sha}/status")
+        state = str((status or {}).get("state") or "")
+        if state == "success":
+            return True
+        if state in ("failure", "error"):
+            return False
+    except GitHubError:
+        pass
+    try:
+        runs = client.get(
+            f"/repos/{owner}/{name}/commits/{sha}/check-runs",
+            params={"per_page": 20},
+        )
+        items = (runs or {}).get("check_runs") if isinstance(runs, dict) else None
+        if not items:
+            return True  # no checks configured → allow gated chore merges
+        conclusions = [str(c.get("conclusion") or "") for c in items]
+        if any(c in ("failure", "timed_out", "cancelled", "action_required") for c in conclusions):
+            return False
+        return all(c in ("success", "neutral", "skipped") for c in conclusions if c)
+    except GitHubError:
+        return False
+
+
 def merge_argus_prs(
     client: GitHubClient,
     *,
     max_merges: int,
     login: str | None = None,
+    safety: dict[str, Any] | None = None,
 ) -> YoloResult:
     """Squash-merge open PRs titled chore(argus) for the authenticated user."""
+    from argus.config_loader import load_safety
+    from argus.yolo_checks import evaluate_pre_merge
+
     result = YoloResult()
     if client.report_only:
         result.skipped.append("report_only")
         return result
+    safety = safety or load_safety()
     try:
         me = login or str((client.whoami() or {}).get("login") or "")
     except GitHubError as exc:
@@ -352,6 +428,7 @@ def merge_argus_prs(
         result.errors.append(str(exc))
         return result
     items = data.get("items") if isinstance(data, dict) else []
+    skip_profile = bool((safety.get("yolo") or {}).get("skip_profile", True))
     for it in items or []:
         if len(result.merged) >= max_merges:
             break
@@ -362,6 +439,23 @@ def merge_argus_prs(
         owner, name = parts[-2], parts[-1]
         num = int(it["number"])
         title = str(it.get("title") or "chore(argus)")
+        sha = None
+        try:
+            pr = client.get(f"/repos/{owner}/{name}/pulls/{num}")
+            sha = str(((pr or {}).get("head") or {}).get("sha") or "") or None
+        except GitHubError:
+            pass
+        is_profile = owner.lower() == name.lower()
+        ok, failed = evaluate_pre_merge(
+            safety=safety,
+            title=title,
+            ci_green=_pr_ci_green(client, owner, name, sha),
+            is_profile_repo=is_profile,
+            skip_profile=skip_profile,
+        )
+        if not ok:
+            result.skipped.append(f"{owner}/{name}#{num}:checks={','.join(failed)}")
+            continue
         try:
             client.put(
                 f"/repos/{owner}/{name}/pulls/{num}/merge",
@@ -369,6 +463,22 @@ def merge_argus_prs(
                 json={"merge_method": "squash", "commit_title": title},
             )
             result.merged.append(f"{owner}/{name}#{num}")
+            append_action = None
+            try:
+                from argus.action_ledger import append_action as _append
+
+                append_action = _append
+            except ImportError:
+                pass
+            if append_action:
+                append_action(
+                    actor="yolo",
+                    repo=f"{owner}/{name}",
+                    action="squash_merge",
+                    detail=title,
+                    pr_url=str(it.get("html_url") or ""),
+                    sha_after=sha,
+                )
         except GitHubError as exc:
             result.errors.append(f"{owner}/{name}#{num}:{exc}")
     return result
