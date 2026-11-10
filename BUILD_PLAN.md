@@ -10,24 +10,34 @@ Argus is the enforcer: multi-repo hygiene, scoring, gated apply, and (on the pri
 
 **Architecture (do not drift):** Public MIT product repo (source + CI). Private **runner** for scheduled scan/apply, Issues inbox, artifacts, secrets, YOLO. Public `USERNAME/USERNAME` profile Overview via PR. Never publish per-repo security findings on public product Pages/Issues.
 
-> **S9–S15 signals → fleet → YOLO → remote** archived in COMPLETED_TASKS.md (2026-11-09).
-> **Sprints 0–8 + portfolio doctor + private control plane + Cursor FOSS** archived in COMPLETED_TASKS.md @ `39c34ef`.
-> **Dual-plane + profile + Sequential A–L** archived in COMPLETED_TASKS.md (v0.3.0).
-> **v0.4.0 YOLO + reports** shipped 2026-11-05.
+> **Parent upgrade wave v1.13.0** — U1–U7 PRs opened (canon rules). Merge after CI. Prior S9–S15 archived in COMPLETED_TASKS.md.
 
 ## Non-goals (board)
 
-- Agent-only runtime · local desktop app · LLM-invented profile bios · findings on public product Issues/Pages · YOLO armed on the public product template
+- Overwriting sacred child files (`AGENTS.md`, `docs/spec.md`, `docs/plan.md`, product `branding/assets`)
+- Force-push / deleting repos
+- Vendoring full parent `modules/` / `examples/` / `scripts/lib` into Argus product (G12)
+- Arming YOLO on public Argus
 
-## Sequential
+## Sequential — Parent v1.13.0 child upgrades
 
 | Status | Venue | Task |
 |--------|-------|------|
-| — | — | *(empty — next work opens a new Sequential block)* |
+| ✅ | `[AGENT][LOCAL]` — scope: `scripts/,BUILD_PLAN.md,dist/` | **U1 Tooling** — `scripts/child-upgrade-1.13.py` canon pack + inventory |
+| ✅ | `[AGENT][LOCAL]` — scope: fleet | **U2 Canary** — `edwardlthompson/lineage-lens` full upgrade PR |
+| ✅ | `[AGENT][LOCAL]` — scope: fleet | **U3 Batch** — AstroAlarm, HermesLauncher, SyncMark |
+| ✅ | `[AGENT][LOCAL]` — scope: fleet | **U4 Batch** — chromaflow, OBDForge, JanusBoot, continuum-calendar, QuickMediaIngest |
+| ✅ | `[AGENT][LOCAL]` — scope: fleet | **U5 Batch** — selfchronicle, ExpeditionGauge, takein-sms, hover-icons, 3d-game-optimizer |
+| ✅ | `[AGENT][LOCAL]` — scope: fleet | **U6 Batch** — vault-organizer, noclip-auto, trendalgo-bot, MultiAppShare-, DevPulse |
+| ✅ | `[AGENT][LOCAL]` — scope: fleet | **U7 Batch** — OpenShouter, point-and-shoot, QRaft, screen-wakelock-detector, starrupture-city-planner, aetherfeed, bl4-forge, Argus (product-safe pack) |
+
+**Excluded:** `agent-project-bootstrap`, `edwardlthompson` (profile), `argus-runner`.
+
+**Next (human/CI):** merge open `chore/argus-upgrade-1.13.0` PRs after checks green. `/upgrade` may still list Mixed/Sacred gaps (product README, AGENTS.md) — those stay human.
 
 ## Parallel (after Sequential)
 
-None until a new Sequential lock is opened.
+None until upgrade PRs merge.
 
 ## Archived Sprints
 

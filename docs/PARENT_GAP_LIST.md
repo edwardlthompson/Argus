@@ -1,6 +1,6 @@
 # Parent / child gap list
 
-**Parent:** [edwardlthompson/agent-project-bootstrap](https://github.com/edwardlthompson/agent-project-bootstrap) (`v1.12.0`)  
+**Parent:** [edwardlthompson/agent-project-bootstrap](https://github.com/edwardlthompson/agent-project-bootstrap) (`v1.13.0`)  
 **Child:** Argus (this repository)  
 **Policy:** Argus is a **product child**, not a template fork. Inherit lineage + Cursor FOSS surface; do not vendor full template lifecycle (`modules/`, `examples/`, full `scripts/lib`).
 
