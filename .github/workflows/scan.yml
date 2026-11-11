@@ -66,7 +66,7 @@ jobs:
             argus run $REPORT_FLAG $NOTIFY_FLAG
           fi
       - name: Upload private artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: argus-scan-dist
           path: dist/
