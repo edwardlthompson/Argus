@@ -33,7 +33,16 @@ Argus is the enforcer: multi-repo hygiene, scoring, gated apply, and (on the pri
 
 **Excluded:** `agent-project-bootstrap`, `edwardlthompson` (profile), `argus-runner`.
 
-**YOLO hands-off:** fix+soft-merge on scheduled run; `argus-weekly` = Tuesday 14:00 UTC; Grok **Tuesday Steward** digests leftovers (never merges). Sync `weekly.yml` to private `argus-runner`. Leftovers = Security/Trivy/CodeQL/Feature Gate — human.
+**YOLO hands-off:** fix+soft-merge on scheduled run; `argus-weekly` = Tuesday 14:00 UTC on **private `argus-runner` only** (public product = dispatch-only, no cron); Grok **Tuesday Steward** digests leftovers (never merges). Sync weekly job body + cron to `argus-runner`. Leftovers = Security/Trivy/CodeQL/Feature Gate — human.
+
+## Sequential — argus-weekly repair (found by Tuesday Steward 2026-11-10)
+
+| Status | Venue | Task |
+|--------|-------|------|
+| 🔲 | `[HUMAN][PC]` — scope: Actions secrets | **W1 Token** — Add fine-grained `ARGUS_GITHUB_TOKEN` on **`edwardlthompson/argus-runner`** (not public Argus). Empty token → `GET /user` 403. Failed public run: https://github.com/edwardlthompson/Argus/actions/runs/42897596779 |
+| 🔲 | `[HUMAN][PC]` — scope: workflow | **W2 Re-run** — re-run `argus-weekly` on the runner; confirm `argus-dist` (health-delta.md, health-hotspots.json, health-infographic) + Steward webhook. |
+| 🔲 | `[HUMAN][PC]` — scope: runner | **W3 Where it runs** — Confirm Tuesday cron only on `argus-runner` after public cron removal; sync runner `weekly.yml` if still Monday. |
+| ✅ | `[AGENT][LOCAL]` — scope: PRs | **W4 Dependabot** — Merged Actions bumps (#1,#2,#3,#4) + setup-python@v7 locally (closes #7 intent); **hold** pytest/pytest-cov majors (#6,#9). |
 
 ## Parallel (after Sequential)
 

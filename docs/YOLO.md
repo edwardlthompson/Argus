@@ -59,7 +59,7 @@ argus merge-upgrades --allow-unarmed --fix --soft-allowlist --loop 10 --sleep 18
 
 `--fix` runs heal plus mechanical fixers (markdown table pipes, F-Droid changelog stubs). `--soft-allowlist` squash-merges when the only remaining failures are template noise (`Template Upgrade Simulation`, `Validate Bootstrap Artifacts`, …; umbrella `CI` ignored). Security/Trivy/CodeQL/Gitleaks/Dependency Review and product Feature Gate/build failures still block.
 
-**Hands-off defaults** (`config/safety.yaml` → `yolo`): `fix_upgrade_prs: true`, `soft_merge_upgrade_noise: true`, `auto_merge_upgrade_prs: true`. Scheduled YOLO on the private runner runs fix → soft-merge upgrades without an operator flag. Cadence: Monday Dependabot → Tuesday `argus-weekly` (14:00 UTC) → optional **Tuesday Steward** Grok digest ([GROK_BOTS.md](GROK_BOTS.md)).
+**Hands-off defaults** (`config/safety.yaml` → `yolo`): `fix_upgrade_prs: true`, `soft_merge_upgrade_noise: true`, `auto_merge_upgrade_prs: true`. Scheduled YOLO on the private runner runs fix → soft-merge upgrades without an operator flag. Cadence: Monday Dependabot → Tuesday `argus-weekly` (14:00 UTC) on **`argus-runner` only** → optional **Tuesday Steward** Grok digest ([GROK_BOTS.md](GROK_BOTS.md)). Public product must not schedule `argus-weekly` (dispatch-only; see [RUNNER.md](RUNNER.md)).
 
 ## Quiet posture (don’t bother the creator)
 
