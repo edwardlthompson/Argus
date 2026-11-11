@@ -33,7 +33,7 @@ Argus is the enforcer: multi-repo hygiene, scoring, gated apply, and (on the pri
 
 **Excluded:** `agent-project-bootstrap`, `edwardlthompson` (profile), `argus-runner`.
 
-**YOLO hands-off:** fix+soft-merge on scheduled run; `argus-weekly` = Tuesday 14:00 UTC on **private `argus-runner` only** (public product = dispatch-only, no cron); Grok **Tuesday Steward** digests leftovers (never merges). Sync weekly job body + cron to `argus-runner`. Leftovers = Security/Trivy/CodeQL/Feature Gate — human.
+**YOLO hands-off:** mandatory `clear_upgrade_blockers` on scheduled run; `argus-weekly` = Tuesday 14:00 UTC on **private `argus-runner` only** (public product = dispatch-only); Steward digests hard leftovers only. Trivy npm/Guava fixers in `yolo_trivy_npm` / `yolo_trivy_gradle`.
 
 ## Sequential — argus-weekly repair (found by Tuesday Steward 2026-11-10)
 
@@ -43,10 +43,13 @@ Argus is the enforcer: multi-repo hygiene, scoring, gated apply, and (on the pri
 | 🔲 | `[HUMAN][PC]` — scope: workflow | **W2 Re-run** — re-run `argus-weekly` on the runner; confirm `argus-dist` (health-delta.md, health-hotspots.json, health-infographic) + Steward webhook. |
 | 🔲 | `[HUMAN][PC]` — scope: runner | **W3 Where it runs** — Public cron removed (#15); runner `weekly.yml` now has Tuesday 14:00 UTC cron + Steward body. Confirm after W1 token + W2 re-run. |
 | ✅ | `[AGENT][LOCAL]` — scope: PRs | **W4 Dependabot** — Merged Actions bumps (#1,#2,#3,#4) + setup-python@v7 locally (closes #7 intent); **hold** pytest/pytest-cov majors (#6,#9). |
+| 🔲 | `[HUMAN][PC]` — scope: billing | **W5 Actions billing** — GitHub Actions jobs fail immediately: “account payments have failed or spending limit”. Fix Billing & plans, then re-run upgrade CI. Blocks noclip-auto#17 and current hover-icons/starrupture scans. |
+| ✅ | `[AGENT][LOCAL]` — scope: yolo | **S1 Trivy wave** — `yolo_trivy_npm` + `yolo_trivy_gradle` (Guava); applied overrides/lockfiles on hover-icons, starrupture, ExpeditionGauge signaling-server; Guava force on point-and-shoot#42. Re-merge after W5 CI green. |
+| ❌ | `[AGENT][LOCAL]` — scope: noclip-auto#17 | **S2 noclip** — rust-test/m0-smoke never started: **billing** (same as W5), not a Rust compile failure. Unblocked by W5 then re-run CI. |
 
 ## Parallel (after Sequential)
 
-None until upgrade PRs merge.
+None until upgrade PRs merge (after W5).
 
 ## Archived Sprints
 

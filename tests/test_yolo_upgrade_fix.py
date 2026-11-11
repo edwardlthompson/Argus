@@ -36,6 +36,19 @@ def test_clear_blockers_steady_state_shape():
     assert callable(clear_open_upgrade_blockers)
 
 
+def test_trivy_npm_overrides_apply():
+    from argus.yolo_trivy_npm import CAPACITOR_PINS, NPM_OVERRIDES, _apply_pkg_json
+
+    assert NPM_OVERRIDES["@xmldom/xmldom"] == "0.9.12"
+    data = {
+        "dependencies": {"@capacitor/android": "^8.4.2"},
+        "overrides": {},
+    }
+    assert _apply_pkg_json(data) is True
+    assert data["overrides"]["brace-expansion"] == "5.0.11"
+    assert data["dependencies"]["@capacitor/android"] == CAPACITOR_PINS["@capacitor/android"]
+
+
 def test_normalize_markdown_table_pipes():
     src = (
         "| A | B |\n"

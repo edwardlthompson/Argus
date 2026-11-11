@@ -473,6 +473,12 @@ def fix_upgrade_branch(
         actions.extend(fix_codeql_pruned_android(client, owner, name, branch))
     if (not failed) or "android" in failed_l or "assemble" in failed_l or "feature gate" in failed_l:
         actions.extend(fix_ci_skip_missing_android(client, owner, name, branch))
+    if (not failed) or "trivy" in failed_l or "security scan" in failed_l:
+        from argus.yolo_trivy_gradle import fix_trivy_gradle_guava
+        from argus.yolo_trivy_npm import fix_trivy_npm_overrides
+
+        actions.extend(fix_trivy_npm_overrides(client, owner, name, branch))
+        actions.extend(fix_trivy_gradle_guava(client, owner, name, branch))
     if pr_number is not None and (
         (not failed) or "conventional commits" in failed_l
     ):

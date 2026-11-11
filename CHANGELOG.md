@@ -4,7 +4,7 @@
 
 ### Added
 
-- YOLO **mandatory clear loop** (`clear_upgrade_blockers`): fix → wait → soft-merge upgrades/patches until green or hard leftover; new fixers for ADR Status, pruned-android CodeQL, conventional PR titles.
+- YOLO **mandatory clear loop** (`clear_upgrade_blockers`): fix → wait → soft-merge upgrades/patches until green or hard leftover; new fixers for ADR Status, pruned-android CodeQL, conventional PR titles, Trivy npm overrides (`yolo_trivy_npm`).
 
 ### Changed
 
