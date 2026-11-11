@@ -183,6 +183,12 @@ def load_safety(path: Path | None = None) -> dict[str, Any]:
     yolo_defaults: dict[str, Any] = {
         "auto_merge_auto_safe": True,
         "auto_merge_dependabot_patch": True,
+        "auto_merge_upgrade_prs": True,
+        "fix_upgrade_prs": True,
+        "soft_merge_upgrade_noise": True,
+        "clear_upgrade_blockers": True,
+        "clear_upgrade_loops": 8,
+        "clear_upgrade_sleep_s": 90,
         "auto_dispatch_agents": True,
         "auto_merge_agent_prs": True,
         "max_auto_merges_per_day": 20,

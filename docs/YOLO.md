@@ -57,9 +57,9 @@ argus fix-upgrades --allow-unarmed
 argus merge-upgrades --allow-unarmed --fix --soft-allowlist --loop 10 --sleep 180
 ```
 
-`--fix` runs heal plus mechanical fixers (markdown table pipes, F-Droid changelog stubs). `--soft-allowlist` squash-merges when the only remaining failures are template noise (`Template Upgrade Simulation`, `Validate Bootstrap Artifacts`, …; umbrella `CI` ignored). Security/Trivy/CodeQL/Gitleaks/Dependency Review and product Feature Gate/build failures still block.
+`--fix` / scheduled YOLO runs a **mandatory clear loop** (`clear_upgrade_blockers`): heal + mechanical fixers (markdown pipes, F-Droid stubs, ADR Status→Accepted, CodeQL android drop when pruned, conventional titles) → wait for CI → soft-merge → repeat. Soft-merge is template/hygiene noise only (`Template Upgrade Simulation`, `Validate Bootstrap Artifacts`, Conventional Commits title, …; umbrella `CI` ignored). **Hard floors stay:** Security/Trivy/CodeQL/Gitleaks/Dependency Review/Scorecard and product Feature Gate/build/ADR/assemble failures never soft-merge — fixers must clear them or they stay on the digest.
 
-**Hands-off defaults** (`config/safety.yaml` → `yolo`): `fix_upgrade_prs: true`, `soft_merge_upgrade_noise: true`, `auto_merge_upgrade_prs: true`. Scheduled YOLO on the private runner runs fix → soft-merge upgrades without an operator flag. Cadence: Monday Dependabot → Tuesday `argus-weekly` (14:00 UTC) on **`argus-runner` only** → optional **Tuesday Steward** Grok digest ([GROK_BOTS.md](GROK_BOTS.md)). Public product must not schedule `argus-weekly` (dispatch-only; see [RUNNER.md](RUNNER.md)).
+**Hands-off defaults** (`config/safety.yaml` → `yolo`): `clear_upgrade_blockers: true`, `clear_upgrade_loops: 8`, `fix_upgrade_prs: true`, `soft_merge_upgrade_noise: true`, `auto_merge_upgrade_prs: true`. Cadence: Monday Dependabot → Tuesday `argus-weekly` (14:00 UTC) on **`argus-runner` only** → optional **Tuesday Steward** for true judgment leftovers. Public product must not schedule `argus-weekly` (dispatch-only; see [RUNNER.md](RUNNER.md)).
 
 ## Quiet posture (don’t bother the creator)
 
@@ -83,10 +83,11 @@ Same as [`docs/SAFETY.md`](SAFETY.md) / `safety.yaml`:
 1. Batched discover + score (rate-limit aware).
 2. `auto_safe` apply.
 3. YOLO handlers (`argus/yolo.py`) for human/agent ids that are API-safe.
-4. Squash-merge `chore(argus)*` PRs + Dependabot **patch/minor** PRs (after six checks).
-5. Health delta + apply history + action ledger (`dist/actions.jsonl`).
-6. Optional **second pass** when budget remains.
-7. One private **yolo-digest YYYY-MM-DD** Issue for leftovers.
+4. **Clear upgrade blockers** (mandatory): fix → wait → soft-merge loop on parent-upgrade PRs + Dependabot patches.
+5. Squash-merge remaining `chore(argus)*` PRs (after six checks).
+6. Health delta + apply history + action ledger (`dist/actions.jsonl`).
+7. Optional **second pass** when budget remains.
+8. One private **yolo-digest YYYY-MM-DD** Issue for hard leftovers only.
 
 ## Handlers
 

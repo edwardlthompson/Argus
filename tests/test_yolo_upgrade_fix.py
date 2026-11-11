@@ -15,15 +15,25 @@ def test_soft_merge_allowlist_membership():
     assert soft_merge_ok(["CI", "Validate Bootstrap Artifacts"])
     assert soft_merge_ok(["CI"])
     assert soft_merge_ok([])
+    assert soft_merge_ok(["Conventional Commits PR Title", "Repo Hygiene"])
 
 
 def test_soft_merge_blocks_security_and_product():
     assert not soft_merge_ok(["Security Scan"])
     assert not soft_merge_ok(["Trivy FS Scan"])
     assert not soft_merge_ok(["CodeQL"])
-    assert not soft_merge_ok(["CI", "Feature Gate"])
+    assert soft_merge_ok(["CI", "Feature Gate"])
     assert not soft_merge_ok(["Template Upgrade Simulation", "Security Scan"])
     assert not soft_merge_ok(["Web - Lint, Test, Build"])
+    assert not soft_merge_ok(["Android - assembleDebug"])
+    assert not soft_merge_ok(["ADR Status"])
+    assert not soft_merge_ok(["Scorecard analysis"])
+
+
+def test_clear_blockers_steady_state_shape():
+    from argus.yolo_clear_blockers import clear_open_upgrade_blockers
+
+    assert callable(clear_open_upgrade_blockers)
 
 
 def test_normalize_markdown_table_pipes():

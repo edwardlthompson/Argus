@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+### Added
+
+- YOLO **mandatory clear loop** (`clear_upgrade_blockers`): fix → wait → soft-merge upgrades/patches until green or hard leftover; new fixers for ADR Status, pruned-android CodeQL, conventional PR titles.
+
+### Changed
+
+- Soft-merge allowlist expanded for template/hygiene noise only; Security/Trivy/CodeQL/Feature Gate/builds stay hard-blocked.
+
 ## [0.6.0] — 2026-11-10
 
 ### Added

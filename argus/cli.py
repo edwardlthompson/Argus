@@ -645,15 +645,13 @@ def merge_upgrades_cmd(
     loops: int,
     sleep_s: int,
 ) -> None:
-    """YOLO: squash-merge open parent-upgrade PRs (chore/argus-upgrade-*)."""
+    """YOLO: mandatory clear loop — fix → wait → soft-merge upgrade PRs."""
     import os
-    import time
 
     from argus.config_loader import load_safety
     from argus.github_client import GitHubClient
-    from argus.yolo import merge_upgrade_prs
     from argus.yolo_arm import is_yolo_armed
-    from argus.yolo_upgrade_fix import fix_open_upgrade_prs
+    from argus.yolo_clear_blockers import clear_open_upgrade_blockers
     from argus.yolo_upgrade_heal import heal_open_upgrade_prs
 
     token = os.environ.get("GITHUB_TOKEN") or os.environ.get("ARGUS_GITHUB_TOKEN") or ""
@@ -662,37 +660,24 @@ def merge_upgrades_cmd(
     safety = load_safety()
     if not allow_unarmed and not is_yolo_armed(safety):
         raise SystemExit("YOLO not armed — pass --allow-unarmed or run on the private runner")
-    payload: dict = {}
     with GitHubClient(token=token) as client:
-        if do_fix:
-            payload["fix"] = fix_open_upgrade_prs(client, max_repos=max_merges)
-        elif do_heal:
-            payload["heal"] = heal_open_upgrade_prs(client, max_repos=max_merges)
-        rounds: list[dict] = []
-        leftovers: list[str] = []
-        remaining = max_merges
-        for i in range(max(1, loops)):
-            out = merge_upgrade_prs(
-                client,
-                max_merges=remaining,
-                require_armed=not allow_unarmed,
-                soft_allowlist=soft_allowlist,
+        if do_heal and not do_fix and loops <= 1:
+            click.echo(json.dumps({"heal": heal_open_upgrade_prs(client, max_repos=max_merges)}, indent=2))
+            return
+        click.echo(
+            json.dumps(
+                clear_open_upgrade_blockers(
+                    client,
+                    max_merges=max_merges,
+                    loops=max(1, loops),
+                    sleep_s=sleep_s,
+                    soft_allowlist=soft_allowlist,
+                    require_armed=not allow_unarmed,
+                    also_dependabot_patch=False,
+                ),
+                indent=2,
             )
-            rounds.append({
-                "pass": i + 1,
-                "merged": out.merged,
-                "skipped": out.skipped,
-                "errors": out.errors,
-            })
-            remaining = max(0, remaining - len(out.merged))
-            leftovers = [s for s in out.skipped if "ci_green" in s and ":pending" not in s]
-            pending = any(":pending" in s for s in out.skipped)
-            if not pending or remaining <= 0 or i + 1 >= loops:
-                break
-            time.sleep(max(5, sleep_s))
-        payload["rounds"] = rounds
-        payload["leftovers"] = leftovers
-    click.echo(json.dumps(payload, indent=2))
+        )
 
 
 @main.group("grok")

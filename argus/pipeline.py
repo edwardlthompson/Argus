@@ -38,6 +38,7 @@ from argus.signals import collect_signals, fixture_bundle
 from argus.state import StateStore
 from argus.triage import fleet_rollup, summarize_triage
 from argus.yolo import (
+    YoloResult,
     apply_yolo_extras,
     merge_argus_prs,
     merge_dependabot_patch_prs,
@@ -303,6 +304,43 @@ def run_pipeline(
                         if (
                             not dry_run
                             and yolo_cfg.get("auto_merge_upgrade_prs", True)
+                            and yolo_cfg.get("clear_upgrade_blockers", True)
+                        ):
+                            from argus.yolo_clear_blockers import clear_open_upgrade_blockers
+
+                            rem_up = int(yolo_cfg.get("max_auto_merges_per_day") or 20)
+                            if yolo_merge:
+                                rem_up = max(0, rem_up - len(yolo_merge.merged))
+                            cleared = clear_open_upgrade_blockers(
+                                client,
+                                login=profile_login or None,
+                                max_merges=rem_up,
+                                loops=int(yolo_cfg.get("clear_upgrade_loops") or 8),
+                                sleep_s=int(yolo_cfg.get("clear_upgrade_sleep_s") or 90),
+                                soft_allowlist=bool(
+                                    yolo_cfg.get("soft_merge_upgrade_noise", True)
+                                ),
+                                require_armed=True,
+                                also_dependabot_patch=bool(
+                                    yolo_cfg.get("auto_merge_dependabot_patch", True)
+                                ),
+                            )
+                            up = YoloResult()
+                            up.merged.extend(cleared.get("merged") or [])
+                            up.skipped.extend(cleared.get("leftovers") or [])
+                            for round_row in cleared.get("rounds") or []:
+                                up.errors.extend(round_row.get("errors") or [])
+                            if yolo_merge is None:
+                                yolo_merge = up
+                            else:
+                                yolo_merge.merged.extend(up.merged)
+                                yolo_merge.skipped.extend(up.skipped)
+                                yolo_merge.errors.extend(up.errors)
+                            yolo_dep = YoloResult()
+                            yolo_dep.merged.extend(cleared.get("dep_merged") or [])
+                        elif (
+                            not dry_run
+                            and yolo_cfg.get("auto_merge_upgrade_prs", True)
                         ):
                             try:
                                 max_up = int(yolo_cfg.get("max_auto_merges_per_day") or 20)
@@ -341,7 +379,16 @@ def run_pipeline(
                                 yolo_merge.merged.extend(up.merged)
                                 yolo_merge.skipped.extend(up.skipped)
                                 yolo_merge.errors.extend(up.errors)
-                        if (
+                            if yolo_cfg.get("auto_merge_dependabot_patch", True):
+                                rem = int(yolo_cfg.get("max_auto_merges_per_day") or 20)
+                                if yolo_merge:
+                                    rem = max(0, rem - len(yolo_merge.merged))
+                                yolo_dep = merge_dependabot_patch_prs(
+                                    client,
+                                    max_merges=rem,
+                                    login=profile_login or None,
+                                )
+                        elif (
                             not dry_run
                             and yolo_cfg.get("auto_merge_dependabot_patch", True)
                         ):

@@ -18,9 +18,12 @@ yolo:
   auto_merge_auto_safe: true
   auto_merge_upgrade_prs: true
   heal_upgrade_prs: true
-  # Hands-off: scheduled YOLO runs mechanical fixers + soft-merges allowlisted template noise.
+  # Hands-off: mandatory fix→wait→merge until green or hard leftover (security stays hard).
   fix_upgrade_prs: true
   soft_merge_upgrade_noise: true
+  clear_upgrade_blockers: true
+  clear_upgrade_loops: 8
+  clear_upgrade_sleep_s: 90
   auto_merge_dependabot_patch: true
   auto_dispatch_agents: true
   auto_merge_agent_prs: true
