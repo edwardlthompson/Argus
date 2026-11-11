@@ -409,7 +409,7 @@ def fix_ci_skip_missing_android(
     for job in jobs:
         # Insert if: false when job has no if: yet (right after name: or job key).
         pattern = rf"(  {job}:\n(?:    name: .+\n)?)(    (?!if:))"
-        repl = rf"\1    if: false\n\2"
+        repl = r"\1    if: false\n\2"
         updated = re.sub(pattern, repl, new, count=1)
         new = updated
     if new == text:
