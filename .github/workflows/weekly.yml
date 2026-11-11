@@ -1,9 +1,8 @@
 name: argus-weekly
 
+# Public product: dispatch-only. Tuesday cron lives solely on private argus-runner
+# (see docs/RUNNER.md). Do not re-add schedule: here — empty ARGUS_GITHUB_TOKEN → 403.
 on:
-  schedule:
-    # Tuesday after Monday Dependabot: YOLO maintenance (fix/merge upgrades + patches).
-    - cron: "0 14 * * 2" # Tuesdays 14:00 UTC
   workflow_dispatch:
     inputs:
       apply:
@@ -19,7 +18,7 @@ jobs:
       issues: write
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - name: Install

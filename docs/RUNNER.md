@@ -6,7 +6,7 @@ The **private** runner (`YOU/argus-runner`) owns scheduled scans and apply. The 
 
 | Workflow | Trigger | Default |
 |----------|---------|---------|
-| `argus-weekly` | **Tuesday** cron (14:00 UTC, after Monday Dependabot) + `workflow_dispatch` | Prefer apply when YOLO armed (`yolo.on` / `apply_mode: yolo`); fix+soft-merge upgrades |
+| `argus-weekly` | **Tuesday** cron (14:00 UTC, after Monday Dependabot) + `workflow_dispatch` on **private `argus-runner` only** | Prefer apply when YOLO armed (`yolo.on` / `apply_mode: yolo`); fix+soft-merge upgrades. Public product `weekly.yml` is **`workflow_dispatch` only** (no cron) — never schedule YOLO on public Argus. |
 | `argus-scan` | `workflow_dispatch` | Choose `apply` / `notify` inputs |
 | `ci` | push/PR | tests only |
 | `pages` | after weekly/scan success | status-only if enabled |
@@ -23,7 +23,7 @@ First week on a new runner: run once with `--dry-run`, inspect artifacts, then l
 
 Bootstrap writes `yolo.on` and sets runner `apply_mode: yolo` (public product template stays `normal`). Loop: apply → handlers → fix/heal upgrade PRs → six pre-merge checks → squash chore/upgrade (incl. soft-allowlist noise) / Dependabot patch → action ledger → optional second pass → private **yolo-digest** Issue for judgment leftovers only (no per-finding creator pings). Profile Overview stays sacred via `yolo.skip_profile: true`. **Grok never merges** — optional **Tuesday Steward** digests leftovers after the Tuesday run. Kill: delete `yolo.on` or add `YOLO-OFF.md`. Full policy: [YOLO.md](YOLO.md) · [GROK_BOTS.md](GROK_BOTS.md).
 
-Sync this product’s `weekly.yml` cron to the private `argus-runner` when upgrading the runner clone.
+Sync this product’s `weekly.yml` **job body** (and Tuesday cron) to the private `argus-runner` when upgrading the runner clone. Cron must remain on the runner only; the public product workflow stays dispatch-only.
 
 ### Shareable reports
 
