@@ -35,6 +35,15 @@ Argus is the enforcer: multi-repo hygiene, scoring, gated apply, and (on the pri
 
 **YOLO hands-off:** fix+soft-merge on scheduled run; `argus-weekly` = Tuesday 14:00 UTC; Grok **Tuesday Steward** digests leftovers (never merges). Sync `weekly.yml` to private `argus-runner`. Leftovers = Security/Trivy/CodeQL/Feature Gate — human.
 
+## Sequential — argus-weekly repair (found by Tuesday Steward 2026-11-10)
+
+| Status | Venue | Task |
+|--------|-------|------|
+| 🔲 | `[HUMAN][PC]` — scope: Actions secrets | **W1 Token** — `argus-weekly` run #2 failed at `argus run`: `GET /user` returned 403 because `ARGUS_GITHUB_TOKEN` is empty and the built-in `GITHUB_TOKEN` can't read the user or other repos. Add a PAT as `ARGUS_GITHUB_TOKEN` on the repo that runs the schedule (check scopes against Argus docs). Failed run: https://github.com/edwardlthompson/Argus/actions/runs/42897596779 |
+| 🔲 | `[HUMAN][PC]` — scope: workflow | **W2 Re-run** — re-run `argus-weekly`; confirm it uploads `argus-dist` (health-delta.md, health-hotspots.json, health-infographic) and pings the Steward webhook. |
+| 🔲 | `[HUMAN][PC]` — scope: runner | **W3 Where it runs** — this failed run was in the public `Argus` repo, but the plan says scheduled YOLO belongs on the private `argus-runner`. Confirm `weekly.yml` is synced there and the secret goes on the runner. |
+| 🔲 | `[AGENT][LOCAL]` — scope: PRs | **W4 Dependabot majors** — review PRs #1, #2, #3, #4, #6, #7, #9 (actions/* and pytest/pytest-cov bumps). |
+
 ## Parallel (after Sequential)
 
 None until upgrade PRs merge.
