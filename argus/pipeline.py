@@ -147,19 +147,64 @@ def _score_batch(
     return plans
 
 
-def _yolo_eligible_left(plans: list[RepoPlan]) -> bool:
-    from argus.yolo import YOLO_HANDLERS, is_yolo_deterministic_agent
+def _yolo_eligible_left(plans: list[RepoPlan], *, apply_api: bool = False) -> bool:
+    from argus.yolo import (
+        YOLO_API_SAFE_HANDLERS,
+        YOLO_HANDLERS,
+        is_yolo_deterministic_agent,
+    )
 
     for plan in plans:
         for m in plan.auto_fixes:
             if m.fix.class_ == FixClass.AUTO_SAFE:
                 return True
-        for m in plan.agent_fixes:
+        for m in list(plan.agent_fixes) + list(plan.human_fixes):
             if is_yolo_deterministic_agent(m):
                 return True
             if m.fix.id in YOLO_HANDLERS or m.fix.id == "PR-STALE":
                 return True
+            if apply_api and m.fix.id in YOLO_API_SAFE_HANDLERS:
+                return True
     return False
+
+
+def _maybe_auto_rules_sync(safety: dict[str, Any], *, yolo_on: bool, dry_run: bool) -> dict[str, Any] | None:
+    """Refresh rules lock when continuous-zero asks for auto_rules_sync."""
+    if dry_run:
+        return None
+    normal_cfg = safety.get("normal") or {}
+    yolo_cfg = safety.get("yolo") or {}
+    want = bool(
+        (yolo_on and yolo_cfg.get("auto_rules_sync", True))
+        or ((not yolo_on) and normal_cfg.get("auto_rules_sync", True))
+    )
+    if not want:
+        return None
+    try:
+        from argus.rules_sync import rules_stale, sync_lock
+
+        if not rules_stale():
+            return {"synced": False, "reason": "fresh"}
+        return {"synced": True, "lock": sync_lock()}
+    except Exception as exc:  # noqa: BLE001
+        return {"synced": False, "error": str(exc)}
+
+
+def _handlers_cfg(safety: dict[str, Any], *, yolo_on: bool) -> dict[str, Any]:
+    """Merge YOLO + normal continuous-zero flags for apply_yolo_extras."""
+    yolo_cfg = dict(safety.get("yolo") or {})
+    normal_cfg = safety.get("normal") or {}
+    if yolo_on:
+        return yolo_cfg
+    # Vanilla --apply: enable handlers + API-safe path from continuous zero.
+    out = dict(yolo_cfg)
+    if normal_cfg.get("yolo_handlers", True) or normal_cfg.get("continuous_zero", True):
+        out["apply_api_handlers"] = True
+        out.setdefault(
+            "resolve_ci_when_actions_unavailable",
+            yolo_cfg.get("resolve_ci_when_actions_unavailable", True),
+        )
+    return out
 
 
 def run_pipeline(
@@ -181,6 +226,7 @@ def run_pipeline(
     rubric = load_rubric()
     fixes = load_fixes()
     yolo_cfg = safety.get("yolo") or {}
+    normal_cfg = safety.get("normal") or {}
     yolo_on = is_yolo_armed(safety)
 
     # YOLO implies apply unless caller passed an explicit dry_run=True.
@@ -192,6 +238,7 @@ def run_pipeline(
 
     mode = "report" if target else ("fix" if run_agents or not dry_run else "run")
     report_banner = "Read-only report — no changes were made." if target else None
+    rules_sync_meta = _maybe_auto_rules_sync(safety, yolo_on=yolo_on, dry_run=bool(dry_run))
 
     try:
         quota = _quota_from_safety(safety)
@@ -262,19 +309,19 @@ def run_pipeline(
                     yolo_merge = None
                     yolo_dep = None
                     # Vanilla (normal + explicit --apply): mechanical upgrade heal/fix only.
-                    normal_cfg = safety.get("normal") or {}
+                    ncfg = safety.get("normal") or {}
                     if (
                         not yolo_on
                         and not dry_run
                         and not discovery.report_only
                         and (
-                            normal_cfg.get("fix_upgrade_prs", True)
-                            or normal_cfg.get("heal_upgrade_prs", True)
+                            ncfg.get("fix_upgrade_prs", True)
+                            or ncfg.get("heal_upgrade_prs", True)
                         )
                     ):
                         try:
                             max_up = int(yolo_cfg.get("max_auto_merges_per_day") or 20)
-                            if normal_cfg.get("fix_upgrade_prs", True):
+                            if ncfg.get("fix_upgrade_prs", True):
                                 from argus.yolo_upgrade_fix import fix_open_upgrade_prs
 
                                 vf = fix_open_upgrade_prs(
@@ -286,7 +333,7 @@ def run_pipeline(
                                     **apply_summary,
                                     "vanilla_fix_upgrades": vf,
                                 }
-                            elif normal_cfg.get("heal_upgrade_prs", True):
+                            elif ncfg.get("heal_upgrade_prs", True):
                                 from argus.yolo_upgrade_heal import heal_open_upgrade_prs
 
                                 vh = heal_open_upgrade_prs(
@@ -303,14 +350,28 @@ def run_pipeline(
                                 **apply_summary,
                                 "vanilla_upgrade_error": str(exc),
                             }
-                    if yolo_on and not discovery.report_only:
+                    run_handlers = (
+                        not discovery.report_only
+                        and (
+                            yolo_on
+                            or (
+                                not dry_run
+                                and (
+                                    ncfg.get("yolo_handlers", True)
+                                    or ncfg.get("continuous_zero", True)
+                                )
+                            )
+                        )
+                    )
+                    if run_handlers:
+                        handlers_cfg = _handlers_cfg(safety, yolo_on=yolo_on)
                         yolo_extra = apply_yolo_extras(
                             client,
                             store,
                             current,
                             dry_run=dry_run,
                             max_actions=int(yolo_cfg.get("max_yolo_actions_per_run") or 40),
-                            yolo_cfg=yolo_cfg,
+                            yolo_cfg=handlers_cfg,
                         )
                         apply_summary = {
                             **apply_summary,
@@ -322,6 +383,7 @@ def run_pipeline(
                             + list(yolo_extra.errors),
                             "skipped": list(apply_summary.get("skipped") or [])
                             + list(yolo_extra.skipped),
+                            "continuous_zero": True,
                         }
                         drop = set(yolo_extra.applied)
                         for plan in current:
@@ -335,6 +397,7 @@ def run_pipeline(
                                 for m in plan.agent_fixes
                                 if f"{plan.repo.full_name}:{m.fix.id}" not in drop
                             ]
+                    if yolo_on and not discovery.report_only:
                         if (
                             not dry_run
                             and yolo_cfg.get("auto_merge_auto_safe", True)
@@ -449,14 +512,37 @@ def run_pipeline(
                     return apply_summary, yolo_extra, yolo_merge, yolo_dep
 
                 apply_summary, yolo_extra, yolo_merge, yolo_dep = _apply_once(plans)
+                if rules_sync_meta:
+                    apply_summary = {**apply_summary, "rules_sync": rules_sync_meta}
 
                 second_pass = False
+                want_second = bool(
+                    (
+                        yolo_on
+                        and yolo_cfg.get("second_pass_if_budget", True)
+                        and (
+                            yolo_cfg.get("continuous_zero", True)
+                            or yolo_cfg.get("second_pass_if_budget", True)
+                        )
+                    )
+                    or (
+                        (not yolo_on)
+                        and not dry_run
+                        and (
+                            normal_cfg.get("second_pass", True)
+                            or normal_cfg.get("continuous_zero", True)
+                        )
+                    )
+                )
+                apply_api = bool(
+                    (yolo_on and yolo_cfg.get("apply_api_handlers", True))
+                    or (not yolo_on and normal_cfg.get("yolo_handlers", True))
+                )
                 if (
-                    yolo_on
+                    want_second
                     and not dry_run
                     and not discovery.report_only
-                    and yolo_cfg.get("second_pass_if_budget", True)
-                    and _yolo_eligible_left(plans)
+                    and _yolo_eligible_left(plans, apply_api=apply_api)
                 ):
                     remaining = int(client.quota.remaining or 0)
                     need = batch_size * per_repo + quota.reserve

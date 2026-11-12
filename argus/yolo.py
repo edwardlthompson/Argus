@@ -267,6 +267,18 @@ def _pr_stale(
     return f"pr-stale:{plan.repo.full_name}:closed={closed}:nudged={commented}"
 
 
+def _issue_patterned(client: GitHubClient, plan: RepoPlan, matched: MatchedFix) -> str:
+    from argus.yolo_issues import triage_repo_issues
+
+    return triage_repo_issues(client, plan, matched, stale_days=90)
+
+
+def _stale_issues(client: GitHubClient, plan: RepoPlan, matched: MatchedFix) -> str:
+    from argus.yolo_issues import triage_repo_issues
+
+    return triage_repo_issues(client, plan, matched, stale_days=90)
+
+
 YOLO_HANDLERS = {
     "SEC-CODEQL": _sec_codeql,
     "SEC-OPEN-DEPENDABOT-ALERTS": _dependabot_security_updates,
@@ -274,13 +286,33 @@ YOLO_HANDLERS = {
     "LINEAGE-RECOMMEND-UPGRADE": _lineage_version,
     "AGENT-WHAT-NOT": _what_not,
     "AGENT-MEMORY-LAYOUT": _memory_layout,
+    "ISSUE-PATTERNED-AUTO": _issue_patterned,
+    "AGENT-STALE-ISSUES": _stale_issues,
 }
 
-# S10: YOLO/fanout consume agent-class deterministic handlers only (not human class).
+# Deterministic agent-class handlers (always eligible when handlers run).
 YOLO_AGENT_HANDLERS = frozenset({
     "AGENT-WHAT-NOT",
     "AGENT-MEMORY-LAYOUT",
     "PR-STALE",
+    "SEC-CODEQL",
+    "LINEAGE-RECOMMEND-UPGRADE",
+    "ISSUE-PATTERNED-AUTO",
+    "AGENT-STALE-ISSUES",
+})
+
+# Catalogue may still say human; continuous zero applies these via API.
+YOLO_API_SAFE_HANDLERS = frozenset({
+    "SEC-CODEQL",
+    "SEC-OPEN-DEPENDABOT-ALERTS",
+    "LINEAGE-RECOMMEND-UPGRADE",
+})
+
+# Never auto-clear — judgment / artwork only.
+YOLO_JUDGMENT_ONLY = frozenset({
+    "BRAND-ICON-MISSING",
+    "HUMAN-PARK-INACTIVE",
+    "HUMAN-ARCHIVE-JUDGMENT",
 })
 
 
@@ -301,66 +333,106 @@ def apply_yolo_extras(
     max_actions: int,
     yolo_cfg: dict[str, Any] | None = None,
 ) -> YoloResult:
-    """Run YOLO handlers for agent-class deterministic fixes only (S10)."""
-    from argus.models import FixClass
+    """Run deterministic handlers (continuous zero).
 
+    When ``apply_api_handlers`` is true (default under YOLO / continuous zero),
+    API-safe catalogue rows run even if class is still human. Judgment-only
+    ids (brand art, park/archive) stay digest-only.
+    """
     cfg = yolo_cfg or {}
+    apply_api = bool(cfg.get("apply_api_handlers", False))
+    resolve_ci = bool(cfg.get("resolve_ci_when_actions_unavailable", False))
+    actions_down = False
+    if resolve_ci:
+        try:
+            from argus.actions_billing import actions_unavailable
+            from argus.config_loader import load_safety
+
+            actions_down = bool(actions_unavailable(client, safety=load_safety()))
+        except Exception:  # noqa: BLE001
+            actions_down = bool(
+                __import__("os").environ.get("ARGUS_ACTIONS_UNAVAILABLE", "").strip()
+                in ("1", "true", "yes", "on")
+            )
     idle = int(cfg.get("stale_pr_idle_days") or cfg.get("close_stale_bot_prs_days") or 30)
     result = YoloResult()
     if client.report_only or dry_run:
         for plan in plans:
-            for m in plan.agent_fixes:
-                if is_yolo_deterministic_agent(m) or m.fix.id == "PR-STALE":
+            for m in list(plan.agent_fixes) + list(plan.human_fixes):
+                if (
+                    is_yolo_deterministic_agent(m)
+                    or m.fix.id == "PR-STALE"
+                    or (apply_api and m.fix.id in YOLO_API_SAFE_HANDLERS)
+                ):
                     result.skipped.append(f"{plan.repo.full_name}:{m.fix.id}:dry_run")
         return result
     n = 0
+
+    def _run_handler(plan: RepoPlan, m: MatchedFix, handler) -> None:
+        nonlocal n
+        if n >= max_actions:
+            result.skipped.append(f"{plan.repo.full_name}:{m.fix.id}:max_actions")
+            return
+        key = f"{plan.repo.full_name}:{m.fix.id}"
+        try:
+            if m.fix.id == "PR-STALE":
+                url = _pr_stale(client, plan, m, idle_days=idle)
+            else:
+                url = handler(client, plan, m)
+            result.applied.append(key)
+            result.opened_prs.append(url)
+            store.record_resolution(
+                plan.repo.full_name,
+                m.fix.id,
+                ttl_days=m.fix.resolution_ttl_days or 30,
+                source="yolo",
+            )
+            n += 1
+        except GitHubError as exc:
+            result.errors.append(f"{key}:{exc}")
+
     for plan in plans:
         if not plan.repo.can_write:
             continue
-        for m in list(plan.human_fixes):
-            if m.fix.id in ("CI-LATEST-FAILED", "HUMAN-PARK-INACTIVE", "HUMAN-ARCHIVE-JUDGMENT"):
+        # Agent + human bags: continuous zero treats deterministic ids uniformly.
+        bag = list(plan.human_fixes) + list(plan.agent_fixes)
+        for m in bag:
+            fid = m.fix.id
+            if fid == "CI-LATEST-FAILED":
                 result.digest_notes.append(
-                    f"- `{plan.repo.full_name}` · `{m.fix.id}` — {m.fix.title}"
+                    f"- `{plan.repo.full_name}` · `{fid}` — {m.fix.title}"
                 )
-                store.record_resolution(
-                    plan.repo.full_name, m.fix.id, ttl_days=7, source="yolo_digest"
-                )
-                result.applied.append(f"{plan.repo.full_name}:{m.fix.id}")
-                n += 1
-            elif m.fix.id in YOLO_HANDLERS:
-                # Human-class: never auto-apply under S10 — digest only.
-                result.digest_notes.append(
-                    f"- `{plan.repo.full_name}` · `{m.fix.id}` — {m.fix.title} (human; not YOLO)"
-                )
-                result.skipped.append(f"{plan.repo.full_name}:{m.fix.id}:human_class")
-        for m in list(plan.agent_fixes):
-            if m.fix.class_ != FixClass.AGENT:
-                continue
-            if m.fix.id == "PR-STALE":
-                handler = None
-            else:
-                handler = YOLO_HANDLERS.get(m.fix.id) if m.fix.id in YOLO_AGENT_HANDLERS else None
-            if m.fix.id != "PR-STALE" and not handler:
-                continue
-            if n >= max_actions:
-                result.skipped.append(f"{plan.repo.full_name}:{m.fix.id}:max_actions")
-                continue
-            key = f"{plan.repo.full_name}:{m.fix.id}"
-            try:
-                if m.fix.id == "PR-STALE":
-                    url = _pr_stale(client, plan, m, idle_days=idle)
+                if resolve_ci and actions_down:
+                    store.record_resolution(
+                        plan.repo.full_name,
+                        fid,
+                        ttl_days=7,
+                        source="actions_unavailable",
+                    )
+                    result.applied.append(f"{plan.repo.full_name}:{fid}")
+                    n += 1
                 else:
-                    assert handler is not None
-                    url = handler(client, plan, m)
-                result.applied.append(key)
-                result.opened_prs.append(url)
-                store.record_resolution(
-                    plan.repo.full_name, m.fix.id,
-                    ttl_days=m.fix.resolution_ttl_days or 30, source="yolo",
+                    result.skipped.append(f"{plan.repo.full_name}:{fid}:needs_triage")
+                continue
+            if fid in YOLO_JUDGMENT_ONLY:
+                result.digest_notes.append(
+                    f"- `{plan.repo.full_name}` · `{fid}` — {m.fix.title} (judgment)"
                 )
-                n += 1
-            except GitHubError as exc:
-                result.errors.append(f"{key}:{exc}")
+                result.skipped.append(f"{plan.repo.full_name}:{fid}:judgment")
+                continue
+            if fid == "PR-STALE" or fid in YOLO_AGENT_HANDLERS or (
+                apply_api and fid in YOLO_API_SAFE_HANDLERS
+            ):
+                handler = None if fid == "PR-STALE" else YOLO_HANDLERS.get(fid)
+                if fid != "PR-STALE" and not handler:
+                    continue
+                _run_handler(plan, m, handler)
+                continue
+            if fid in YOLO_HANDLERS and not apply_api:
+                result.digest_notes.append(
+                    f"- `{plan.repo.full_name}` · `{fid}` — {m.fix.title} (human; not YOLO)"
+                )
+                result.skipped.append(f"{plan.repo.full_name}:{fid}:human_class")
     return result
 
 

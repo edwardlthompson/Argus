@@ -1,16 +1,16 @@
-# Release notes — Argus 0.7.0
+# Release notes — Argus 0.8.0
 
 ## Highlights
 
-- **Free-tier Actions path** — `argus local-weekly` and `skip_ci_when_actions_unavailable`; paying for Actions is never required.
-- **Sanitized portfolio Pages** — public `portfolio-pages.html` (metrics + graphs only). Full weakness reports stay private under `argus-history/reports/latest*`.
-- **Tuesday Steward brief** — private `steward-brief.html` for Grok; never published to Pages.
-- **Vanilla `--apply`** — upgrade fix/heal without arming YOLO; merges stay human unless you opt into CLI merge.
+- **Continuous zero** — `--apply` / `local-weekly --apply` / armed YOLO auto-syncs rules, runs deterministic handlers, soft-clears CI when Actions is unavailable, and second-passes toward zero open Argus fixes.
+- **Patterned Issue triage** — closes `argus-auto` / digest / bot bump Issues; nudges other stale human Issues (never invents product patches).
+- **Report urgency** — Priority / Rest of fleet sorted by GitHub Issues (most first); green + zero-Issue repos omitted.
+- **Signal honesty** — `RULES-STALE` and `SEC-RELEASE-TOKEN-MISSING` no longer fan out across the portfolio.
 
 ## Upgrade notes
 
-- Point `ARGUS_REPORT_URL` at the **sanitized** Pages URL only.
-- Full report / Steward brief: private runner `argus-history/reports/latest.html` and `latest-steward.html`.
-- Enable GitHub Pages from `/docs` on public Argus (or Actions `pages` workflow when minutes allow).
+- Free-tier: keep using `argus local-weekly --apply` (no payment card).
+- Label Issues `argus-auto` when Argus should close them on the next apply.
+- Public Pages stay sanitized (`docs/index.html`); full reports stay private.
 
 See `CHANGELOG.md` for the full list.

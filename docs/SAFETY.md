@@ -38,8 +38,17 @@ Edit `config/safety.yaml`, `config/allowlist.yaml`, and `config/inbox.yaml` to t
 
 | Mode | Behavior |
 |------|----------|
-| `normal` (default / **vanilla**) | Dry-run or explicit `--apply` opens `auto_safe` PRs; **human merges**. On `--apply`, also runs mechanical upgrade **fix/heal** on open PR heads (`config/safety.yaml` → `normal`). |
-| `yolo` | Same apply path + handlers + auto-merge when gate + CI policy allow. Kill switch: set `apply_mode: normal` / delete `yolo.on`. |
+| `normal` (default / **vanilla**) | Dry-run safe. Explicit `--apply` / `local-weekly --apply` runs **continuous zero**: `auto_safe` PRs, deterministic handlers, auto rules sync, second pass. **Human merges** on public product. |
+| `yolo` | Continuous zero + auto-merge when gate + CI policy allow. Kill switch: set `apply_mode: normal` / delete `yolo.on`. |
+
+### Continuous zero (config)
+
+Behaviour in `config/safety.yaml`:
+
+- `normal.yolo_handlers` / `normal.auto_rules_sync` / `normal.continuous_zero` / `normal.second_pass`
+- `yolo.apply_api_handlers` / `yolo.auto_rules_sync` / `yolo.resolve_ci_when_actions_unavailable` / `yolo.continuous_zero`
+
+Controller-only signals (`RULES-STALE`, opt-in `SEC-RELEASE-TOKEN-MISSING`) never fan out to the portfolio. Judgment leftovers (brand art, park/archive, residual Dependabot accept/dismiss) stay on the private digest — see [`YOLO.md`](YOLO.md).
 
 ### YOLO → vanilla (what is safe)
 
@@ -50,8 +59,10 @@ Edit `config/safety.yaml`, `config/allowlist.yaml`, and `config/inbox.yaml` to t
 | Free-tier Actions skip / `local-weekly` | yes (CLI opt-in) | yes (scheduled) |
 | Soft-merge allowlist / clear loop | no (use `merge-upgrades --allow-unarmed`) | yes |
 | Auto-merge upgrades / Dependabot patch | no (human or CLI) | yes |
-| YOLO API handlers (CodeQL enable, etc.) | no | yes |
-| Second pass / quiet yolo-digest | no | yes |
+| Deterministic API handlers (CodeQL, lineage, …) | yes (`normal.yolo_handlers`) | yes (`apply_api_handlers`) |
+| Auto rules sync when stale | yes | yes |
+| Soft-resolve `CI-LATEST-FAILED` when Actions down | yes (via handlers cfg) | yes |
+| Second pass / quiet yolo-digest | yes (`continuous_zero`) | yes |
 | Imply apply without `--apply` | no | yes |
 
 Hard floors above still apply under YOLO. Grok Bots never merge — see [`GROK_BOTS.md`](GROK_BOTS.md) and [`YOLO.md`](YOLO.md). Prefer new Argus `auto_safe` matchers over LLM mutators.

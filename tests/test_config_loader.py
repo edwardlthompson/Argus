@@ -27,7 +27,12 @@ def test_load_safety_yolo_defaults():
     normal = load_safety().get("normal") or {}
     assert normal.get("fix_upgrade_prs") is True
     assert normal.get("merge_upgrade_prs") is False
-    assert normal.get("yolo_handlers") is False
+    assert normal.get("yolo_handlers") is True
+    assert normal.get("continuous_zero") is True
+    assert normal.get("auto_rules_sync") is True
+    assert yolo.get("apply_api_handlers") is True
+    assert yolo.get("resolve_ci_when_actions_unavailable") is True
+    assert yolo.get("continuous_zero") is True
     api = safety["github_api"]
     assert api["core_limit_hint"] == 5000
     assert api["max_repos_per_batch"] == 6

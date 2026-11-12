@@ -248,17 +248,19 @@
     </div>
     {% endif %}
 
-    <h2>Repos by attention</h2>
+    <h2>Repos (most GitHub Issues first)</h2>
+    <p class="empty">Green + zero Issues omitted. Issues column is GitHub open Issues, not Argus fixes.</p>
     <div class="panel">
       {% if view.priority_cards %}
       <table>
         <thead>
-          <tr><th>Repo</th><th>Attention</th><th>Open fixes</th><th>Band</th></tr>
+          <tr><th>Repo</th><th>GitHub Issues</th><th>Attention</th><th>Argus fixes</th><th>Band</th></tr>
         </thead>
         <tbody>
           {% for c in view.priority_cards %}
           <tr>
             <td>{{ c.name }}</td>
+            <td>{{ c.gh_issues }}</td>
             <td>{{ c.attention }}</td>
             <td>{{ c.open_fixes }}</td>
             <td>{{ c.band }}</td>
@@ -267,7 +269,7 @@
         </tbody>
       </table>
       {% else %}
-      <p class="empty">No repositories in this scan.</p>
+      <p class="empty">No repositories needing attention in this scan.</p>
       {% endif %}
     </div>
 

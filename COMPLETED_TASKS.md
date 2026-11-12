@@ -2,6 +2,15 @@
 
 Archived BUILD_PLAN rows (newest first).
 
+## Continuous zero + Issue triage (2026-11-12)
+
+- ✅ `[AGENT][LOCAL]` — scope: `config/safety.yaml,config_loader` | **CZ1** continuous-zero safety flags
+- ✅ `[AGENT][LOCAL]` — scope: `argus/signals/contract.py` | **CZ2** RULES-STALE / RELEASE_TOKEN fan-out fix
+- ✅ `[AGENT][LOCAL]` — scope: `argus/yolo.py,pipeline.py` | **CZ3** handlers + pipeline loop
+- ✅ `[AGENT][LOCAL]` — scope: `config/fixes/` | **CZ4** CodeQL/lineage/Dependabot/catalogue
+- ✅ `[AGENT][LOCAL]` — scope: docs | **CZ5** YOLO/SAFETY continuous-zero docs
+- ✅ `[AGENT][LOCAL]` — scope: `report_view,yolo_issues` | Priority by GH Issues; ISSUE-PATTERNED-AUTO triage
+
 ## Free-tier Actions-out (no payment) (2026-11-11)
 
 - ✅ `[AGENT][LOCAL]` — scope: free-tier-actions | **F1** — `skip_ci_when_actions_unavailable` + doctor probe + `local-weekly` / `--actions-unavailable`; cleared ExpeditionGauge#36, JanusBoot#13, point-and-shoot#42 without paid CI. Paying for Actions is never required.

@@ -192,13 +192,18 @@ def load_safety(path: Path | None = None) -> dict[str, Any]:
         "merge_when_actions_billing": True,
         "skip_ci_when_actions_unavailable": True,
         "assume_actions_unavailable": False,
+        "auto_rules_sync": True,
+        "apply_api_handlers": True,
+        "resolve_ci_when_actions_unavailable": True,
+        "continuous_zero": True,
         "auto_dispatch_agents": True,
         "auto_merge_agent_prs": True,
         "max_auto_merges_per_day": 20,
         "close_stale_bot_prs_days": 0,
         "max_yolo_actions_per_run": 40,
+        "second_pass_if_budget": True,
     }
-    # Vanilla (apply_mode=normal): safe YOLO subset on explicit --apply only.
+    # Vanilla (apply_mode=normal): continuous-zero on explicit --apply only.
     # Merges stay human unless operator uses merge-upgrades --allow-unarmed.
     normal_defaults: dict[str, Any] = {
         "fix_upgrade_prs": True,
@@ -206,8 +211,10 @@ def load_safety(path: Path | None = None) -> dict[str, Any]:
         "merge_upgrade_prs": False,
         "merge_dependabot_patch": False,
         "clear_upgrade_blockers": False,
-        "yolo_handlers": False,
-        "second_pass": False,
+        "yolo_handlers": True,
+        "auto_rules_sync": True,
+        "continuous_zero": True,
+        "second_pass": True,
         "quiet_digest_only": False,
     }
     # Authenticated REST core is 5000/hr; ~45–60 GETs per repo makes full-portfolio

@@ -1,5 +1,11 @@
 # Decision log
 
+## 2026-11-12 — Ship v0.8.0 (continuous zero + patterned Issues)
+
+- **Decision:** Continuous zero is product policy (`safety.normal` + `yolo`): auto rules sync, deterministic handlers on `--apply`, CI soft-resolve when Actions unavailable, second pass. Patterned Issue close (`argus-auto` / digests / bot bumps) only — never invent product patches. Report Priority sorted by GitHub Issues; omit green+zero.
+- **Gates:** `update-deps` audit clean + `verify` (158 tests); template Release Please / full pre-release-gate N/A (G12).
+- **Ops:** `/ship` amid low disk — ephemeral purge; free-tier `local-weekly --apply` remains the cadence.
+
 ## 2026-11-10 — Ship v0.6.0 (hands-off upgrade YOLO + Tuesday Steward)
 
 - **Decision:** Soft-merge allowlisted template noise + mechanical upgrade fixers are **on** for scheduled YOLO; Tuesday weekly after Monday Dependabot; Grok Tuesday Steward is digest-only (pack bootstrap, no create API).

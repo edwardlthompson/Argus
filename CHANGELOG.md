@@ -2,6 +2,19 @@
 
 ## [Unreleased]
 
+## [0.8.0] — 2026-11-12
+
+### Added
+
+- **Continuous zero:** every `--apply` / `local-weekly --apply` / armed YOLO run auto-syncs rules, runs deterministic handlers (including API-safe CodeQL / lineage / Dependabot enable), soft-resolves `CI-LATEST-FAILED` when Actions is unavailable, and second-passes when budget remains (`safety.normal` + `safety.yolo`).
+- **Patterned Issue triage:** `ISSUE-PATTERNED-AUTO` + `AGENT-STALE-ISSUES` handlers close `argus-auto` / digest / bot bump Issues; nudge only on other stale human Issues (`argus/yolo_issues.py`).
+
+### Changed
+
+- `RULES-STALE` and `SEC-RELEASE-TOKEN-MISSING` no longer fan out to every portfolio repo (controller-only; release token opt-in via `ARGUS_REQUIRE_RELEASE_TOKEN=1`).
+- Vanilla `--apply` runs YOLO deterministic handlers (`normal.yolo_handlers: true`); public product still does not auto-merge.
+- Report Priority / Rest of fleet: sort by GitHub Issues (most first); omit green repos with zero Issues.
+
 ## [0.7.0] — 2026-11-12
 
 ### Added

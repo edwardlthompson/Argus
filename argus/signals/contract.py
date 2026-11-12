@@ -4,17 +4,38 @@ from __future__ import annotations
 
 import hashlib
 import os
+from functools import lru_cache
 from typing import Any
 
 from argus.github_client import GitHubClient, GitHubError
 from argus.models import RepoRecord
-from argus.paths import PROJECT_ROOT
+from argus.paths import CONFIG_DIR, PROJECT_ROOT
 
 
 def _hash_file(path) -> str | None:
     if not path.is_file():
         return None
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+@lru_cache(maxsize=1)
+def _controller_repo_names() -> frozenset[str]:
+    """Names that may carry controller-only signals (RULES-STALE, release token)."""
+    names = {"argus", "argus-runner"}
+    try:
+        from argus.config_loader import load_yaml
+
+        data = load_yaml(CONFIG_DIR / "parent.yaml")
+        for n in data.get("controller_repo_names") or []:
+            if isinstance(n, str) and n.strip():
+                names.add(n.strip().lower())
+    except Exception:  # noqa: BLE001
+        pass
+    return frozenset(names)
+
+
+def is_controller_repo(repo: RepoRecord) -> bool:
+    return repo.name.lower() in _controller_repo_names()
 
 
 def collect(client: GitHubClient, repo: RepoRecord) -> dict[str, Any]:
@@ -53,25 +74,41 @@ def collect(client: GitHubClient, repo: RepoRecord) -> dict[str, Any]:
     except (GitHubError, TypeError, ValueError):
         pass
 
+    controller = is_controller_repo(repo)
+    # Free-tier default: do not fan out process RELEASE_TOKEN to every portfolio repo.
+    # Opt in with ARGUS_REQUIRE_RELEASE_TOKEN=1 (controller / runner only).
+    require_token = os.environ.get("ARGUS_REQUIRE_RELEASE_TOKEN", "").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+        "on",
+    )
     token_set = bool(os.environ.get("RELEASE_TOKEN") or os.environ.get("ARGUS_RELEASE_TOKEN"))
     has_release_workflow = False
-    try:
-        workflows = client.get(f"/repos/{repo.owner}/{repo.name}/contents/.github/workflows")
-        if isinstance(workflows, list):
-            for item in workflows:
-                name = str(item.get("name") or "").lower()
-                if "release" in name:
-                    has_release_workflow = True
-                    break
-    except GitHubError:
-        pass
-    rules_stale = False
-    try:
-        from argus.rules_sync import rules_stale as _rules_stale
+    if controller and require_token:
+        try:
+            workflows = client.get(f"/repos/{repo.owner}/{repo.name}/contents/.github/workflows")
+            if isinstance(workflows, list):
+                for item in workflows:
+                    name = str(item.get("name") or "").lower()
+                    if "release" in name:
+                        has_release_workflow = True
+                        break
+        except GitHubError:
+            pass
+    else:
+        # Not scoring SEC-RELEASE-TOKEN-MISSING on portfolio / free-tier.
+        token_set = True
+        has_release_workflow = False
 
-        rules_stale = _rules_stale()
-    except Exception:  # noqa: BLE001
-        rules_stale = False
+    rules_stale = False
+    if controller:
+        try:
+            from argus.rules_sync import rules_stale as _rules_stale
+
+            rules_stale = _rules_stale()
+        except Exception:  # noqa: BLE001
+            rules_stale = False
     return {
         "contract_expected": expected,
         "contract_remote_sha": remote_hash,
@@ -82,6 +119,7 @@ def collect(client: GitHubClient, repo: RepoRecord) -> dict[str, Any]:
         "rules_stale": rules_stale,
         "CONTRACT-BEHIND": bool(stale),
         "RULES-STALE": rules_stale,
+        "is_controller": controller,
     }
 
 

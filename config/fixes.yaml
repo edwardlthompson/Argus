@@ -254,19 +254,36 @@ fixes:
     profiles: [generic, edward]
     resolution_ttl_days: 90
 
+  - id: ISSUE-PATTERNED-AUTO
+    class: agent
+    title: Close patterned bot / argus-auto Issues
+    why: >
+      Digest, Dependabot-noise, and Issues labeled argus-auto are mechanical —
+      continuous zero closes them; human product bugs stay open.
+    applies_when: "(momentum.get('open_issues') or 0) >= 1"
+    phase: 2
+    depends_on: []
+    confidence: high
+    auto_safe: false
+    agent_prompt: |
+      Close Issues labeled argus-auto / argus:auto, Argus digest titles, or bot Issues
+      matching bump/upgrade/chore(argus) patterns. Do not close human product bugs.
+    gate: "true"
+    profiles: [generic, edward]
+    resolution_ttl_days: 14
+
   - id: AGENT-STALE-ISSUES
     class: agent
     title: Triage truly stale issues
     why: Ancient open issues hide real bugs and signal abandonment.
-    applies_when: "(responsiveness.get('stale_issues_90d') or 0) >= 3"
+    applies_when: "(responsiveness.get('stale_issues_90d') or 0) >= 1"
     phase: 2
     depends_on: []
     confidence: medium
     auto_safe: false
     agent_prompt: |
-      List open issues idle ≥90 days. For each: comment with current status, or close with
-      a polite resolution if clearly obsolete. Do not close issues that need human judgment —
-      label them `needs-human` instead.
+      For Issues idle ≥90 days: close if patterned (argus-auto / bot digest); otherwise
+      nudge once. Do not close human product bugs — ask for needs-human instead.
     gate: "true"
     profiles: [generic, edward]
     resolution_ttl_days: 45

@@ -13,15 +13,18 @@ attention_threshold_for_agents: 60
 # See docs/YOLO.md dual-plane.
 apply_mode: normal
 
-# Vanilla (--apply, not armed): safe subset of YOLO mechanics. Merges stay human.
+# Vanilla (--apply, not armed): continuous-zero subset. Merges stay human.
+# Dry-run (default) never mutates. See docs/YOLO.md continuous zero.
 normal:
   fix_upgrade_prs: true
   heal_upgrade_prs: true
   merge_upgrade_prs: false
   merge_dependabot_patch: false
   clear_upgrade_blockers: false
-  yolo_handlers: false
-  second_pass: false
+  yolo_handlers: true
+  auto_rules_sync: true
+  continuous_zero: true
+  second_pass: true
   quiet_digest_only: false
 
 yolo:
@@ -40,6 +43,10 @@ yolo:
   merge_when_actions_billing: true
   skip_ci_when_actions_unavailable: true
   assume_actions_unavailable: false  # or set ARGUS_ACTIONS_UNAVAILABLE=1
+  auto_rules_sync: true
+  apply_api_handlers: true  # run YOLO_HANDLERS even if catalogue class is human
+  resolve_ci_when_actions_unavailable: true
+  continuous_zero: true
   auto_merge_dependabot_patch: true
   auto_dispatch_agents: true
   auto_merge_agent_prs: true

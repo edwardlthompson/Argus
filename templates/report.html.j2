@@ -513,6 +513,7 @@
     {% endif %}
 
     <h2>Priority Attention</h2>
+    <p class="meta">Sorted by GitHub Issues (most first). Green repos with zero Issues are omitted. Issues ≠ Argus fixes.</p>
     {% for c in view.priority_cards %}
     <div class="card priority-card">
       <h3>
@@ -520,7 +521,8 @@
         <span class="badge badge-{{ c.status }}">{{ c.status }}</span>
         <a href="{{ c.url }}">{{ c.full_name }}</a>
       </h3>
-      <p class="meta">{{ c.meta }} · attention {{ c.attention }}/100</p>
+      <p class="meta">{{ c.gh_issues }} GitHub Issues · {{ c.open_fixes }} Argus fixes · attention {{ c.attention }}/100</p>
+      <p class="meta">{{ c.meta }}</p>
       {% if c.categories_line %}
       <p class="meta">Top categories: {{ c.categories_line }}</p>
       {% endif %}
@@ -550,15 +552,17 @@
 
     {% if view.fleet %}
     <h2>Rest of fleet</h2>
+    <p class="meta">Same filter as Priority — sorted by GitHub Issues (most first). {{ view.healthy_omitted }} healthy omitted.</p>
     <div class="card">
       <table class="fleet">
-        <thead><tr><th>Repo</th><th>Lang</th><th>Issues</th><th>Attention</th></tr></thead>
+        <thead><tr><th>Repo</th><th>Lang</th><th>GitHub Issues</th><th>Argus fixes</th><th>Attention</th></tr></thead>
         <tbody>
           {% for r in view.fleet %}
           <tr>
             <td><a href="{{ r.url }}">{{ r.name }}</a></td>
             <td>{{ r.lang }}</td>
             <td>{{ r.issues }}</td>
+            <td>{{ r.open_fixes }}</td>
             <td>{{ r.attention }}</td>
           </tr>
           {% endfor %}

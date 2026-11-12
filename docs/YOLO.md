@@ -90,16 +90,32 @@ Same as [`docs/SAFETY.md`](SAFETY.md) / `safety.yaml`:
 - No force-close of human-authored PRs
 - **Brand icons:** brief-only PR (`docs/BRAND_ICON_BRIEF.md`) — Argus never generates PNG assets
 
+## Continuous zero
+
+Goal: every armed YOLO run and every `argus local-weekly --apply` / vanilla `--apply` drives **mechanical open fixes toward zero** without a BUILD_PLAN punch list.
+
+| Step | Config |
+|------|--------|
+| Auto `argus rules sync` when lock stale | `auto_rules_sync` (normal + yolo) |
+| No portfolio fan-out of `RULES-STALE` / `SEC-RELEASE-TOKEN-MISSING` | signals in `argus/signals/contract.py` (controller-only; token opt-in `ARGUS_REQUIRE_RELEASE_TOKEN=1`) |
+| Deterministic handlers | `normal.yolo_handlers` / `yolo.apply_api_handlers` |
+| Soft-clear `CI-LATEST-FAILED` when Actions unavailable | `yolo.resolve_ci_when_actions_unavailable` |
+| Rescore + re-apply once | `continuous_zero` / `second_pass` / `second_pass_if_budget` |
+
+Steady state leftovers (digest / Steward only): brand artwork, park/archive judgment, Dependabot alert accept/dismiss after automation is enabled. Paying for Actions is never required.
+
 ## Pipeline loop
 
-1. Batched discover + score (rate-limit aware).
-2. `auto_safe` apply.
-3. YOLO handlers (`argus/yolo.py`) for human/agent ids that are API-safe.
-4. **Clear upgrade blockers** (mandatory): fix → wait → soft-merge loop on parent-upgrade PRs + Dependabot patches.
-5. Squash-merge remaining `chore(argus)*` PRs (after six checks).
-6. Health delta + apply history + action ledger (`dist/actions.jsonl`).
-7. Optional **second pass** when budget remains.
-8. One private **yolo-digest YYYY-MM-DD** Issue for hard leftovers only.
+1. **Auto rules sync** when stale (continuous zero).
+2. Batched discover + score (rate-limit aware).
+3. `auto_safe` apply.
+4. Deterministic handlers (`argus/yolo.py`) for agent + API-safe ids (`apply_api_handlers`).
+5. Soft-resolve `CI-LATEST-FAILED` when Actions unavailable.
+6. **Clear upgrade blockers** (YOLO mandatory): fix → wait → soft-merge loop on parent-upgrade PRs + Dependabot patches.
+7. Squash-merge remaining `chore(argus)*` PRs (after six checks).
+8. Health delta + apply history + action ledger (`dist/actions.jsonl`).
+9. **Second pass** when budget remains.
+10. One private **yolo-digest YYYY-MM-DD** Issue for judgment leftovers only.
 
 ## Handlers
 
@@ -107,11 +123,12 @@ Same as [`docs/SAFETY.md`](SAFETY.md) / `safety.yaml`:
 |--------|--------|
 | `SEC-CODEQL` | Code Scanning default setup |
 | `SEC-OPEN-DEPENDABOT-ALERTS` | Enable automated security fixes |
-| `BRAND-ICON-MISSING` | Design brief PR only (no generated asset) |
+| `BRAND-ICON-MISSING` | Judgment only (brief PR exists; no auto-clear of missing art) |
 | `LINEAGE-RECOMMEND-UPGRADE` | Lineage bump PR |
 | `AGENT-WHAT-NOT` / `AGENT-MEMORY-LAYOUT` | README / `.agent/` PRs |
 | `PR-STALE` | Close bot/`chore/argus-*` idle PRs; nudge comment only on human PRs |
-| `CI-LATEST-FAILED` | Digest only (no invented patches) |
+| `CI-LATEST-FAILED` | Soft-resolve when Actions unavailable; else digest (no invented patches) |
+| `ISSUE-PATTERNED-AUTO` / `AGENT-STALE-ISSUES` | Close `argus-auto` / digest / bot bump Issues; nudge other stale human Issues (never invent product patches) |
 | `HUMAN-PARK-INACTIVE` / `HUMAN-ARCHIVE-JUDGMENT` | Digest only (never archive) |
 
 ## Prefer Argus autoload over Grok mutators

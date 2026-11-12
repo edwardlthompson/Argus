@@ -20,15 +20,35 @@ _Notes:_ missing categories: lineage; hygiene/security-only scoring for parked/a
 
 **Done when:** Repo is archived, or you noted 'keep parked' on the Argus report
 
-#### H2. Turn on CodeQL / default code scanning
+### Agent prompt for `example/parked-lab`
 
-**Why:** Static analysis catches common security bugs before they ship.
+Paste this entire block into your coding agent. Stop if any GATE fails twice.
 
-1. Open the repository on GitHub.
-2. Settings → Code security → Code scanning.
-3. Set up CodeQL (default setup) and wait until it shows Enabled.
+```text
+Repository: example/parked-lab
+You are performing gated Argus hygiene/correctness work.
+Prefer opening a PR over committing to the default branch.
 
-**Done when:** Code scanning shows as configured
+## Phase 2
+
+> unverified — check before pasting
+
+### SEC-CODEQL: Turn on CodeQL / default code scanning
+Static analysis catches common security bugs before they ship.
+Enable GitHub Code Scanning default setup (CodeQL) via the repository API.
+Do not invent custom query packs. Stop after two gate failures.
+
+GATE: Code scanning shows as configured
+
+## Phase final — verify & PR
+
+1. Run project tests / verify script if present.
+2. Add a hand-written CHANGELOG note under [Unreleased] listing fix IDs: SEC-CODEQL
+3. Push branch `chore/argus-agent` (or continue the existing Argus branch).
+4. Open a Pull Request whose body lists the fix IDs above.
+
+GATE: gh pr view --json url,title || test -f .git/ARGUS_PR_OPENED
+```
 
 ### Auto-safe (controller may open PRs)
 
@@ -45,17 +65,7 @@ _Notes:_ missing categories: lineage, prs, releases
 
 ### Human tasks
 
-#### H1. Turn on CodeQL / default code scanning
-
-**Why:** Static analysis catches common security bugs before they ship.
-
-1. Open the repository on GitHub.
-2. Settings → Code security → Code scanning.
-3. Set up CodeQL (default setup) and wait until it shows Enabled.
-
-**Done when:** Code scanning shows as configured
-
-#### H2. Park or archive a long-inactive active repo
+#### H1. Park or archive a long-inactive active repo
 
 **Why:** Repos that look abandoned confuse visitors about what you still maintain.
 
@@ -79,11 +89,23 @@ Prefer opening a PR over committing to the default branch.
 
 ### AGENT-STALE-ISSUES: Triage truly stale issues
 Ancient open issues hide real bugs and signal abandonment.
-List open issues idle ≥90 days. For each: comment with current status, or close with
-a polite resolution if clearly obsolete. Do not close issues that need human judgment —
-label them `needs-human` instead.
+For Issues idle ≥90 days: close if patterned (argus-auto / bot digest); otherwise
+nudge once. Do not close human product bugs — ask for needs-human instead.
 
-GATE: true
+### ISSUE-PATTERNED-AUTO: Close patterned bot / argus-auto Issues
+Digest, Dependabot-noise, and Issues labeled argus-auto are mechanical — continuous zero closes them; human product bugs stay open.
+
+Close Issues labeled argus-auto / argus:auto, Argus digest titles, or bot Issues
+matching bump/upgrade/chore(argus) patterns. Do not close human product bugs.
+
+> unverified — check before pasting
+
+### SEC-CODEQL: Turn on CodeQL / default code scanning
+Static analysis catches common security bugs before they ship.
+Enable GitHub Code Scanning default setup (CodeQL) via the repository API.
+Do not invent custom query packs. Stop after two gate failures.
+
+GATE: Code scanning shows as configured
 
 ## Phase 3
 
@@ -105,7 +127,7 @@ GATE: test -f README.md
 ## Phase final — verify & PR
 
 1. Run project tests / verify script if present.
-2. Add a hand-written CHANGELOG note under [Unreleased] listing fix IDs: AGENT-STALE-ISSUES, AGENT-MEMORY-LAYOUT, AGENT-PRESENTATION
+2. Add a hand-written CHANGELOG note under [Unreleased] listing fix IDs: AGENT-STALE-ISSUES, ISSUE-PATTERNED-AUTO, SEC-CODEQL, AGENT-MEMORY-LAYOUT, AGENT-PRESENTATION
 3. Push branch `chore/argus-agent` (or continue the existing Argus branch).
 4. Open a Pull Request whose body lists the fix IDs above.
 
@@ -132,18 +154,6 @@ GATE: gh pr view --json url,title || test -f .git/ARGUS_PR_OPENED
 **Attention:** needs human read (low confidence) — raw score 15.4/100
 _Notes:_ missing categories: lineage, prs, releases
 
-### Human tasks
-
-#### H1. Turn on CodeQL / default code scanning
-
-**Why:** Static analysis catches common security bugs before they ship.
-
-1. Open the repository on GitHub.
-2. Settings → Code security → Code scanning.
-3. Set up CodeQL (default setup) and wait until it shows Enabled.
-
-**Done when:** Code scanning shows as configured
-
 ### Agent prompt for `example/forked-tool`
 
 Paste this entire block into your coding agent. Stop if any GATE fails twice.
@@ -152,6 +162,17 @@ Paste this entire block into your coding agent. Stop if any GATE fails twice.
 Repository: example/forked-tool
 You are performing gated Argus hygiene/correctness work.
 Prefer opening a PR over committing to the default branch.
+
+## Phase 2
+
+> unverified — check before pasting
+
+### SEC-CODEQL: Turn on CodeQL / default code scanning
+Static analysis catches common security bugs before they ship.
+Enable GitHub Code Scanning default setup (CodeQL) via the repository API.
+Do not invent custom query packs. Stop after two gate failures.
+
+GATE: Code scanning shows as configured
 
 ## Phase 3
 
@@ -167,7 +188,7 @@ GATE: grep -qi 'what this is not' README.md
 ## Phase final — verify & PR
 
 1. Run project tests / verify script if present.
-2. Add a hand-written CHANGELOG note under [Unreleased] listing fix IDs: AGENT-WHAT-NOT
+2. Add a hand-written CHANGELOG note under [Unreleased] listing fix IDs: SEC-CODEQL, AGENT-WHAT-NOT
 3. Push branch `chore/argus-agent` (or continue the existing Argus branch).
 4. Open a Pull Request whose body lists the fix IDs above.
 
@@ -185,18 +206,6 @@ GATE: gh pr view --json url,title || test -f .git/ARGUS_PR_OPENED
 **Attention:** needs human read (low confidence) — raw score 17.4/100
 _Notes:_ missing categories: lineage, prs, releases
 
-### Human tasks
-
-#### H1. Turn on CodeQL / default code scanning
-
-**Why:** Static analysis catches common security bugs before they ship.
-
-1. Open the repository on GitHub.
-2. Settings → Code security → Code scanning.
-3. Set up CodeQL (default setup) and wait until it shows Enabled.
-
-**Done when:** Code scanning shows as configured
-
 ### Agent prompt for `example/docs-only`
 
 Paste this entire block into your coding agent. Stop if any GATE fails twice.
@@ -205,6 +214,23 @@ Paste this entire block into your coding agent. Stop if any GATE fails twice.
 Repository: example/docs-only
 You are performing gated Argus hygiene/correctness work.
 Prefer opening a PR over committing to the default branch.
+
+## Phase 2
+
+### ISSUE-PATTERNED-AUTO: Close patterned bot / argus-auto Issues
+Digest, Dependabot-noise, and Issues labeled argus-auto are mechanical — continuous zero closes them; human product bugs stay open.
+
+Close Issues labeled argus-auto / argus:auto, Argus digest titles, or bot Issues
+matching bump/upgrade/chore(argus) patterns. Do not close human product bugs.
+
+> unverified — check before pasting
+
+### SEC-CODEQL: Turn on CodeQL / default code scanning
+Static analysis catches common security bugs before they ship.
+Enable GitHub Code Scanning default setup (CodeQL) via the repository API.
+Do not invent custom query packs. Stop after two gate failures.
+
+GATE: Code scanning shows as configured
 
 ## Phase 3
 
@@ -220,7 +246,7 @@ GATE: grep -qi 'what this is not' README.md
 ## Phase final — verify & PR
 
 1. Run project tests / verify script if present.
-2. Add a hand-written CHANGELOG note under [Unreleased] listing fix IDs: AGENT-WHAT-NOT
+2. Add a hand-written CHANGELOG note under [Unreleased] listing fix IDs: ISSUE-PATTERNED-AUTO, SEC-CODEQL, AGENT-WHAT-NOT
 3. Push branch `chore/argus-agent` (or continue the existing Argus branch).
 4. Open a Pull Request whose body lists the fix IDs above.
 
@@ -254,8 +280,8 @@ _Notes:_ missing categories: lineage; hygiene/security-only scoring for parked/a
 
 ## example/agent-only
 
-**Attention:** 26.0/100 (medium confidence)
-_Notes:_ missing categories: lineage, releases
+**Attention:** 29.1/100 (medium confidence)
+_Notes:_ missing categories: releases
 
 ### Agent prompt for `example/agent-only`
 
@@ -270,14 +296,19 @@ Prefer opening a PR over committing to the default branch.
 
 ### AGENT-STALE-ISSUES: Triage truly stale issues
 Ancient open issues hide real bugs and signal abandonment.
-List open issues idle ≥90 days. For each: comment with current status, or close with
-a polite resolution if clearly obsolete. Do not close issues that need human judgment —
-label them `needs-human` instead.
+For Issues idle ≥90 days: close if patterned (argus-auto / bot digest); otherwise
+nudge once. Do not close human product bugs — ask for needs-human instead.
 
 ### CI-LATEST-FAILED: Fix failing CI on the default branch
 A red default-branch build means the project cannot be trusted to ship.
 Open the latest failed Actions run on the default branch. Fix the clear failure.
 Do not disable the workflow. Stop after two gate failures.
+
+### ISSUE-PATTERNED-AUTO: Close patterned bot / argus-auto Issues
+Digest, Dependabot-noise, and Issues labeled argus-auto are mechanical — continuous zero closes them; human product bugs stay open.
+
+Close Issues labeled argus-auto / argus:auto, Argus digest titles, or bot Issues
+matching bump/upgrade/chore(argus) patterns. Do not close human product bugs.
 
 ### PR-STALE: Triage stale open pull requests
 Old PRs hide real review work and confuse contributors.
@@ -303,10 +334,20 @@ Keep tone plain. Do not invent features.
 
 GATE: grep -qi 'what this is not' README.md
 
+## Phase 4
+
+### LINEAGE-RECOMMEND-UPGRADE: Open parent template lineage bump PR
+A version gap needs a gated lineage bump; continuous zero opens the PR via handler.
+Open or refresh the Argus lineage bump PR so .template-version matches the parent pin.
+Do not invent sacred-file rewrites; follow docs/UPGRADING_FROM_TEMPLATE.md.
+Stop after two gate failures.
+
+GATE: Child .template-version equals parent expected_version
+
 ## Phase final — verify & PR
 
 1. Run project tests / verify script if present.
-2. Add a hand-written CHANGELOG note under [Unreleased] listing fix IDs: AGENT-STALE-ISSUES, CI-LATEST-FAILED, PR-STALE, AGENT-MEMORY-LAYOUT, AGENT-WHAT-NOT
+2. Add a hand-written CHANGELOG note under [Unreleased] listing fix IDs: AGENT-STALE-ISSUES, CI-LATEST-FAILED, ISSUE-PATTERNED-AUTO, PR-STALE, AGENT-MEMORY-LAYOUT, AGENT-WHAT-NOT, LINEAGE-RECOMMEND-UPGRADE
 3. Push branch `chore/argus-agent` (or continue the existing Argus branch).
 4. Open a Pull Request whose body lists the fix IDs above.
 
@@ -317,23 +358,12 @@ GATE: gh pr view --json url,title || test -f .git/ARGUS_PR_OPENED
 
 - `HYGIENE-CODEOWNERS` — Add CODEOWNERS — GATE: `test -f CODEOWNERS -o -f .github/CODEOWNERS -o -f docs/CODEOWNERS`
 - `HYGIENE-GITIGNORE` — Add a starter .gitignore — GATE: `test -f .gitignore`
+- `LINEAGE-VERSION-STALE` — Bump .template-version toward parent — GATE: `test -f .template-version`
 
 ## example/low-confidence
 
 **Attention:** needs human read (low confidence) — raw score 52.5/100
 _Notes:_ missing categories: ci, deps, lineage, presentation, prs, releases, responsiveness, security
-
-### Human tasks
-
-#### H1. Turn on CodeQL / default code scanning
-
-**Why:** Static analysis catches common security bugs before they ship.
-
-1. Open the repository on GitHub.
-2. Settings → Code security → Code scanning.
-3. Set up CodeQL (default setup) and wait until it shows Enabled.
-
-**Done when:** Code scanning shows as configured
 
 ### Agent prompt for `example/low-confidence`
 
@@ -343,6 +373,23 @@ Paste this entire block into your coding agent. Stop if any GATE fails twice.
 Repository: example/low-confidence
 You are performing gated Argus hygiene/correctness work.
 Prefer opening a PR over committing to the default branch.
+
+## Phase 2
+
+### ISSUE-PATTERNED-AUTO: Close patterned bot / argus-auto Issues
+Digest, Dependabot-noise, and Issues labeled argus-auto are mechanical — continuous zero closes them; human product bugs stay open.
+
+Close Issues labeled argus-auto / argus:auto, Argus digest titles, or bot Issues
+matching bump/upgrade/chore(argus) patterns. Do not close human product bugs.
+
+> unverified — check before pasting
+
+### SEC-CODEQL: Turn on CodeQL / default code scanning
+Static analysis catches common security bugs before they ship.
+Enable GitHub Code Scanning default setup (CodeQL) via the repository API.
+Do not invent custom query packs. Stop after two gate failures.
+
+GATE: Code scanning shows as configured
 
 ## Phase 3
 
@@ -358,7 +405,7 @@ GATE: test -f README.md
 ## Phase final — verify & PR
 
 1. Run project tests / verify script if present.
-2. Add a hand-written CHANGELOG note under [Unreleased] listing fix IDs: AGENT-PRESENTATION
+2. Add a hand-written CHANGELOG note under [Unreleased] listing fix IDs: ISSUE-PATTERNED-AUTO, SEC-CODEQL, AGENT-PRESENTATION
 3. Push branch `chore/argus-agent` (or continue the existing Argus branch).
 4. Open a Pull Request whose body lists the fix IDs above.
 
@@ -384,18 +431,6 @@ GATE: gh pr view --json url,title || test -f .git/ARGUS_PR_OPENED
 **Attention:** needs human read (low confidence) — raw score 66.5/100
 _Notes:_ missing categories: lineage, prs, releases
 
-### Human tasks
-
-#### H1. Turn on CodeQL / default code scanning
-
-**Why:** Static analysis catches common security bugs before they ship.
-
-1. Open the repository on GitHub.
-2. Settings → Code security → Code scanning.
-3. Set up CodeQL (default setup) and wait until it shows Enabled.
-
-**Done when:** Code scanning shows as configured
-
 ### Agent prompt for `brother/family-app`
 
 Paste this entire block into your coding agent. Stop if any GATE fails twice.
@@ -404,6 +439,23 @@ Paste this entire block into your coding agent. Stop if any GATE fails twice.
 Repository: brother/family-app
 You are performing gated Argus hygiene/correctness work.
 Prefer opening a PR over committing to the default branch.
+
+## Phase 2
+
+### ISSUE-PATTERNED-AUTO: Close patterned bot / argus-auto Issues
+Digest, Dependabot-noise, and Issues labeled argus-auto are mechanical — continuous zero closes them; human product bugs stay open.
+
+Close Issues labeled argus-auto / argus:auto, Argus digest titles, or bot Issues
+matching bump/upgrade/chore(argus) patterns. Do not close human product bugs.
+
+> unverified — check before pasting
+
+### SEC-CODEQL: Turn on CodeQL / default code scanning
+Static analysis catches common security bugs before they ship.
+Enable GitHub Code Scanning default setup (CodeQL) via the repository API.
+Do not invent custom query packs. Stop after two gate failures.
+
+GATE: Code scanning shows as configured
 
 ## Phase 3
 
@@ -419,7 +471,7 @@ GATE: grep -qi 'what this is not' README.md
 ## Phase final — verify & PR
 
 1. Run project tests / verify script if present.
-2. Add a hand-written CHANGELOG note under [Unreleased] listing fix IDs: AGENT-WHAT-NOT
+2. Add a hand-written CHANGELOG note under [Unreleased] listing fix IDs: ISSUE-PATTERNED-AUTO, SEC-CODEQL, AGENT-WHAT-NOT
 3. Push branch `chore/argus-agent` (or continue the existing Argus branch).
 4. Open a Pull Request whose body lists the fix IDs above.
 
@@ -446,17 +498,35 @@ GATE: gh pr view --json url,title || test -f .git/ARGUS_PR_OPENED
 **Attention:** 6.7/100 (high confidence)
 _Notes:_ hygiene/security-only scoring for parked/archived
 
-### Human tasks
+### Agent prompt for `example/archived-old`
 
-#### H1. Turn on CodeQL / default code scanning
+Paste this entire block into your coding agent. Stop if any GATE fails twice.
 
-**Why:** Static analysis catches common security bugs before they ship.
+```text
+Repository: example/archived-old
+You are performing gated Argus hygiene/correctness work.
+Prefer opening a PR over committing to the default branch.
 
-1. Open the repository on GitHub.
-2. Settings → Code security → Code scanning.
-3. Set up CodeQL (default setup) and wait until it shows Enabled.
+## Phase 2
 
-**Done when:** Code scanning shows as configured
+> unverified — check before pasting
+
+### SEC-CODEQL: Turn on CodeQL / default code scanning
+Static analysis catches common security bugs before they ship.
+Enable GitHub Code Scanning default setup (CodeQL) via the repository API.
+Do not invent custom query packs. Stop after two gate failures.
+
+GATE: Code scanning shows as configured
+
+## Phase final — verify & PR
+
+1. Run project tests / verify script if present.
+2. Add a hand-written CHANGELOG note under [Unreleased] listing fix IDs: SEC-CODEQL
+3. Push branch `chore/argus-agent` (or continue the existing Argus branch).
+4. Open a Pull Request whose body lists the fix IDs above.
+
+GATE: gh pr view --json url,title || test -f .git/ARGUS_PR_OPENED
+```
 
 ### Auto-safe (controller may open PRs)
 
@@ -469,18 +539,6 @@ _Notes:_ hygiene/security-only scoring for parked/archived
 **Attention:** needs human read (low confidence) — raw score 50.8/100
 _Notes:_ missing categories: lineage, prs, releases
 
-### Human tasks
-
-#### H1. Turn on CodeQL / default code scanning
-
-**Why:** Static analysis catches common security bugs before they ship.
-
-1. Open the repository on GitHub.
-2. Settings → Code security → Code scanning.
-3. Set up CodeQL (default setup) and wait until it shows Enabled.
-
-**Done when:** Code scanning shows as configured
-
 ### Agent prompt for `example/experimental-spike`
 
 Paste this entire block into your coding agent. Stop if any GATE fails twice.
@@ -489,6 +547,17 @@ Paste this entire block into your coding agent. Stop if any GATE fails twice.
 Repository: example/experimental-spike
 You are performing gated Argus hygiene/correctness work.
 Prefer opening a PR over committing to the default branch.
+
+## Phase 2
+
+> unverified — check before pasting
+
+### SEC-CODEQL: Turn on CodeQL / default code scanning
+Static analysis catches common security bugs before they ship.
+Enable GitHub Code Scanning default setup (CodeQL) via the repository API.
+Do not invent custom query packs. Stop after two gate failures.
+
+GATE: Code scanning shows as configured
 
 ## Phase 3
 
@@ -504,7 +573,7 @@ GATE: grep -qi 'what this is not' README.md
 ## Phase final — verify & PR
 
 1. Run project tests / verify script if present.
-2. Add a hand-written CHANGELOG note under [Unreleased] listing fix IDs: AGENT-WHAT-NOT
+2. Add a hand-written CHANGELOG note under [Unreleased] listing fix IDs: SEC-CODEQL, AGENT-WHAT-NOT
 3. Push branch `chore/argus-agent` (or continue the existing Argus branch).
 4. Open a Pull Request whose body lists the fix IDs above.
 

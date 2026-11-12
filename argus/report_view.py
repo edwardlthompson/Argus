@@ -37,6 +37,24 @@ def _band(attention: float, open_any: bool) -> str:
     return "good"
 
 
+def _gh_open_issues(plan: RepoPlan) -> int:
+    return int(_raw(plan).get("open_issues_count") or 0)
+
+
+def _argus_open_count(plan: RepoPlan) -> int:
+    return len(plan.auto_fixes) + len(plan.agent_fixes) + len(plan.human_fixes)
+
+
+def _needs_attention_listing(plan: RepoPlan) -> bool:
+    """Priority/fleet: skip green (no Argus fixes) repos with zero GitHub Issues."""
+    return _argus_open_count(plan) > 0 or _gh_open_issues(plan) > 0
+
+
+def _urgency_key(plan: RepoPlan) -> tuple[int, float, str]:
+    """Most GitHub Issues first, then attention, then name."""
+    return (-_gh_open_issues(plan), -float(plan.score.attention), plan.repo.full_name.lower())
+
+
 def _fix_prefix(fix_id: str) -> str:
     head = (fix_id or "").split("-", 1)[0].upper()
     return head if head in _PREFIX_ORDER[:-1] else "OTHER"
@@ -160,13 +178,20 @@ def build_report_view(
     top_fixes = sorted(fix_counts.items(), key=lambda kv: (-kv[1], kv[0]))[:8]
     hist_max = max(hist) if hist else 1
 
-    priority = sorted(active, key=lambda p: p.score.attention, reverse=True)
+    # Urgent first: GitHub Issues count, then attention. Omit green + 0 Issues.
+    attention_list = sorted(
+        (p for p in active if _needs_attention_listing(p)),
+        key=_urgency_key,
+    )
+    healthy_omitted = sum(1 for p in active if not _needs_attention_listing(p))
+    priority = attention_list  # alias for grandma / spark helpers
     cards = []
-    for p in priority[:12]:
+    for p in attention_list[:12]:
         open_any = bool(p.human_fixes or p.agent_fixes or p.auto_fixes)
         band = _band(p.score.attention, open_any)
         top_cats = _top_categories(p)
-        open_n = len(p.auto_fixes) + len(p.agent_fixes) + len(p.human_fixes)
+        open_n = _argus_open_count(p)
+        gh_issues = _gh_open_issues(p)
         card: dict[str, Any] = {
             "full_name": p.repo.full_name,
             "name": p.repo.name,
@@ -181,6 +206,7 @@ def build_report_view(
             ),
             "bar_width": max(8, min(95, int(p.score.attention))),
             "open_fixes": open_n,
+            "gh_issues": gh_issues,
             "description": (p.repo.description or "")[:220],
         }
         if pages_safe:
@@ -206,6 +232,11 @@ def build_report_view(
         )
     else:
         assessment.append("No open Argus fix matches — fleet looks clean on matched rules.")
+    if healthy_omitted:
+        assessment.append(
+            f"Omitted {healthy_omitted} green repo(s) with zero GitHub Issues from "
+            "Priority / Rest of fleet."
+        )
     if health_delta:
         assessment.append(
             f"This run health delta: open fixes "
@@ -308,17 +339,18 @@ def build_report_view(
             "priority_attention": _priority_spark(priority[:12], cards),
         },
         "assessment_bullets": assessment,
+        "healthy_omitted": healthy_omitted,
         "priority_cards": cards,
         "fleet": [
             {
                 "name": p.repo.name,
                 "url": p.repo.html_url or f"https://github.com/{p.repo.full_name}",
-                "issues": int(_raw(p).get("open_issues_count") or 0),
+                "issues": _gh_open_issues(p),
                 "lang": str(_raw(p).get("language") or "—"),
                 "attention": p.score.attention,
-                "open_fixes": len(p.auto_fixes) + len(p.agent_fixes) + len(p.human_fixes),
+                "open_fixes": _argus_open_count(p),
             }
-            for p in priority[12:]
+            for p in attention_list[12:]
         ],
         "archived_cards": [
             {
@@ -336,10 +368,10 @@ def build_report_view(
             "Full weakness detail stays private (argus-history); Pages stay sanitized.",
         ],
         "attention_blurb": (
-            "Attention is a deterministic 0–100 “needs work” score: category rules "
-            "(momentum, CI, deps, hygiene, security, PRs, …) from live GitHub signals, "
-            "blended by weights in config/rubric.yaml. Higher means more portfolio care. "
-            "Badge bands follow open Argus fixes (empty → good). Dump one repo with "
-            "`argus explain owner/name`."
+            "Attention is a deterministic 0–100 “needs work” score from config/rubric.yaml. "
+            "Priority / Rest of fleet list only repos with open GitHub Issues or open Argus "
+            "fixes, sorted by Issues (most first). Green + zero Issues are omitted. "
+            "The Issues column is GitHub’s open-issue count — not Argus fix backlog. "
+            "`argus explain owner/name` dumps one repo."
         ),
     }

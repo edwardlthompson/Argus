@@ -115,7 +115,10 @@ def test_triage_groups_by_class():
 
 def test_yolo_agent_class_only():
     agent = MatchedFix(fix=_fix("AGENT-WHAT-NOT", FixClass.AGENT), reason="x")
-    human = MatchedFix(fix=_fix("SEC-CODEQL", FixClass.HUMAN), reason="x")
+    human = MatchedFix(fix=_fix("SEC-OPEN-DEPENDABOT-ALERTS", FixClass.HUMAN), reason="x")
+    codeql = MatchedFix(fix=_fix("SEC-CODEQL", FixClass.AGENT), reason="x")
     assert is_yolo_deterministic_agent(agent)
     assert not is_yolo_deterministic_agent(human)
+    assert is_yolo_deterministic_agent(codeql)
     assert "PR-STALE" in YOLO_AGENT_HANDLERS
+    assert "SEC-CODEQL" in YOLO_AGENT_HANDLERS
