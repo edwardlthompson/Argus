@@ -8,7 +8,7 @@
 
 ### Changed
 
-- Reports drop **Priority Attention** / **Rest of fleet** split — one **Fleet** table lists every active repo (Issues → PRs → attention) with an attention bar in the final column.
+- Reports drop **Priority Attention** / **Rest of fleet** split — one **Fleet** table lists every active repo (Issues → open PRs) with an attention bar in the final column; Overall Assessment sits at the bottom.
 
 ### Fixed
 

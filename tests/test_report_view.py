@@ -67,6 +67,25 @@ def test_fleet_lists_every_active_repo_sorted_by_issues():
     assert view["charts"]["fleet_attention"]["points"]
 
 
+def test_fleet_sorts_issues_then_open_prs():
+    low_i_high_pr = _plain("alpha", issues=1, attention=90.0)
+    low_i_high_pr.repo.raw["open_prs_count"] = 20
+    low_i_high_pr.repo.raw["open_issues_only"] = 1
+    high_i = _plain("bravo", issues=5, attention=10.0)
+    high_i.repo.raw["open_prs_count"] = 0
+    high_i.repo.raw["open_issues_only"] = 5
+    same_i_more_pr = _plain("charlie", issues=1, attention=5.0)
+    same_i_more_pr.repo.raw["open_prs_count"] = 3
+    same_i_more_pr.repo.raw["open_issues_only"] = 1
+    view = build_report_view(
+        [low_i_high_pr, high_i, same_i_more_pr],
+        target_label="t",
+        mode="run",
+        pages_safe=True,
+    )
+    assert [r["name"] for r in view["fleet"]] == ["bravo", "alpha", "charlie"]
+
+
 def test_gh_issues_excludes_prs_from_open_issues_count():
     from argus.report_view import _gh_open_issues, _gh_open_prs
 

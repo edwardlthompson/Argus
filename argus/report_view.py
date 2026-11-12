@@ -76,12 +76,11 @@ def _needs_attention_listing(plan: RepoPlan) -> bool:
     )
 
 
-def _urgency_key(plan: RepoPlan) -> tuple[int, int, float, str]:
-    """Most Issues first, then open PRs, then attention."""
+def _urgency_key(plan: RepoPlan) -> tuple[int, int, str]:
+    """Most Issues first, then most open PRs (name tiebreak)."""
     return (
         -_gh_open_issues(plan),
         -_gh_open_prs(plan),
-        -float(plan.score.attention),
         plan.repo.full_name.lower(),
     )
 
@@ -383,7 +382,7 @@ def build_report_view(
         ],
         "attention_blurb": (
             "Attention is a deterministic 0–100 “needs work” score from config/rubric.yaml. "
-            "Fleet lists every active repo, sorted by Issues then open PRs then attention. "
+            "Fleet lists every active repo, sorted by Issues then open PRs. "
             "Issues and PRs stay in separate columns — GitHub’s open_issues_count wrongly "
             "includes PRs; Argus strips that. `argus explain owner/name` dumps one repo."
         ),

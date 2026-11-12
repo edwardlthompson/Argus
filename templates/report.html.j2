@@ -489,26 +489,6 @@
       </div>
     </div>
 
-    <h2>Overall Assessment</h2>
-    <div class="card">
-      {% if view.attention_blurb %}
-      <p class="meta" style="margin:0 0 0.85rem"><strong>How attention works.</strong> {{ view.attention_blurb }}</p>
-      {% endif %}
-      <ul class="assessment">
-        {% for b in view.assessment_bullets %}
-        <li>{{ b }}</li>
-        {% endfor %}
-      </ul>
-      {% if view.strong %}
-      <p class="meta" style="margin-top:1rem">Strengths</p>
-      <ul class="assessment">
-        {% for s in view.strong %}
-        <li>{{ s }}</li>
-        {% endfor %}
-      </ul>
-      {% endif %}
-    </div>
-
     {% if view.grandma_tasks %}
     <h2>Needs you</h2>
     {% for t in view.grandma_tasks %}
@@ -523,7 +503,7 @@
     {% endif %}
 
     <h2>Fleet</h2>
-    <p class="meta">Every active repo — sorted by Issues, then open PRs, then attention. Issues and PRs stay separate (GitHub’s issue count wrongly includes PRs).</p>
+    <p class="meta">Every active repo — sorted by Issues, then open PRs. Issues and PRs stay separate (GitHub’s issue count wrongly includes PRs).</p>
     {% if view.fleet %}
     <div class="card">
       <table class="fleet">
@@ -570,6 +550,26 @@
     </div>
     {% endfor %}
     {% endif %}
+
+    <h2>Overall Assessment</h2>
+    <div class="card">
+      {% if view.attention_blurb %}
+      <p class="meta" style="margin:0 0 0.85rem"><strong>How attention works.</strong> {{ view.attention_blurb }}</p>
+      {% endif %}
+      <ul class="assessment">
+        {% for b in view.assessment_bullets %}
+        <li>{{ b }}</li>
+        {% endfor %}
+      </ul>
+      {% if view.strong %}
+      <p class="meta" style="margin-top:1rem">Strengths</p>
+      <ul class="assessment">
+        {% for s in view.strong %}
+        <li>{{ s }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+    </div>
 
     <footer>
       Deterministic Argus report — no LLM narrative.
