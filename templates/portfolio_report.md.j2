@@ -80,10 +80,10 @@ _No open Argus fixes._
 {% if view.fleet %}
 ## Rest of fleet
 
-| Repo | Lang | Issues | Attention |
-|------|------|-------:|----------:|
+| Repo | Lang | Issues | Open PRs | Attention |
+|------|------|-------:|---------:|----------:|
 {% for r in view.fleet %}
-| [{{ r.name }}]({{ r.url }}) | {{ r.lang }} | {{ r.issues }} | {{ r.attention }} |
+| [{{ r.name }}]({{ r.url }}) | {{ r.lang }} | {{ r.issues }} | {{ r.prs }} | {{ r.attention }} |
 {% endfor %}
 {% endif %}
 

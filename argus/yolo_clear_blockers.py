@@ -6,7 +6,12 @@ import time
 from typing import Any
 
 from argus.github_client import GitHubClient
-from argus.yolo import YoloResult, merge_dependabot_patch_prs, merge_upgrade_prs
+from argus.yolo import (
+    YoloResult,
+    merge_argus_prs,
+    merge_dependabot_patch_prs,
+    merge_upgrade_prs,
+)
 from argus.yolo_upgrade_fix import fix_open_upgrade_prs
 
 
@@ -20,8 +25,9 @@ def clear_open_upgrade_blockers(
     soft_allowlist: bool = True,
     require_armed: bool = True,
     also_dependabot_patch: bool = True,
+    also_argus_prs: bool = True,
 ) -> dict[str, Any]:
-    """Exhaust mechanical upgrade/patch merges while CI settles.
+    """Exhaust mechanical upgrade/patch/argus merges while CI settles.
 
     Soft-merge stays allowlist-only (security/Trivy/CodeQL still hard-block).
     Re-runs fixers each round so new check failures get another mechanical pass.
@@ -30,6 +36,7 @@ def clear_open_upgrade_blockers(
         "rounds": [],
         "merged": [],
         "dep_merged": [],
+        "argus_merged": [],
         "leftovers": [],
         "fix": [],
     }
@@ -44,37 +51,66 @@ def clear_open_upgrade_blockers(
             require_armed=require_armed,
             soft_allowlist=soft_allowlist,
         )
+        argus: YoloResult | None = None
+        if also_argus_prs:
+            rem_a = max(0, remaining - len(up.merged))
+            argus = merge_argus_prs(
+                client,
+                max_merges=rem_a,
+                login=login,
+                require_armed=require_armed,
+                soft_allowlist=soft_allowlist,
+            )
         dep: YoloResult | None = None
         if also_dependabot_patch:
-            rem_dep = max(0, remaining - len(up.merged))
+            used = len(up.merged) + (len(argus.merged) if argus else 0)
+            rem_dep = max(0, remaining - used)
             dep = merge_dependabot_patch_prs(client, max_merges=rem_dep, login=login)
         round_row = {
             "pass": i + 1,
             "merged": list(up.merged),
-            "skipped": list(up.skipped),
-            "errors": list(up.errors),
+            "skipped": list(up.skipped) + (list(argus.skipped) if argus else []),
+            "errors": list(up.errors) + (list(argus.errors) if argus else []),
+            "argus_merged": list(argus.merged) if argus else [],
             "dep_merged": list(dep.merged) if dep else [],
         }
         out["rounds"].append(round_row)
         out["merged"].extend(up.merged)
+        if argus:
+            out["argus_merged"].extend(argus.merged)
         if dep:
             out["dep_merged"].extend(dep.merged)
-        remaining = max(0, remaining - len(up.merged) - (len(dep.merged) if dep else 0))
+        remaining = max(
+            0,
+            remaining
+            - len(up.merged)
+            - (len(argus.merged) if argus else 0)
+            - (len(dep.merged) if dep else 0),
+        )
         hard = [
             s
-            for s in up.skipped
+            for s in (list(up.skipped) + (list(argus.skipped) if argus else []))
             if "ci_green" in s
             and ":pending" not in s
             and ":soft_allowlist" not in s
             and ":actions_billing" not in s
             and ":actions_unavailable" not in s
         ]
-        pending = any(":pending" in s for s in up.skipped)
+        pending = any(
+            ":pending" in s
+            for s in (list(up.skipped) + (list(argus.skipped) if argus else []))
+        )
         fixed_any = bool(fix.get("fixed"))
         out["leftovers"] = hard
         if remaining <= 0:
             break
-        if not pending and not fixed_any and not up.merged and not (dep and dep.merged):
+        if (
+            not pending
+            and not fixed_any
+            and not up.merged
+            and not (argus and argus.merged)
+            and not (dep and dep.merged)
+        ):
             # Steady state: nothing pending, nothing newly fixed/merged.
             break
         if i + 1 >= loops:

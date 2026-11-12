@@ -68,6 +68,23 @@ def test_green_zero_issues_omitted_from_priority():
     assert view["fleet"] == []
 
 
+def test_gh_issues_excludes_prs_from_open_issues_count():
+    from argus.report_view import _gh_open_issues, _gh_open_prs
+
+    plan = _plain("runner", issues=14, attention=30.0)
+    plan.repo.raw["open_issues_count"] = 14  # GitHub includes PRs
+    plan.repo.raw["open_prs_count"] = 14
+    plan.repo.raw["open_issues_only"] = 0
+    assert _gh_open_issues(plan) == 0
+    assert _gh_open_prs(plan) == 14
+    # Still listed (PRs identified) but not as Issues.
+    assert _needs_attention_listing(plan)
+    view = build_report_view([plan], target_label="t", mode="run", pages_safe=True)
+    card = view["priority_cards"][0]
+    assert card["gh_issues"] == 0
+    assert card["gh_prs"] == 14
+
+
 def test_yolo_handlers_include_issue_ids():
     from argus.yolo import YOLO_AGENT_HANDLERS, YOLO_HANDLERS
 

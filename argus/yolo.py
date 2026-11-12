@@ -59,6 +59,21 @@ def is_dependabot_patch_title(title: str, user_login: str | None = None) -> bool
     return bool(re.search(r"\b(patch|minor)\b", t, re.I))
 
 
+def is_dependabot_auto_mergeable(title: str, user_login: str | None = None) -> bool:
+    """Patch/minor plus mechanical Actions majors and pip lower-bound bumps."""
+    if is_dependabot_patch_title(title, user_login):
+        return True
+    t = title or ""
+    login = (user_login or "").lower()
+    if "dependabot" not in login and "dependabot" not in t.lower():
+        return False
+    if re.search(r"actions/[\w-]+ from \d+ to \d+", t, re.I):
+        return True
+    if re.search(r"update .+ requirement from", t, re.I):
+        return True
+    return False
+
+
 def _binary_pr(
     client: GitHubClient,
     plan: RepoPlan,
@@ -677,6 +692,8 @@ def merge_argus_prs(
     max_merges: int,
     login: str | None = None,
     safety: dict[str, Any] | None = None,
+    require_armed: bool = True,
+    soft_allowlist: bool = False,
 ) -> YoloResult:
     """Squash-merge open PRs titled chore(argus) for the authenticated user."""
     from argus.config_loader import load_safety
@@ -689,7 +706,8 @@ def merge_argus_prs(
         login=login,
         safety=safety,
         head_prefixes=("chore/argus",),
-        require_armed=True,
+        require_armed=require_armed,
+        soft_allowlist=soft_allowlist,
     )
 
 
@@ -758,7 +776,7 @@ def merge_dependabot_patch_prs(
         title = str(it.get("title") or "")
         user = ((it.get("user") or {}) if isinstance(it.get("user"), dict) else {})
         login_u = str(user.get("login") or "")
-        if not is_dependabot_patch_title(title, login_u):
+        if not is_dependabot_auto_mergeable(title, login_u):
             result.skipped.append(f"major-or-skip:{title[:60]}")
             continue
         repo_url = str(it.get("repository_url") or "")

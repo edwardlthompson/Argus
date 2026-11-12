@@ -21,9 +21,19 @@ def _meta_line(plan: RepoPlan) -> str:
     spdx = str((lic or {}).get("spdx_id") or "unknown")
     lang = str(raw.get("language") or "—")
     stars = int(raw.get("stargazers_count") or 0)
-    issues = int(raw.get("open_issues_count") or 0)
+    if "open_issues_only" in raw:
+        issues = int(raw.get("open_issues_only") or 0)
+    else:
+        issues = int(raw.get("open_issues_count") or 0)
+        if "open_prs_count" in raw:
+            issues = max(0, issues - int(raw.get("open_prs_count") or 0))
+    prs = int(raw.get("open_prs_count") or 0)
     pushed = str(raw.get("pushed_at") or "")[:10] or "—"
-    return f"{lang} · ★{stars} · License: {spdx} · {issues} open issues · Last push {pushed}"
+    pr_bit = f" · {prs} open PRs" if prs else ""
+    return (
+        f"{lang} · ★{stars} · License: {spdx} · {issues} open issues"
+        f"{pr_bit} · Last push {pushed}"
+    )
 
 
 def _band(attention: float, open_any: bool) -> str:
@@ -38,7 +48,19 @@ def _band(attention: float, open_any: bool) -> str:
 
 
 def _gh_open_issues(plan: RepoPlan) -> int:
-    return int(_raw(plan).get("open_issues_count") or 0)
+    """True GitHub Issues only (PRs stripped). GitHub's open_issues_count includes PRs."""
+    raw = _raw(plan)
+    if "open_issues_only" in raw:
+        return int(raw.get("open_issues_only") or 0)
+    total = int(raw.get("open_issues_count") or 0)
+    if "open_prs_count" in raw:
+        return max(0, total - int(raw.get("open_prs_count") or 0))
+    return total
+
+
+def _gh_open_prs(plan: RepoPlan) -> int:
+    """Open pull requests (never counted as Issues in Priority)."""
+    return int(_raw(plan).get("open_prs_count") or 0)
 
 
 def _argus_open_count(plan: RepoPlan) -> int:
@@ -46,13 +68,22 @@ def _argus_open_count(plan: RepoPlan) -> int:
 
 
 def _needs_attention_listing(plan: RepoPlan) -> bool:
-    """Priority/fleet: skip green (no Argus fixes) repos with zero GitHub Issues."""
-    return _argus_open_count(plan) > 0 or _gh_open_issues(plan) > 0
+    """List repos with Argus fixes, Issues, or open PRs (PRs are not Issues)."""
+    return (
+        _argus_open_count(plan) > 0
+        or _gh_open_issues(plan) > 0
+        or _gh_open_prs(plan) > 0
+    )
 
 
-def _urgency_key(plan: RepoPlan) -> tuple[int, float, str]:
-    """Most GitHub Issues first, then attention, then name."""
-    return (-_gh_open_issues(plan), -float(plan.score.attention), plan.repo.full_name.lower())
+def _urgency_key(plan: RepoPlan) -> tuple[int, int, float, str]:
+    """Most Issues first, then open PRs, then attention."""
+    return (
+        -_gh_open_issues(plan),
+        -_gh_open_prs(plan),
+        -float(plan.score.attention),
+        plan.repo.full_name.lower(),
+    )
 
 
 def _fix_prefix(fix_id: str) -> str:
@@ -192,6 +223,7 @@ def build_report_view(
         top_cats = _top_categories(p)
         open_n = _argus_open_count(p)
         gh_issues = _gh_open_issues(p)
+        gh_prs = _gh_open_prs(p)
         card: dict[str, Any] = {
             "full_name": p.repo.full_name,
             "name": p.repo.name,
@@ -207,6 +239,7 @@ def build_report_view(
             "bar_width": max(8, min(95, int(p.score.attention))),
             "open_fixes": open_n,
             "gh_issues": gh_issues,
+            "gh_prs": gh_prs,
             "description": (p.repo.description or "")[:220],
         }
         if pages_safe:
@@ -234,8 +267,15 @@ def build_report_view(
         assessment.append("No open Argus fix matches — fleet looks clean on matched rules.")
     if healthy_omitted:
         assessment.append(
-            f"Omitted {healthy_omitted} green repo(s) with zero GitHub Issues from "
-            "Priority / Rest of fleet."
+            f"Omitted {healthy_omitted} green repo(s) with zero Issues and zero PRs "
+            "from Priority / Rest of fleet."
+        )
+    pr_total = sum(_gh_open_prs(p) for p in active)
+    issue_total = sum(_gh_open_issues(p) for p in active)
+    if pr_total or issue_total:
+        assessment.append(
+            f"GitHub surface: {issue_total} Issues + {pr_total} open PRs "
+            "(PRs are never counted as Issues)."
         )
     if health_delta:
         assessment.append(
@@ -346,6 +386,7 @@ def build_report_view(
                 "name": p.repo.name,
                 "url": p.repo.html_url or f"https://github.com/{p.repo.full_name}",
                 "issues": _gh_open_issues(p),
+                "prs": _gh_open_prs(p),
                 "lang": str(_raw(p).get("language") or "—"),
                 "attention": p.score.attention,
                 "open_fixes": _argus_open_count(p),
@@ -369,9 +410,9 @@ def build_report_view(
         ],
         "attention_blurb": (
             "Attention is a deterministic 0–100 “needs work” score from config/rubric.yaml. "
-            "Priority / Rest of fleet list only repos with open GitHub Issues or open Argus "
-            "fixes, sorted by Issues (most first). Green + zero Issues are omitted. "
-            "The Issues column is GitHub’s open-issue count — not Argus fix backlog. "
+            "Priority / Rest of fleet list repos with Issues, open PRs, or Argus fixes. "
+            "Sorted by Issues then PRs. Columns keep Issues and PRs separate — GitHub’s "
+            "open_issues_count wrongly includes PRs; Argus strips that. "
             "`argus explain owner/name` dumps one repo."
         ),
     }

@@ -248,19 +248,20 @@
     </div>
     {% endif %}
 
-    <h2>Repos (most GitHub Issues first)</h2>
-    <p class="empty">Green + zero Issues omitted. Issues column is GitHub open Issues, not Argus fixes.</p>
+    <h2>Repos (Issues, then open PRs)</h2>
+    <p class="empty">Issues and open PRs are separate columns (GitHub’s issue count wrongly includes PRs). Green + zero of both omitted.</p>
     <div class="panel">
       {% if view.priority_cards %}
       <table>
         <thead>
-          <tr><th>Repo</th><th>GitHub Issues</th><th>Attention</th><th>Argus fixes</th><th>Band</th></tr>
+          <tr><th>Repo</th><th>Issues</th><th>Open PRs</th><th>Attention</th><th>Argus fixes</th><th>Band</th></tr>
         </thead>
         <tbody>
           {% for c in view.priority_cards %}
           <tr>
             <td>{{ c.name }}</td>
             <td>{{ c.gh_issues }}</td>
+            <td>{{ c.gh_prs }}</td>
             <td>{{ c.attention }}</td>
             <td>{{ c.open_fixes }}</td>
             <td>{{ c.band }}</td>

@@ -39,6 +39,8 @@ def test_brand_handler_is_brief_only_not_png_gen():
 
 
 def test_dependabot_patch_filter():
+    from argus.yolo import is_dependabot_auto_mergeable
+
     assert is_dependabot_patch_title(
         "Bump requests from 2.31.0 to 2.32.1",
         "dependabot[bot]",
@@ -58,6 +60,14 @@ def test_dependabot_patch_filter():
     assert not is_dependabot_patch_title(
         "feat: redesign homepage",
         "alice",
+    )
+    assert is_dependabot_auto_mergeable(
+        "chore(deps): bump actions/checkout from 4 to 7",
+        "dependabot[bot]",
+    )
+    assert is_dependabot_auto_mergeable(
+        "chore(deps): update httpx requirement from >=0.27 to >=0.28.1",
+        "dependabot[bot]",
     )
 
 

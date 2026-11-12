@@ -46,6 +46,18 @@ def collect_signals(client: GitHubClient, repo: RepoRecord) -> SignalBundle:
             setattr(bundle, name, fn(client, repo))
         except (GitHubError, KeyError, TypeError, ValueError):
             setattr(bundle, name, None)
+    # GitHub open_issues_count includes PRs — stamp Issues-only for reports/fixes.
+    mom = bundle.momentum if isinstance(bundle.momentum, dict) else None
+    prs_sig = bundle.prs if isinstance(bundle.prs, dict) else None
+    if mom is not None:
+        total = int(mom.get("open_issues") or (repo.raw or {}).get("open_issues_count") or 0)
+        pr_n = int((prs_sig or {}).get("open_prs") or 0)
+        mom["open_issues_including_prs"] = total
+        mom["open_issues"] = max(0, total - pr_n)
+        raw = dict(repo.raw or {})
+        raw["open_prs_count"] = pr_n
+        raw["open_issues_only"] = mom["open_issues"]
+        repo.raw = raw
     return bundle
 
 

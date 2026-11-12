@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Report Priority used GitHub `open_issues_count` (includes PRs). Now Issues-only with a separate **Open PRs** column/count so PRs are identified without false-positive “Issues.”
+- `local-weekly` clear loop also merges `chore(argus)*` PRs; Dependabot Actions majors + pip lower-bound bumps are auto-mergeable.
+
 ## [0.8.0] — 2026-11-12
 
 ### Added
