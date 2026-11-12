@@ -280,6 +280,16 @@
       color: var(--ink);
     }
     table.fleet th { color: var(--muted); font-weight: 600; }
+    table.fleet .attn-cell { min-width: 7.5rem; }
+    table.fleet .attn-n {
+      display: inline-block;
+      min-width: 2.2rem;
+      margin-right: 0.4rem;
+      font-variant-numeric: tabular-nums;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+    table.fleet .attn-cell .bar { display: inline-block; width: 5.5rem; vertical-align: middle; }
     .steps {
       white-space: pre-wrap;
       font-family: inherit;
@@ -451,10 +461,10 @@
       </div>
 
       <div class="card chart-card">
-        <h3>Priority attention sparkline</h3>
-        {% set spark = view.charts.priority_attention %}
+        <h3>Fleet attention (top 12)</h3>
+        {% set spark = view.charts.fleet_attention or view.charts.priority_attention %}
         {% if spark.points %}
-        <svg class="spark" viewBox="0 0 320 72" preserveAspectRatio="none" role="img" aria-label="Priority repo attention sparkline">
+        <svg class="spark" viewBox="0 0 320 72" preserveAspectRatio="none" role="img" aria-label="Fleet attention sparkline">
           <line class="axis" x1="0" y1="66" x2="320" y2="66" />
           <path class="area" d="{{ spark.area }}" />
           <path class="line" d="{{ spark.line }}" />
@@ -474,7 +484,7 @@
           {% endfor %}
         </div>
         {% else %}
-        <p class="meta">No priority repos.</p>
+        <p class="meta">No fleet repos.</p>
         {% endif %}
       </div>
     </div>
@@ -512,33 +522,44 @@
     {% endfor %}
     {% endif %}
 
-    <h2>Priority Attention</h2>
-    <p class="meta">Sorted by Issues, then open PRs. PRs are listed separately — never counted as Issues. Green + zero Issues + zero PRs omitted.</p>
-    {% for c in view.priority_cards %}
-    <div class="card priority-card">
-      <h3>
-        <span class="badge badge-{{ c.band }}">{{ c.band }}</span>
-        <span class="badge badge-{{ c.status }}">{{ c.status }}</span>
-        <a href="{{ c.url }}">{{ c.full_name }}</a>
-      </h3>
-      <p class="meta">{{ c.gh_issues }} Issues · {{ c.gh_prs }} open PRs · {{ c.open_fixes }} Argus fixes · attention {{ c.attention }}/100</p>
-      <p class="meta">{{ c.meta }}</p>
-      {% if c.categories_line %}
-      <p class="meta">Top categories: {{ c.categories_line }}</p>
-      {% endif %}
-      {% if c.description %}<p>{{ c.description }}</p>{% endif %}
-      <div class="bar bar-{{ c.band }}" title="attention {{ c.attention }}/100"><span style="width:{{ c.bar_width }}%"></span></div>
-      {% if c.issues %}
-      <ul class="issues">
-        {% for i in c.issues %}<li>{{ i }}</li>{% endfor %}
-      </ul>
-      {% else %}
-      <p class="meta">No open Argus fixes.</p>
-      {% endif %}
+    <h2>Fleet</h2>
+    <p class="meta">Every active repo — sorted by Issues, then open PRs, then attention. Issues and PRs stay separate (GitHub’s issue count wrongly includes PRs).</p>
+    {% if view.fleet %}
+    <div class="card">
+      <table class="fleet">
+        <thead>
+          <tr>
+            <th>Repo</th>
+            <th>Lang</th>
+            <th>Issues</th>
+            <th>Open PRs</th>
+            <th>Argus fixes</th>
+            <th>Attention</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in view.fleet %}
+          <tr>
+            <td>
+              <span class="badge badge-{{ r.band }}">{{ r.band }}</span>
+              <a href="{{ r.url }}">{{ r.name }}</a>
+            </td>
+            <td>{{ r.lang }}</td>
+            <td>{{ r.issues }}</td>
+            <td>{{ r.prs }}</td>
+            <td>{{ r.open_fixes }}</td>
+            <td class="attn-cell">
+              <span class="attn-n">{{ r.attention }}</span>
+              <div class="bar bar-{{ r.band }}" title="attention {{ r.attention }}/100"><span style="width:{{ r.bar_width }}%"></span></div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
     {% else %}
-    <div class="card"><p class="meta">No priority repos in this scan.</p></div>
-    {% endfor %}
+    <div class="card"><p class="meta">No active repos in this scan.</p></div>
+    {% endif %}
 
     {% if view.archived_cards %}
     <h2>Archived</h2>
@@ -548,28 +569,6 @@
       <p class="meta">{{ a.meta }}</p>
     </div>
     {% endfor %}
-    {% endif %}
-
-    {% if view.fleet %}
-    <h2>Rest of fleet</h2>
-    <p class="meta">Same filter as Priority — Issues and PRs in separate columns. {{ view.healthy_omitted }} healthy omitted.</p>
-    <div class="card">
-      <table class="fleet">
-        <thead><tr><th>Repo</th><th>Lang</th><th>Issues</th><th>Open PRs</th><th>Argus fixes</th><th>Attention</th></tr></thead>
-        <tbody>
-          {% for r in view.fleet %}
-          <tr>
-            <td><a href="{{ r.url }}">{{ r.name }}</a></td>
-            <td>{{ r.lang }}</td>
-            <td>{{ r.issues }}</td>
-            <td>{{ r.prs }}</td>
-            <td>{{ r.open_fixes }}</td>
-            <td>{{ r.attention }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
     {% endif %}
 
     <footer>

@@ -6,6 +6,10 @@
 
 - **Weekly Overview refresh:** `sync_profile` (default on) refreshes `YOU/YOU` stars/forks/watches/views, full icon rescan, and public↔private membership on every apply / Tuesday weekly / `local-weekly` (independent of `skip_profile` auto_safe guard).
 
+### Changed
+
+- Reports drop **Priority Attention** / **Rest of fleet** split — one **Fleet** table lists every active repo (Issues → PRs → attention) with an attention bar in the final column.
+
 ### Fixed
 
 - Report Priority used GitHub `open_issues_count` (includes PRs). Now Issues-only with a separate **Open PRs** column/count so PRs are identified without false-positive “Issues.”

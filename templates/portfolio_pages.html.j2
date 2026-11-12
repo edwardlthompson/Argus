@@ -248,29 +248,34 @@
     </div>
     {% endif %}
 
-    <h2>Repos (Issues, then open PRs)</h2>
-    <p class="empty">Issues and open PRs are separate columns (GitHub’s issue count wrongly includes PRs). Green + zero of both omitted.</p>
+    <h2>Fleet</h2>
+    <p class="empty">Every active repo — Issues and open PRs in separate columns (GitHub’s issue count wrongly includes PRs).</p>
     <div class="panel">
-      {% if view.priority_cards %}
+      {% if view.fleet %}
       <table>
         <thead>
-          <tr><th>Repo</th><th>Issues</th><th>Open PRs</th><th>Attention</th><th>Argus fixes</th><th>Band</th></tr>
+          <tr><th>Repo</th><th>Issues</th><th>Open PRs</th><th>Argus fixes</th><th>Attention</th><th>Band</th></tr>
         </thead>
         <tbody>
-          {% for c in view.priority_cards %}
+          {% for r in view.fleet %}
           <tr>
-            <td>{{ c.name }}</td>
-            <td>{{ c.gh_issues }}</td>
-            <td>{{ c.gh_prs }}</td>
-            <td>{{ c.attention }}</td>
-            <td>{{ c.open_fixes }}</td>
-            <td>{{ c.band }}</td>
+            <td>{{ r.name }}</td>
+            <td>{{ r.issues }}</td>
+            <td>{{ r.prs }}</td>
+            <td>{{ r.open_fixes }}</td>
+            <td>
+              <span>{{ r.attention }}</span>
+              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
+                <i style="display:block;height:100%;width:{{ r.bar_width }}%;background:var(--plot-fill)"></i>
+              </span>
+            </td>
+            <td>{{ r.band }}</td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
       {% else %}
-      <p class="empty">No repositories needing attention in this scan.</p>
+      <p class="empty">No active repositories in this scan.</p>
       {% endif %}
     </div>
 

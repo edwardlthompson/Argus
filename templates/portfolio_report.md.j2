@@ -49,24 +49,12 @@
 {% endfor %}
 {% endif %}
 
-## Priority Attention
+## Fleet
 
-{% for c in view.priority_cards %}
-### {{ c.full_name }} (`{{ c.band }}` · {{ c.status }} · {{ c.attention }}/100)
-
-{{ c.meta }}
-
-{% if c.description %}{{ c.description }}
-
-{% endif %}
-{% if c.issues %}
-{% for i in c.issues %}
-- {{ i }}
-{% endfor %}
-{% else %}
-_No open Argus fixes._
-{% endif %}
-
+| Repo | Lang | Issues | Open PRs | Argus fixes | Attention | Bar |
+|------|------|-------:|---------:|------------:|----------:|-----|
+{% for r in view.fleet %}
+| [{{ r.name }}]({{ r.url }}) | {{ r.lang }} | {{ r.issues }} | {{ r.prs }} | {{ r.open_fixes }} | {{ r.attention }} | `{{ '█' * ((r.bar_width // 10) or 1) }}{{ '░' * (10 - ((r.bar_width // 10) or 1)) }}` |
 {% endfor %}
 
 {% if view.archived_cards %}
@@ -74,16 +62,6 @@ _No open Argus fixes._
 
 {% for a in view.archived_cards %}
 - [{{ a.full_name }}]({{ a.url }}) — {{ a.meta }}
-{% endfor %}
-{% endif %}
-
-{% if view.fleet %}
-## Rest of fleet
-
-| Repo | Lang | Issues | Open PRs | Attention |
-|------|------|-------:|---------:|----------:|
-{% for r in view.fleet %}
-| [{{ r.name }}]({{ r.url }}) | {{ r.lang }} | {{ r.issues }} | {{ r.prs }} | {{ r.attention }} |
 {% endfor %}
 {% endif %}
 

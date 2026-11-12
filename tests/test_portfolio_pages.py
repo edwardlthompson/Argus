@@ -65,13 +65,13 @@ def test_pages_safe_omits_issue_titles_and_grandma():
     safe = build_report_view(plans, target_label="t", mode="run", pages_safe=True)
     full = build_report_view(plans, target_label="t", mode="run", pages_safe=False)
     assert safe["pages_safe"] is True
-    assert safe["priority_cards"][0]["issues"] == []
+    assert len(safe["fleet"]) == 2
     assert safe["grandma_tasks"] == []
     assert "Secret title" not in str(safe)
-    assert full["priority_cards"][0]["issues"]
     assert full["grandma_tasks"]
     assert any(r["key"] == "SEC" for r in safe["charts"]["prefix_groups"])
     assert safe["charts"]["rubric_means"]
+    assert "bar_width" in safe["fleet"][0]
 
 
 def test_write_portfolio_pages_and_steward(tmp_path):

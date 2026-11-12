@@ -209,47 +209,35 @@ def build_report_view(
     top_fixes = sorted(fix_counts.items(), key=lambda kv: (-kv[1], kv[0]))[:8]
     hist_max = max(hist) if hist else 1
 
-    # Urgent first: GitHub Issues count, then attention. Omit green + 0 Issues.
-    attention_list = sorted(
-        (p for p in active if _needs_attention_listing(p)),
-        key=_urgency_key,
-    )
-    healthy_omitted = sum(1 for p in active if not _needs_attention_listing(p))
-    priority = attention_list  # alias for grandma / spark helpers
-    cards = []
-    for p in attention_list[:12]:
+    # Full active fleet, Issues → PRs → attention. No Priority / omit split.
+    fleet_plans = sorted(active, key=_urgency_key)
+    healthy_omitted = 0
+    priority = fleet_plans  # grandma + spark helpers over full fleet
+    fleet_rows: list[dict[str, Any]] = []
+    for p in fleet_plans:
         open_any = bool(p.human_fixes or p.agent_fixes or p.auto_fixes)
         band = _band(p.score.attention, open_any)
-        top_cats = _top_categories(p)
         open_n = _argus_open_count(p)
         gh_issues = _gh_open_issues(p)
         gh_prs = _gh_open_prs(p)
-        card: dict[str, Any] = {
-            "full_name": p.repo.full_name,
-            "name": p.repo.name,
-            "url": p.repo.html_url or f"https://github.com/{p.repo.full_name}",
-            "status": p.repo.status.value,
-            "band": band,
-            "attention": p.score.attention,
-            "meta": _meta_line(p),
-            "top_categories": top_cats,
-            "categories_line": " · ".join(
-                f"{c['name']} {c['score']}" for c in top_cats
-            ),
-            "bar_width": max(8, min(95, int(p.score.attention))),
-            "open_fixes": open_n,
-            "gh_issues": gh_issues,
-            "gh_prs": gh_prs,
-            "description": (p.repo.description or "")[:220],
-        }
-        if pages_safe:
-            card["issues"] = []
-        else:
-            card["issues"] = [
-                f"`{m.fix.id}` — {m.fix.title}"
-                for m in (*p.auto_fixes, *p.agent_fixes, *p.human_fixes)[:8]
-            ]
-        cards.append(card)
+        fleet_rows.append(
+            {
+                "full_name": p.repo.full_name,
+                "name": p.repo.name,
+                "url": p.repo.html_url or f"https://github.com/{p.repo.full_name}",
+                "status": p.repo.status.value,
+                "band": band,
+                "lang": str(_raw(p).get("language") or "—"),
+                "attention": p.score.attention,
+                "bar_width": max(8, min(100, int(p.score.attention))),
+                "open_fixes": open_n,
+                "issues": gh_issues,
+                "prs": gh_prs,
+                "gh_issues": gh_issues,
+                "gh_prs": gh_prs,
+            }
+        )
+    cards = fleet_rows[:12]  # sparkline sample; fleet table uses all rows
 
     assessment = [
         f"Portfolio size: {len(plans)} repositories "
@@ -265,11 +253,6 @@ def build_report_view(
         )
     else:
         assessment.append("No open Argus fix matches — fleet looks clean on matched rules.")
-    if healthy_omitted:
-        assessment.append(
-            f"Omitted {healthy_omitted} green repo(s) with zero Issues and zero PRs "
-            "from Priority / Rest of fleet."
-        )
     pr_total = sum(_gh_open_prs(p) for p in active)
     issue_total = sum(_gh_open_issues(p) for p in active)
     if pr_total or issue_total:
@@ -377,22 +360,12 @@ def build_report_view(
                 sorted(lang_counts.items(), key=lambda kv: (-kv[1], kv[0])), limit=8
             ),
             "priority_attention": _priority_spark(priority[:12], cards),
+            "fleet_attention": _priority_spark(priority[:12], cards),
         },
         "assessment_bullets": assessment,
         "healthy_omitted": healthy_omitted,
-        "priority_cards": cards,
-        "fleet": [
-            {
-                "name": p.repo.name,
-                "url": p.repo.html_url or f"https://github.com/{p.repo.full_name}",
-                "issues": _gh_open_issues(p),
-                "prs": _gh_open_prs(p),
-                "lang": str(_raw(p).get("language") or "—"),
-                "attention": p.score.attention,
-                "open_fixes": _argus_open_count(p),
-            }
-            for p in attention_list[12:]
-        ],
+        "priority_cards": cards,  # compat alias = first 12 fleet rows
+        "fleet": fleet_rows,
         "archived_cards": [
             {
                 "name": p.repo.name,
@@ -410,9 +383,8 @@ def build_report_view(
         ],
         "attention_blurb": (
             "Attention is a deterministic 0–100 “needs work” score from config/rubric.yaml. "
-            "Priority / Rest of fleet list repos with Issues, open PRs, or Argus fixes. "
-            "Sorted by Issues then PRs. Columns keep Issues and PRs separate — GitHub’s "
-            "open_issues_count wrongly includes PRs; Argus strips that. "
-            "`argus explain owner/name` dumps one repo."
+            "Fleet lists every active repo, sorted by Issues then open PRs then attention. "
+            "Issues and PRs stay in separate columns — GitHub’s open_issues_count wrongly "
+            "includes PRs; Argus strips that. `argus explain owner/name` dumps one repo."
         ),
     }

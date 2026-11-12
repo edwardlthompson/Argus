@@ -48,7 +48,7 @@ def _plain(name: str, *, issues: int, attention: float = 20.0) -> RepoPlan:
     )
 
 
-def test_green_zero_issues_omitted_from_priority():
+def test_fleet_lists_every_active_repo_sorted_by_issues():
     healthy = _plain("healthy", issues=0, attention=50.0)
     noisy = _plain("noisy", issues=61, attention=12.0)
     mid = _plain("mid", issues=10, attention=40.0)
@@ -60,12 +60,11 @@ def test_green_zero_issues_omitted_from_priority():
         mode="run",
         pages_safe=True,
     )
-    names = [c["name"] for c in view["priority_cards"]]
-    assert "healthy" not in names
-    assert names[0] == "noisy"  # most Issues first
-    assert names[1] == "mid"
-    assert view["healthy_omitted"] == 1
-    assert view["fleet"] == []
+    names = [r["name"] for r in view["fleet"]]
+    assert names == ["noisy", "mid", "healthy"]
+    assert view["healthy_omitted"] == 0
+    assert "bar_width" in view["fleet"][0]
+    assert view["charts"]["fleet_attention"]["points"]
 
 
 def test_gh_issues_excludes_prs_from_open_issues_count():
@@ -80,9 +79,11 @@ def test_gh_issues_excludes_prs_from_open_issues_count():
     # Still listed (PRs identified) but not as Issues.
     assert _needs_attention_listing(plan)
     view = build_report_view([plan], target_label="t", mode="run", pages_safe=True)
-    card = view["priority_cards"][0]
-    assert card["gh_issues"] == 0
-    assert card["gh_prs"] == 14
+    row = view["fleet"][0]
+    assert row["gh_issues"] == 0
+    assert row["gh_prs"] == 14
+    assert row["issues"] == 0
+    assert row["prs"] == 14
 
 
 def test_yolo_handlers_include_issue_ids():
