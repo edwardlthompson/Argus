@@ -1,5 +1,11 @@
 # Decision log
 
+## 2026-11-12 — Ship v0.9.0 (Overview weekly sync + Fleet report)
+
+- **Decision:** `sync_profile` refreshes Overview on every apply / Tuesday / `local-weekly` (stats, icons, public↔private) while `skip_profile` only blocks auto_safe into `YOU/YOU`. Reports use one Fleet table (Issues → PRs, attention bar); Assessment at bottom.
+- **Gates:** `update-deps` audit clean + `verify` (162 tests); template Release Please / full pre-release-gate N/A (G12).
+- **Ops:** Keep runner `weekly.yml` on `--with-profile`; free-tier `local-weekly --apply` remains the cadence.
+
 ## 2026-11-12 — Ship v0.8.0 (continuous zero + patterned Issues)
 
 - **Decision:** Continuous zero is product policy (`safety.normal` + `yolo`): auto rules sync, deterministic handlers on `--apply`, CI soft-resolve when Actions unavailable, second pass. Patterned Issue close (`argus-auto` / digests / bot bumps) only — never invent product patches. Report Priority sorted by GitHub Issues; omit green+zero.

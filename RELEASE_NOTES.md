@@ -1,16 +1,15 @@
-# Release notes — Argus 0.8.0
+# Release notes — Argus 0.9.0
 
 ## Highlights
 
-- **Continuous zero** — `--apply` / `local-weekly --apply` / armed YOLO auto-syncs rules, runs deterministic handlers, soft-clears CI when Actions is unavailable, and second-passes toward zero open Argus fixes.
-- **Patterned Issue triage** — closes `argus-auto` / digest / bot bump Issues; nudges other stale human Issues (never invents product patches).
-- **Report urgency** — Priority / Rest of fleet sorted by GitHub Issues (most first); green + zero-Issue repos omitted.
-- **Signal honesty** — `RULES-STALE` and `SEC-RELEASE-TOKEN-MISSING` no longer fan out across the portfolio.
+- **Weekly Overview refresh** — every apply / Tuesday weekly / `local-weekly` refreshes `YOU/YOU` stars, forks, watches, Insights views, full icon rescan, and public↔private membership (`sync_profile`; independent of `skip_profile`).
+- **Fleet report** — one table of every active repo (Issues → open PRs), attention bar in the last column; Overall Assessment at the bottom. Issues and PRs stay separate (GitHub’s issue count wrongly includes PRs).
+- **Honest Issues vs PRs** — Priority/Fleet no longer treat open PRs as Issues.
 
 ## Upgrade notes
 
+- Tuesday `argus-weekly` / `local-weekly` pass `--with-profile` so Overview stays current.
+- `yolo.skip_profile` still blocks auto_safe/merge *into* Overview; set `sync_profile: false` or `--skip-profile` only if you want to pause the README PR.
 - Free-tier: keep using `argus local-weekly --apply` (no payment card).
-- Label Issues `argus-auto` when Argus should close them on the next apply.
-- Public Pages stay sanitized (`docs/index.html`); full reports stay private.
 
 See `CHANGELOG.md` for the full list.

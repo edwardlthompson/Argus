@@ -2,6 +2,12 @@
 
 Archived BUILD_PLAN rows (newest first).
 
+## Overview sync + Fleet report (2026-11-12)
+
+- ✅ `[AGENT][LOCAL]` — scope: `sync_profile,profile_enrich,weekly.yml` | Weekly Overview refresh (stars/forks/views/icons/membership)
+- ✅ `[AGENT][LOCAL]` — scope: `report_view,templates` | Single Fleet table + attention bar; Assessment last; Issues then PRs sort
+- ✅ `[AGENT][LOCAL]` — scope: reports | Split Issues from open PRs (no false-positive Issues)
+
 ## Continuous zero + Issue triage (2026-11-12)
 
 - ✅ `[AGENT][LOCAL]` — scope: `config/safety.yaml,config_loader` | **CZ1** continuous-zero safety flags

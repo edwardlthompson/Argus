@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.9.0] — 2026-11-12
+
 ### Added
 
 - **Weekly Overview refresh:** `sync_profile` (default on) refreshes `YOU/YOU` stars/forks/watches/views, full icon rescan, and public↔private membership on every apply / Tuesday weekly / `local-weekly` (independent of `skip_profile` auto_safe guard).

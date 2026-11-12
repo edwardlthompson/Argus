@@ -44,6 +44,7 @@ Argus is the enforcer: multi-repo hygiene, scoring, gated apply, and (on the pri
 
 | Sprint | Complete | Archive |
 |--------|----------|---------|
+| Overview sync + Fleet report (v0.9.0) | 2026-11-12 | `COMPLETED_TASKS.md` |
 | Continuous zero + Issue triage (v0.8.0) | 2026-11-12 | `COMPLETED_TASKS.md` |
 | Free-tier Actions-out (no payment) | 2026-11-11 | `COMPLETED_TASKS.md` |
 | argus-weekly repair W1–W6 + S1–S2 | 2026-11-11 | `COMPLETED_TASKS.md` |
