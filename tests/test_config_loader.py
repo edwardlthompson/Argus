@@ -33,6 +33,9 @@ def test_load_safety_yolo_defaults():
     assert yolo.get("apply_api_handlers") is True
     assert yolo.get("resolve_ci_when_actions_unavailable") is True
     assert yolo.get("continuous_zero") is True
+    assert yolo.get("skip_profile") is True
+    assert yolo.get("sync_profile") is True
+    assert normal.get("sync_profile") is True
     api = safety["github_api"]
     assert api["core_limit_hint"] == 5000
     assert api["max_repos_per_batch"] == 6

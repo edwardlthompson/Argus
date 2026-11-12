@@ -45,7 +45,7 @@ def main() -> None:
 @click.option(
     "--skip-profile/--with-profile",
     default=None,
-    help="Skip USERNAME/USERNAME Overview. YOLO defaults to skip; --with-profile forces sync.",
+    help="Skip Overview sync. Default: sync_profile on (stats/icons). YOLO still skips YOU/YOU auto_safe.",
 )
 def run_cmd(
     dry_run: bool | None,
@@ -94,7 +94,7 @@ def run_cmd(
 @click.option(
     "--skip-profile/--with-profile",
     default=None,
-    help="Skip USERNAME/USERNAME Overview. YOLO defaults to skip; --with-profile forces sync.",
+    help="Skip Overview sync. Default: sync_profile on (stats/icons). YOLO still skips YOU/YOU auto_safe.",
 )
 def fix_cmd(
     dry_run: bool | None,
@@ -753,7 +753,8 @@ def local_weekly_cmd(
         dry_run=dry_run,
         profile="generic",
         notify=not no_notify,
-        skip_profile=True,
+        # Tuesday PC fallback: refresh Overview stats/icons/membership (sync_profile).
+        skip_profile=None,
     )
     out["run"] = {
         "mode": summary.mode,

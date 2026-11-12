@@ -196,6 +196,8 @@ def load_safety(path: Path | None = None) -> dict[str, Any]:
         "apply_api_handlers": True,
         "resolve_ci_when_actions_unavailable": True,
         "continuous_zero": True,
+        "skip_profile": True,
+        "sync_profile": True,
         "auto_dispatch_agents": True,
         "auto_merge_agent_prs": True,
         "max_auto_merges_per_day": 20,
@@ -215,6 +217,7 @@ def load_safety(path: Path | None = None) -> dict[str, Any]:
         "auto_rules_sync": True,
         "continuous_zero": True,
         "second_pass": True,
+        "sync_profile": True,
         "quiet_digest_only": False,
     }
     # Authenticated REST core is 5000/hr; ~45–60 GETs per repo makes full-portfolio

@@ -43,13 +43,15 @@ jobs:
           REPORT_FLAG=""
           if [ -n "$ARGUS_REPORT_URL" ]; then REPORT_FLAG="--report-url $ARGUS_REPORT_URL"; fi
           APPLY="${{ inputs.apply }}"
+          # Overview sync (stars/forks/views/icons/public↔private) via safety.sync_profile.
+          # Use --with-profile so CLI never treats Tuesday as --skip-profile.
           if [ "$APPLY" = "true" ]; then
-            argus run --apply $REPORT_FLAG
+            argus run --apply --with-profile $REPORT_FLAG
           elif [ "$APPLY" = "false" ]; then
-            argus run --dry-run $REPORT_FLAG
+            argus run --dry-run --with-profile $REPORT_FLAG
           else
-            # schedule / unset: YOLO implies apply (docs/YOLO.md)
-            argus run $REPORT_FLAG
+            # schedule / unset: YOLO implies apply (docs/YOLO.md) + weekly Overview refresh
+            argus run --with-profile $REPORT_FLAG
           fi
       - name: Upload private artifacts
         uses: actions/upload-artifact@v7

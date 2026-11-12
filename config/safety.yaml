@@ -25,10 +25,14 @@ normal:
   auto_rules_sync: true
   continuous_zero: true
   second_pass: true
+  # Refresh public YOU/YOU Overview (stars/forks/views/icons/membership) on --apply.
+  sync_profile: true
   quiet_digest_only: false
 
 yolo:
+  # Do not auto_safe / merge into YOU/YOU; still refresh Overview stats (sync_profile).
   skip_profile: true
+  sync_profile: true
   auto_merge_auto_safe: true
   auto_merge_upgrade_prs: true
   heal_upgrade_prs: true

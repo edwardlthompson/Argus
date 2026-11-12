@@ -28,7 +28,8 @@ Public product must stay `apply_mode: normal` so forks/scanners are dry-run safe
 apply_mode: yolo   # normal | yolo — product ships normal
 
 yolo:
-  skip_profile: true
+  skip_profile: true   # do not auto_safe / merge into YOU/YOU
+  sync_profile: true   # still refresh Overview PR (stars/forks/views/icons/membership)
   auto_merge_auto_safe: true
   auto_merge_dependabot_patch: true
   auto_dispatch_agents: true
@@ -42,7 +43,7 @@ yolo:
 
 ### YOLO implies apply
 
-When YOLO is armed, `argus run` / `argus fix` **apply** unless you pass `--dry-run`. Pass `--with-profile` only if you intentionally want Overview mutations (default skips `YOU/YOU`).
+When YOLO is armed, `argus run` / `argus fix` **apply** unless you pass `--dry-run`. **`sync_profile: true`** (default) refreshes the public `YOU/YOU` Overview on every apply / Tuesday weekly / `local-weekly` — live stars, forks, watches, Insights views, icon rescan, and public↔private membership. `skip_profile` only blocks auto_safe/merge *into* the Overview repo. Pass `--skip-profile` to disable Overview sync for one run.
 
 ## Six pre-merge checks
 

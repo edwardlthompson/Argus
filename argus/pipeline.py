@@ -233,8 +233,18 @@ def run_pipeline(
     # CLI uses dry_run=None when neither --dry-run nor --apply was set.
     if dry_run is None:
         dry_run = not yolo_on
+    # CLI: None = defaults; True = --skip-profile; False = --with-profile.
+    cli_skip_profile = skip_profile
     if skip_profile is None:
         skip_profile = bool(yolo_on and yolo_cfg.get("skip_profile", True))
+    # Overview sync (stats/icons/membership) is separate from skip_profile mutations.
+    plane_cfg = yolo_cfg if yolo_on else normal_cfg
+    if cli_skip_profile is True:
+        sync_profile = False
+    elif cli_skip_profile is False:
+        sync_profile = True
+    else:
+        sync_profile = bool(plane_cfg.get("sync_profile", True))
 
     mode = "report" if target else ("fix" if run_agents or not dry_run else "run")
     report_banner = "Read-only report — no changes were made." if target else None
@@ -620,13 +630,18 @@ def run_pipeline(
                     ledger_rows = record_actions(apply_summary, actor=actor)
 
                 profile_result: ProfileApplyResult | None = None
-                if skip_profile:
+                if discovery.report_only:
                     profile_result = ProfileApplyResult(
-                        action="skipped", detail="skip_profile"
+                        action="skipped", detail="report_only"
                     )
-                elif not discovery.report_only:
+                elif not sync_profile:
+                    profile_result = ProfileApplyResult(
+                        action="skipped", detail="sync_profile_off"
+                    )
+                else:
+                    # Live stars/forks/views + icon rescan + public/private membership.
                     profile_result = sync_profile_readme(
-                        client, store, plans, dry_run=dry_run
+                        client, store, plans, dry_run=bool(dry_run)
                     )
 
                 if yolo_on and yolo_cfg.get("auto_dispatch_agents", True):
@@ -803,6 +818,7 @@ def run_pipeline(
                         "viewer": discovery.viewer,
                         "report_only": discovery.report_only,
                         "skip_profile": skip_profile,
+                        "sync_profile": sync_profile,
                         "github_api": client.quota.snapshot(),
                         "batch": {
                             "max_repos_per_batch": batch_size,

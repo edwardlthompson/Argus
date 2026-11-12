@@ -63,6 +63,7 @@ Controller-only signals (`RULES-STALE`, opt-in `SEC-RELEASE-TOKEN-MISSING`) neve
 | Auto rules sync when stale | yes | yes |
 | Soft-resolve `CI-LATEST-FAILED` when Actions down | yes (via handlers cfg) | yes |
 | Second pass / quiet yolo-digest | yes (`continuous_zero`) | yes |
+| Overview sync (stars/views/icons/membership) | yes (`normal.sync_profile`) | yes (`yolo.sync_profile`; `skip_profile` only blocks YOU/YOU auto_safe) |
 | Imply apply without `--apply` | no | yes |
 
 Hard floors above still apply under YOLO. Grok Bots never merge — see [`GROK_BOTS.md`](GROK_BOTS.md) and [`YOLO.md`](YOLO.md). Prefer new Argus `auto_safe` matchers over LLM mutators.

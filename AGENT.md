@@ -32,4 +32,4 @@ Don’t bother the creator: one log line per run; leftovers → private `yolo-di
 
 ## Profile Overview (operators)
 
-Public `YOU/YOU` skills portfolio README from live GitHub evidence. Start from `config/profile_readme.yaml.example`, then follow [`docs/PROFILE_OVERVIEW.md`](docs/PROFILE_OVERVIEW.md). Behaviour stays in YAML (`profile_readme`, `profile_skills`, `profile_stack`, `profile_icons`). YOLO skips Overview mutations by default (`skip_profile`).
+Public `YOU/YOU` skills portfolio README from live GitHub evidence. Start from `config/profile_readme.yaml.example`, then follow [`docs/PROFILE_OVERVIEW.md`](docs/PROFILE_OVERVIEW.md). Behaviour stays in YAML (`profile_readme`, `profile_skills`, `profile_stack`, `profile_icons`). Every apply / Tuesday weekly / `local-weekly` refreshes stars, forks, views, icons, and public↔private membership (`sync_profile`; default on). YOLO `skip_profile` only blocks auto_safe/merge *into* Overview — not that stats refresh.

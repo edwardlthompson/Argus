@@ -25,12 +25,28 @@ Live data comes from the GitHub API. YAML only supplies **your voice** and layou
 
    ```bash
    argus doctor
-   argus run --dry-run --no-notify
-   # when ready (often on the private runner):
-   argus run --apply --no-notify
+   argus run --dry-run --with-profile --no-notify
+   # when ready (often on the private runner / Tuesday weekly):
+   argus run --apply --with-profile --no-notify
+   # PC fallback when Actions is out:
+   argus local-weekly --apply
    ```
 
 6. **Merge** the Overview PR on `YOU/YOU` (`chore/argus-profile-readme`). Keep that repo **public**.
+
+## Weekly refresh (required cadence)
+
+Every Tuesday `argus-weekly` / `local-weekly --apply` refreshes the Overview when `sync_profile: true` (default in `config/safety.yaml`):
+
+| Signal | Behavior |
+|--------|----------|
+| Stars / forks / watches | Re-fetched from the GitHub API |
+| Views | Insights Traffic (~14 days) when the token can read it |
+| Icons | Full rescan of canonical paths + overrides; generated marks if still missing |
+| Public ↔ private | Visibility re-checked; private/archived drop out of featured; newly public repos can enter |
+| Membership | Portfolio discover + Overview eligibility (`_eligible`) drive add/remove |
+
+`yolo.skip_profile: true` still means Argus will not auto_safe/merge hygiene into `YOU/YOU` — only the Overview README PR.
 
 ## What gets written to YOU/YOU
 
