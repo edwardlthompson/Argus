@@ -10,7 +10,8 @@ Argus is the enforcer: multi-repo hygiene, scoring, gated apply, and (on the pri
 
 **Architecture (do not drift):** Public MIT product repo (source + CI). Private **runner** for scheduled scan/apply, Issues inbox, artifacts, secrets, YOLO. Public `USERNAME/USERNAME` profile Overview via PR. Never publish per-repo security findings on public product Pages/Issues.
 
-> **Parent upgrade wave v1.13.0** — U1–U7 PRs opened (canon rules). Merge after CI. Prior S9–S15 archived in COMPLETED_TASKS.md.
+> **Free-tier Actions-out** archived in COMPLETED_TASKS.md @ `e51fa8b`.
+> When Actions minutes are gone: `argus local-weekly --apply` or `merge-upgrades --allow-unarmed --actions-unavailable` — **never** require a payment card.
 
 ## Non-goals (board)
 
@@ -18,43 +19,25 @@ Argus is the enforcer: multi-repo hygiene, scoring, gated apply, and (on the pri
 - Force-push / deleting repos
 - Vendoring full parent `modules/` / `examples/` / `scripts/lib` into Argus product (G12)
 - Arming YOLO on public Argus
+- Requiring a GitHub payment card / paid Actions minutes
 
-## Sequential — Parent v1.13.0 child upgrades
-
-| Status | Venue | Task |
-|--------|-------|------|
-| ✅ | `[AGENT][LOCAL]` — scope: `scripts/,BUILD_PLAN.md,dist/` | **U1 Tooling** — `scripts/child-upgrade-1.13.py` canon pack + inventory |
-| ✅ | `[AGENT][LOCAL]` — scope: fleet | **U2 Canary** — `edwardlthompson/lineage-lens` full upgrade PR |
-| ✅ | `[AGENT][LOCAL]` — scope: fleet | **U3 Batch** — AstroAlarm, HermesLauncher, SyncMark |
-| ✅ | `[AGENT][LOCAL]` — scope: fleet | **U4 Batch** — chromaflow, OBDForge, JanusBoot, continuum-calendar, QuickMediaIngest |
-| ✅ | `[AGENT][LOCAL]` — scope: fleet | **U5 Batch** — selfchronicle, ExpeditionGauge, takein-sms, hover-icons, 3d-game-optimizer |
-| ✅ | `[AGENT][LOCAL]` — scope: fleet | **U6 Batch** — vault-organizer, noclip-auto, trendalgo-bot, MultiAppShare-, DevPulse |
-| ✅ | `[AGENT][LOCAL]` — scope: fleet | **U7 Batch** — OpenShouter, point-and-shoot, QRaft, screen-wakelock-detector, starrupture-city-planner, aetherfeed, bl4-forge, Argus (product-safe pack) |
-
-**Excluded:** `agent-project-bootstrap`, `edwardlthompson` (profile), `argus-runner`.
-
-**YOLO hands-off:** mandatory `clear_upgrade_blockers` on scheduled run; `argus-weekly` = Tuesday 14:00 UTC on **private `argus-runner` only** (public product = dispatch-only); Steward digests hard leftovers only. Trivy npm/Guava fixers in `yolo_trivy_npm` / `yolo_trivy_gradle`.
-
-## Sequential — argus-weekly repair (found by Tuesday Steward 2026-11-10)
+## Sequential
 
 | Status | Venue | Task |
 |--------|-------|------|
-| 🔲 | `[HUMAN][PC]` — scope: Actions secrets | **W1 Token** — Add fine-grained `ARGUS_GITHUB_TOKEN` on **`edwardlthompson/argus-runner`** (not public Argus). Empty token → `GET /user` 403. Failed public run: https://github.com/edwardlthompson/Argus/actions/runs/42897596779 |
-| 🔲 | `[HUMAN][PC]` — scope: workflow | **W2 Re-run** — re-run `argus-weekly` on the runner; confirm `argus-dist` (health-delta.md, health-hotspots.json, health-infographic) + Steward webhook. |
-| 🔲 | `[HUMAN][PC]` — scope: runner | **W3 Where it runs** — Public cron removed (#15); runner `weekly.yml` now has Tuesday 14:00 UTC cron + Steward body. Confirm after W1 token + W2 re-run. |
-| ✅ | `[AGENT][LOCAL]` — scope: PRs | **W4 Dependabot** — Merged Actions bumps (#1,#2,#3,#4) + setup-python@v7 locally (closes #7 intent); **hold** pytest/pytest-cov majors (#6,#9). |
-| 🔲 | `[HUMAN][PC]` — scope: billing | **W5 Actions billing** — GitHub Actions jobs fail immediately: “account payments have failed or spending limit”. Fix Billing & plans, then re-run upgrade CI. Blocks noclip-auto#17 and current hover-icons/starrupture scans. |
-| ✅ | `[AGENT][LOCAL]` — scope: yolo | **S1 Trivy wave** — `yolo_trivy_npm` + `yolo_trivy_gradle` (Guava); applied overrides/lockfiles on hover-icons, starrupture, ExpeditionGauge signaling-server; Guava force on point-and-shoot#42. Re-merge after W5 CI green. |
-| ❌ | `[AGENT][LOCAL]` — scope: noclip-auto#17 | **S2 noclip** — rust-test/m0-smoke never started: **billing** (same as W5), not a Rust compile failure. Unblocked by W5 then re-run CI. |
+| ✅ | `[AGENT][LOCAL]` — scope: reports/pages | **R1 Portfolio Pages + Steward** — sanitized public `portfolio-pages.html`; private `latest*` + `steward-brief.html` in argus-history; Pages never stages full report. |
 
 ## Parallel (after Sequential)
 
-None until upgrade PRs merge (after W5).
+None.
 
 ## Archived Sprints
 
 | Sprint | Complete | Archive |
 |--------|----------|---------|
+| Free-tier Actions-out (no payment) | 2026-11-11 | `COMPLETED_TASKS.md` |
+| argus-weekly repair W1–W6 + S1–S2 | 2026-11-11 | `COMPLETED_TASKS.md` |
+| Parent v1.13.0 child upgrades U1–U7 | 2026-11-11 | `COMPLETED_TASKS.md` |
 | Signals → fleet → YOLO → remote S9–S15 | 2026-11-09 | `COMPLETED_TASKS.md` |
 | Dual-plane + profile + Sequential A–L | 2026-11-05 | `COMPLETED_TASKS.md` |
 | Sprints 0–8 + portfolio doctor + control plane + Cursor FOSS | 2026-11-05 | `COMPLETED_TASKS.md` |

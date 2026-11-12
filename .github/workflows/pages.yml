@@ -30,19 +30,30 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: argus run --dry-run --no-notify || true
-      - name: Stage public status page only
+      - name: Stage sanitized portfolio Pages only
         run: |
           mkdir -p _site
-          # Never publish report.html / runbook.md / inbox.json to public Pages.
-          if [ -f dist/status.html ]; then
+          # Never publish report.html / runbook.md / inbox.json / steward-brief.html
+          # (world-readable Pages must not expose per-repo weakness titles).
+          if [ -f dist/portfolio-pages.html ]; then
+            cp dist/portfolio-pages.html _site/index.html
+          elif [ -f dist/status.html ]; then
             cp dist/status.html _site/index.html
+          fi
+          if [ -f dist/portfolio-pages.json ]; then
+            cp dist/portfolio-pages.json _site/portfolio-pages.json
           fi
           if [ -f dist/status.json ]; then
             cp dist/status.json _site/status.json
           fi
+          if [ -f dist/badge.svg ]; then
+            cp dist/badge.svg _site/badge.svg
+          fi
           if [ ! -f _site/index.html ]; then
             printf '%s\n' '<!DOCTYPE html><html><body><h1>Argus</h1><p>No status yet. Run the scan or weekly workflow.</p></body></html>' > _site/index.html
           fi
+          # Hard deny accidental staging of private detail
+          rm -f _site/report.html _site/runbook.md _site/inbox.json _site/steward-brief.html
       - uses: actions/upload-pages-artifact@v5
         with:
           path: _site

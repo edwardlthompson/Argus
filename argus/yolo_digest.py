@@ -130,8 +130,13 @@ def sync_report_files(
     html: str,
     markdown: str,
     dry_run: bool = False,
+    steward_html: str | None = None,
+    infographic_svg: str | None = None,
 ) -> dict[str, Any]:
-    """Push dated shareable reports to private controller argus-history/reports/."""
+    """Push dated + latest reports to private controller argus-history/reports/.
+
+    Full finding detail stays private. Never called for public Pages.
+    """
     inbox = load_inbox()
     controller = _resolve_controller(client, inbox)
     out: dict[str, Any] = {"action": "skipped"}
@@ -140,17 +145,44 @@ def sync_report_files(
     day = datetime.now(UTC).strftime("%Y-%m-%d")
     if dry_run:
         out["action"] = "dry_run"
-        out["detail"] = f"would_write:{controller}/argus-history/reports/{day}.*"
+        out["detail"] = f"would_write:{controller}/argus-history/reports/{{day,latest}}.*"
         return out
     try:
+        base = "argus-history/reports"
         out["html_url"] = _put_file(
-            client, controller, f"argus-history/reports/{day}.html", html,
+            client, controller, f"{base}/{day}.html", html,
             f"chore(argus): portfolio report {day}.html",
         )
         out["md_url"] = _put_file(
-            client, controller, f"argus-history/reports/{day}.md", markdown,
+            client, controller, f"{base}/{day}.md", markdown,
             f"chore(argus): portfolio report {day}.md",
         )
+        out["latest_html_url"] = _put_file(
+            client, controller, f"{base}/latest.html", html,
+            "chore(argus): portfolio report latest.html",
+        )
+        out["latest_md_url"] = _put_file(
+            client, controller, f"{base}/latest.md", markdown,
+            "chore(argus): portfolio report latest.md",
+        )
+        if steward_html:
+            out["steward_url"] = _put_file(
+                client, controller, f"{base}/{day}-steward.html", steward_html,
+                f"chore(argus): steward brief {day}",
+            )
+            out["latest_steward_url"] = _put_file(
+                client, controller, f"{base}/latest-steward.html", steward_html,
+                "chore(argus): steward brief latest",
+            )
+        if infographic_svg:
+            out["infographic_url"] = _put_file(
+                client, controller, f"{base}/{day}-infographic.svg", infographic_svg,
+                f"chore(argus): health infographic {day}",
+            )
+            out["latest_infographic_url"] = _put_file(
+                client, controller, f"{base}/latest-infographic.svg", infographic_svg,
+                "chore(argus): health infographic latest",
+            )
         out["action"] = "updated"
     except GitHubError as exc:
         out["action"] = "error"

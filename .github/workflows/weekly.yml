@@ -68,18 +68,24 @@ jobs:
             exit 0
           fi
           BODY=$(python - <<'PY'
-          import json, pathlib
+          import json, os, pathlib
           d = pathlib.Path("dist")
+          pages = (os.environ.get("ARGUS_REPORT_URL") or "").strip()
           payload = {
             "event": "after-argus-weekly",
             "artifacts": {
+              "steward_brief": (d / "steward-brief.html").exists(),
               "health_delta": (d / "health-delta.md").exists(),
               "health_hotspots": (d / "health-hotspots.json").exists(),
               "health_infographic": (d / "health-infographic.svg").exists(),
+              "portfolio_pages_sanitized": (d / "portfolio-pages.html").exists(),
             },
+            "pages_url_sanitized": pages or None,
             "instruction": (
-              "Run Tuesday Steward portfolio digest. Prefer health-delta.md, "
-              "health-hotspots.json, and health-infographic.svg from this run."
+              "Run Tuesday Steward. Lead with private steward-brief.html "
+              "(or argus-history/reports/latest-steward.html). "
+              "Do not publish finding titles to a public Page. "
+              "Sanitized dashboard only if pages_url_sanitized is set."
             ),
           }
           print(json.dumps(payload))

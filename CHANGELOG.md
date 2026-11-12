@@ -2,13 +2,19 @@
 
 ## [Unreleased]
 
+## [0.7.0] — 2026-11-12
+
 ### Added
 
 - YOLO **mandatory clear loop** (`clear_upgrade_blockers`): fix → wait → soft-merge upgrades/patches until green or hard leftover; new fixers for ADR Status, pruned-android CodeQL, conventional PR titles, Trivy npm overrides (`yolo_trivy_npm`).
+- **Free-tier Actions fallback (no payment required):** `argus local-weekly` + `scripts/local-weekly.ps1|.sh`; `skip_ci_when_actions_unavailable` skips remote CI for upgrade merges when Actions is dead (auto-detect or `ARGUS_ACTIONS_UNAVAILABLE=1` / `--actions-unavailable`). Paying for Actions is never the fix.
+- **Portfolio Pages + Tuesday Steward brief:** sanitized `portfolio-pages.html` for public Pages (metrics/graphs only); full `report.html` + `steward-brief.html` sync to private `argus-history/reports/latest*`; never publish finding titles to Pages.
+- Public `docs/index.html` Pages source (sanitized dashboard) so graphics stay viewable without Actions minutes.
 
 ### Changed
 
-- Soft-merge allowlist expanded for template/hygiene noise only; Security/Trivy/CodeQL/Feature Gate/builds stay hard-blocked.
+- Soft-merge allowlist expanded for template/hygiene noise only; when Actions is unavailable (free minutes / no card), upgrade merges skip remote CI entirely (`actions_unavailable`) instead of waiting on paid runners.
+- Vanilla (`apply_mode: normal`): explicit `--apply` now runs upgrade **fix/heal** (`safety.normal`); auto-merge / YOLO handlers / clear-loop stay YOLO-only (see SAFETY.md matrix).
 
 ## [0.6.0] — 2026-11-10
 

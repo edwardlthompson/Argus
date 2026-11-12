@@ -8,10 +8,11 @@ gh repo create YOUR_LOGIN/Argus --public --source=. --remote=origin --push
 
 Then on the **public** product:
 
-1. **Settings → Actions** — allow workflows (CI / Pages status-only).
-2. Optional **Pages** → GitHub Actions for **status counts only** (`status.html`).
-3. Do **not** put your portfolio PAT apply secrets here if the repo is public and you sync Issues with security detail.
-4. Set `ARGUS_REPORT_URL` only to a **status-only** Pages URL if used in digests.
+1. **Settings → Actions** — allow workflows (CI / Pages).
+2. Optional **Pages** → GitHub Actions for the **sanitized** portfolio dashboard (`portfolio-pages.html` → metrics/graphs only). GitHub Pages URLs are public and scrapable.
+3. Full weakness reports stay on the **private runner** under `argus-history/reports/latest.html` (login + repo access). Never publish `report.html` / `steward-brief.html` to Pages.
+4. Do **not** put your portfolio PAT apply secrets on the public product if Issues sync security detail.
+5. Set `ARGUS_REPORT_URL` only to the **sanitized** Pages URL if used in digests / Steward webhook.
 
 ## Private runner (required for auto scan / auto-fix)
 

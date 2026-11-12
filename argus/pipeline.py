@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 from argus.action_ledger import record_actions
@@ -260,6 +261,48 @@ def run_pipeline(
                     yolo_extra = None
                     yolo_merge = None
                     yolo_dep = None
+                    # Vanilla (normal + explicit --apply): mechanical upgrade heal/fix only.
+                    normal_cfg = safety.get("normal") or {}
+                    if (
+                        not yolo_on
+                        and not dry_run
+                        and not discovery.report_only
+                        and (
+                            normal_cfg.get("fix_upgrade_prs", True)
+                            or normal_cfg.get("heal_upgrade_prs", True)
+                        )
+                    ):
+                        try:
+                            max_up = int(yolo_cfg.get("max_auto_merges_per_day") or 20)
+                            if normal_cfg.get("fix_upgrade_prs", True):
+                                from argus.yolo_upgrade_fix import fix_open_upgrade_prs
+
+                                vf = fix_open_upgrade_prs(
+                                    client,
+                                    login=profile_login or None,
+                                    max_repos=max_up,
+                                )
+                                apply_summary = {
+                                    **apply_summary,
+                                    "vanilla_fix_upgrades": vf,
+                                }
+                            elif normal_cfg.get("heal_upgrade_prs", True):
+                                from argus.yolo_upgrade_heal import heal_open_upgrade_prs
+
+                                vh = heal_open_upgrade_prs(
+                                    client,
+                                    login=profile_login or None,
+                                    max_repos=max_up,
+                                )
+                                apply_summary = {
+                                    **apply_summary,
+                                    "vanilla_heal_upgrades": vh,
+                                }
+                        except Exception as exc:  # noqa: BLE001
+                            apply_summary = {
+                                **apply_summary,
+                                "vanilla_upgrade_error": str(exc),
+                            }
                     if yolo_on and not discovery.report_only:
                         yolo_extra = apply_yolo_extras(
                             client,
@@ -551,13 +594,43 @@ def run_pipeline(
                 html_path = paths["report"]
                 portfolio_path = paths["portfolio"]
 
+                import json as _json
+                import os as _os
+
+                from argus.steward_brief import write_steward_brief
+
+                hotspots_payload: dict = {}
+                hs_path = health_paths.get("health_hotspots")
+                if hs_path and Path(hs_path).is_file():
+                    try:
+                        hotspots_payload = _json.loads(
+                            Path(hs_path).read_text(encoding="utf-8")
+                        )
+                    except Exception:  # noqa: BLE001
+                        hotspots_payload = {}
+                steward_path = write_steward_brief(
+                    plans,
+                    health_delta=health_delta,
+                    hotspots=hotspots_payload,
+                    target_label=target_label,
+                    mode=mode,
+                    pages_url=_os.environ.get("ARGUS_REPORT_URL") or None,
+                )
+                paths["steward_brief"] = steward_path
+
                 report_sync = {"action": "skipped"}
                 if not discovery.report_only:
+                    svg_text = None
+                    svg_path = health_paths.get("health_infographic_svg")
+                    if svg_path and Path(svg_path).is_file():
+                        svg_text = Path(svg_path).read_text(encoding="utf-8")
                     report_sync = sync_report_files(
                         client,
                         html=html_path.read_text(encoding="utf-8"),
                         markdown=portfolio_path.read_text(encoding="utf-8"),
                         dry_run=dry_run,
+                        steward_html=steward_path.read_text(encoding="utf-8"),
+                        infographic_svg=svg_text,
                     )
 
                 digest_result = None
@@ -597,6 +670,11 @@ def run_pipeline(
                         "runbook": str(md_path),
                         "report": str(html_path),
                         "portfolio": str(portfolio_path),
+                        "portfolio_pages": str(
+                            paths.get("portfolio_pages")
+                            or (md_path.parent / "portfolio-pages.html")
+                        ),
+                        "steward_brief": str(steward_path),
                         "status": str(md_path.parent / "status.html"),
                         "inbox_json": str(md_path.parent / "inbox.json"),
                         **health_paths,

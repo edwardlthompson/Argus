@@ -1,16 +1,16 @@
-# Release notes — Argus 0.6.0
+# Release notes — Argus 0.7.0
 
 ## Highlights
 
-- **Hands-off upgrade YOLO** — Scheduled runs fix + soft-merge parent-upgrade PRs (`fix_upgrade_prs`, `soft_merge_upgrade_noise`). Operator CLI: `argus fix-upgrades` / `merge-upgrades --fix --soft-allowlist`.
-- **Tuesday cadence** — `argus-weekly` cron moved to **Tuesday 14:00 UTC** (after Monday Dependabot). Sync `weekly.yml` to private `argus-runner`.
-- **Tuesday Steward** — Grok digest skill + `argus grok pack tuesday-steward` one-paste bootstrap (no create-Bot API). Optional webhook after weekly.
-- **Health infographic** — Every scan writes `dist/health-infographic.svg|.html` and `health-hotspots.json` (hottest fix ids / repos before→after).
+- **Free-tier Actions path** — `argus local-weekly` and `skip_ci_when_actions_unavailable`; paying for Actions is never required.
+- **Sanitized portfolio Pages** — public `portfolio-pages.html` (metrics + graphs only). Full weakness reports stay private under `argus-history/reports/latest*`.
+- **Tuesday Steward brief** — private `steward-brief.html` for Grok; never published to Pages.
+- **Vanilla `--apply`** — upgrade fix/heal without arming YOLO; merges stay human unless you opt into CLI merge.
 
 ## Upgrade notes
 
-- Re-bootstrap or copy `config/safety.yaml` YOLO flags onto the **private runner** only.
-- Paste `dist/grok-bots/tuesday-steward-bootstrap.md` into Grok once; set `GROK_STEWARD_WEBHOOK_*` on the runner if you want auto-ping.
-- Security/Trivy/CodeQL/Feature Gate leftovers still need human judgment — soft-merge never bypasses those.
+- Point `ARGUS_REPORT_URL` at the **sanitized** Pages URL only.
+- Full report / Steward brief: private runner `argus-history/reports/latest.html` and `latest-steward.html`.
+- Enable GitHub Pages from `/docs` on public Argus (or Actions `pages` workflow when minutes allow).
 
 See `CHANGELOG.md` for the full list.

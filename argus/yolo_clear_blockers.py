@@ -63,7 +63,11 @@ def clear_open_upgrade_blockers(
         hard = [
             s
             for s in up.skipped
-            if "ci_green" in s and ":pending" not in s and ":soft_allowlist" not in s
+            if "ci_green" in s
+            and ":pending" not in s
+            and ":soft_allowlist" not in s
+            and ":actions_billing" not in s
+            and ":actions_unavailable" not in s
         ]
         pending = any(":pending" in s for s in up.skipped)
         fixed_any = bool(fix.get("fixed"))

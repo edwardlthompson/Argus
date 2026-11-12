@@ -189,11 +189,26 @@ def load_safety(path: Path | None = None) -> dict[str, Any]:
         "clear_upgrade_blockers": True,
         "clear_upgrade_loops": 8,
         "clear_upgrade_sleep_s": 90,
+        "merge_when_actions_billing": True,
+        "skip_ci_when_actions_unavailable": True,
+        "assume_actions_unavailable": False,
         "auto_dispatch_agents": True,
         "auto_merge_agent_prs": True,
         "max_auto_merges_per_day": 20,
         "close_stale_bot_prs_days": 0,
         "max_yolo_actions_per_run": 40,
+    }
+    # Vanilla (apply_mode=normal): safe YOLO subset on explicit --apply only.
+    # Merges stay human unless operator uses merge-upgrades --allow-unarmed.
+    normal_defaults: dict[str, Any] = {
+        "fix_upgrade_prs": True,
+        "heal_upgrade_prs": True,
+        "merge_upgrade_prs": False,
+        "merge_dependabot_patch": False,
+        "clear_upgrade_blockers": False,
+        "yolo_handlers": False,
+        "second_pass": False,
+        "quiet_digest_only": False,
     }
     # Authenticated REST core is 5000/hr; ~45–60 GETs per repo makes full-portfolio
     # multi-pass scans burn the hour — batch + reserve (see docs/RATE_LIMIT.md).
@@ -218,18 +233,24 @@ def load_safety(path: Path | None = None) -> dict[str, Any]:
         "attention_threshold_for_agents": 60,
         "apply_mode": "normal",
         "yolo": dict(yolo_defaults),
+        "normal": dict(normal_defaults),
         "github_api": dict(github_api_defaults),
     }
     if not path.exists():
         return defaults
     data = load_yaml(path)
     yolo_in = data.pop("yolo", None) if isinstance(data, dict) else None
+    normal_in = data.pop("normal", None) if isinstance(data, dict) else None
     api_in = data.pop("github_api", None) if isinstance(data, dict) else None
     defaults.update(data)
     merged_yolo = dict(yolo_defaults)
     if isinstance(yolo_in, dict):
         merged_yolo.update(yolo_in)
     defaults["yolo"] = merged_yolo
+    merged_normal = dict(normal_defaults)
+    if isinstance(normal_in, dict):
+        merged_normal.update(normal_in)
+    defaults["normal"] = merged_normal
     merged_api = dict(github_api_defaults)
     if isinstance(api_in, dict):
         merged_api.update(api_in)

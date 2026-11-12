@@ -365,20 +365,25 @@ def apply_yolo_extras(
 
 
 def pr_ci_detail(
-    client: GitHubClient, owner: str, name: str, sha: str | None
+    client: GitHubClient,
+    owner: str,
+    name: str,
+    sha: str | None,
+    *,
+    probe_billing: bool = False,
 ) -> dict[str, Any]:
-    """Return {state, failed, pending} for commit check-runs."""
+    """Return {state, failed, failed_ids, pending, billing} for commit check-runs."""
+    empty = {
+        "state": "unknown",
+        "failed": [],
+        "failed_ids": [],
+        "pending": False,
+        "billing": False,
+    }
     if not sha:
-        return {"state": "unknown", "failed": [], "pending": False}
+        return empty
     try:
-        status = client.get(f"/repos/{owner}/{name}/commits/{sha}/status")
-        state = str((status or {}).get("state") or "")
-        if state == "success":
-            # still inspect check-runs for partial failures
-            pass
-        if state in ("failure", "error"):
-            # fall through for names
-            pass
+        client.get(f"/repos/{owner}/{name}/commits/{sha}/status")
     except GitHubError:
         pass
     try:
@@ -388,22 +393,55 @@ def pr_ci_detail(
         )
         items = (runs or {}).get("check_runs") if isinstance(runs, dict) else None
         if not items:
-            return {"state": "green", "failed": [], "pending": False}
+            return {
+                "state": "green",
+                "failed": [],
+                "failed_ids": [],
+                "pending": False,
+                "billing": False,
+            }
         pending = any(str(c.get("status") or "") != "completed" for c in items)
-        failed = [
-            str(c.get("name") or "?")
+        failed_rows = [
+            c
             for c in items
             if str(c.get("status") or "") == "completed"
             and str(c.get("conclusion") or "")
             in ("failure", "timed_out", "cancelled", "action_required")
         ]
+        failed = [str(c.get("name") or "?") for c in failed_rows]
+        failed_ids = [int(c["id"]) for c in failed_rows if c.get("id") is not None]
+        billing = False
+        if probe_billing and failed_ids and not pending:
+            from argus.actions_billing import all_failed_checks_billing_only
+
+            billing = all_failed_checks_billing_only(
+                client, owner, name, failed_ids
+            )
         if pending:
-            return {"state": "pending", "failed": failed, "pending": True}
+            return {
+                "state": "pending",
+                "failed": failed,
+                "failed_ids": failed_ids,
+                "pending": True,
+                "billing": False,
+            }
         if failed:
-            return {"state": "failed", "failed": failed, "pending": False}
-        return {"state": "green", "failed": [], "pending": False}
+            return {
+                "state": "failed",
+                "failed": failed,
+                "failed_ids": failed_ids,
+                "pending": False,
+                "billing": billing,
+            }
+        return {
+            "state": "green",
+            "failed": [],
+            "failed_ids": [],
+            "pending": False,
+            "billing": False,
+        }
     except GitHubError:
-        return {"state": "unknown", "failed": [], "pending": False}
+        return empty
 
 
 def _pr_ci_status(client: GitHubClient, owner: str, name: str, sha: str | None) -> str:
@@ -477,13 +515,45 @@ def _squash_merge_search(
             result.skipped.append(f"{owner}/{name}#{num}:head={head_ref or '?'}")
             continue
         is_profile = owner.lower() == name.lower()
-        detail = pr_ci_detail(client, owner, name, sha)
+        yolo_cfg = safety.get("yolo") or {}
+        allow_billing = bool(yolo_cfg.get("merge_when_actions_billing", True))
+        skip_ci_unavailable = bool(
+            yolo_cfg.get("skip_ci_when_actions_unavailable", True)
+        )
+        from argus.actions_billing import actions_unavailable
+
+        unavailable = skip_ci_unavailable and actions_unavailable(
+            client, safety=safety, login=me
+        )
+        detail = pr_ci_detail(
+            client,
+            owner,
+            name,
+            sha,
+            probe_billing=bool(
+                soft_allowlist and allow_billing and not unavailable
+            ),
+        )
         ci_state = str(detail.get("state") or "unknown")
         failed_names = list(detail.get("failed") or [])
         ci_ok = ci_state == "green"
-        if not ci_ok and soft_allowlist and ci_state == "failed" and soft_merge_ok(failed_names):
+        if unavailable and not ci_ok:
+            # Free-tier / no-card: never block upgrades on paid Actions.
+            ci_ok = True
+            ci_state = "actions_unavailable"
+        elif not ci_ok and soft_allowlist and ci_state == "failed" and soft_merge_ok(failed_names):
             ci_ok = True
             ci_state = "soft_allowlist"
+        elif (
+            not ci_ok
+            and soft_allowlist
+            and allow_billing
+            and ci_state == "failed"
+            and bool(detail.get("billing"))
+        ):
+            # Jobs never started (billing/minutes) — local/PC fallback path.
+            ci_ok = True
+            ci_state = "actions_billing"
         ok, failed = evaluate_pre_merge(
             safety=safety,
             title=title,
@@ -509,11 +579,16 @@ def _squash_merge_search(
             try:
                 from argus.action_ledger import append_action
 
+                suffix = {
+                    "soft_allowlist": " (soft)",
+                    "actions_billing": " (actions_billing)",
+                    "actions_unavailable": " (actions_unavailable)",
+                }.get(ci_state, "")
                 append_action(
                     actor="yolo",
                     repo=f"{owner}/{name}",
                     action="squash_merge",
-                    detail=title if ci_state != "soft_allowlist" else f"{title} (soft)",
+                    detail=f"{title}{suffix}",
                     pr_url=str(it.get("html_url") or ""),
                     sha_after=sha,
                 )

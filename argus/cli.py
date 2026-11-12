@@ -409,6 +409,25 @@ def doctor_cmd() -> None:
         if cap < 1:
             problems.append("yolo.max_auto_merges_per_day must be >= 1 when YOLO is armed")
 
+    if token:
+        try:
+            from argus.actions_billing import actions_unavailable, reset_actions_unavailable_cache
+            from argus.github_client import GitHubClient
+
+            reset_actions_unavailable_cache()
+            with GitHubClient(token=token, report_only=True) as gh:
+                down = actions_unavailable(gh, safety=safety)
+            click.echo(
+                "actions: "
+                + (
+                    "unavailable — use `argus local-weekly` (no payment required)"
+                    if down
+                    else "reachable"
+                )
+            )
+        except Exception as exc:  # noqa: BLE001
+            click.echo(f"actions: probe skipped ({exc})")
+
     grok_cfg = load_grok_config()
     click.echo(
         f"grok_budget: enabled={bool(grok_cfg.get('enabled', True))} "
@@ -636,6 +655,12 @@ def fix_upgrades_cmd(max_repos: int, allow_unarmed: bool) -> None:
 )
 @click.option("--loop", "loops", default=1, show_default=True, help="Retry passes for pending CI")
 @click.option("--sleep", "sleep_s", default=45, show_default=True)
+@click.option(
+    "--actions-unavailable/--require-actions-ci",
+    "force_actions_unavailable",
+    default=None,
+    help="Force free-tier path (skip remote CI) or require Actions CI. Default: auto-detect.",
+)
 def merge_upgrades_cmd(
     max_merges: int,
     allow_unarmed: bool,
@@ -644,6 +669,7 @@ def merge_upgrades_cmd(
     soft_allowlist: bool,
     loops: int,
     sleep_s: int,
+    force_actions_unavailable: bool | None,
 ) -> None:
     """YOLO: mandatory clear loop — fix → wait → soft-merge upgrade PRs."""
     import os
@@ -657,6 +683,10 @@ def merge_upgrades_cmd(
     token = os.environ.get("GITHUB_TOKEN") or os.environ.get("ARGUS_GITHUB_TOKEN") or ""
     if not token:
         raise SystemExit("GITHUB_TOKEN is not set")
+    if force_actions_unavailable is True:
+        os.environ["ARGUS_ACTIONS_UNAVAILABLE"] = "1"
+    elif force_actions_unavailable is False:
+        os.environ["ARGUS_ACTIONS_UNAVAILABLE"] = "0"
     safety = load_safety()
     if not allow_unarmed and not is_yolo_armed(safety):
         raise SystemExit("YOLO not armed — pass --allow-unarmed or run on the private runner")
@@ -678,6 +708,74 @@ def merge_upgrades_cmd(
                 indent=2,
             )
         )
+
+
+@main.command("local-weekly")
+@click.option(
+    "--dry-run/--apply",
+    default=False,
+    help="Scan dry-run vs apply. Default apply for PC fallback.",
+)
+@click.option("--skip-merge", is_flag=True, default=False, help="Skip upgrade clear/merge loop")
+@click.option("--loop", "loops", default=6, show_default=True)
+@click.option("--sleep", "sleep_s", default=60, show_default=True)
+@click.option("--no-notify", is_flag=True, default=True, show_default=True)
+def local_weekly_cmd(
+    dry_run: bool,
+    skip_merge: bool,
+    loops: int,
+    sleep_s: int,
+    no_notify: bool,
+) -> None:
+    """PC fallback when GitHub Actions cannot run (free minutes / no paid plan).
+
+    Uses GITHUB_TOKEN / ARGUS_GITHUB_TOKEN on This Computer. Never requires a
+    payment card — skips remote CI when Actions is unavailable and merges via
+    the upgrade clear loop.
+    """
+    import os
+
+    from argus.actions_billing import actions_unavailable, reset_actions_unavailable_cache
+    from argus.config_loader import load_safety
+    from argus.github_client import GitHubClient
+    from argus.yolo_clear_blockers import clear_open_upgrade_blockers
+
+    token = os.environ.get("GITHUB_TOKEN") or os.environ.get("ARGUS_GITHUB_TOKEN") or ""
+    if not token:
+        raise SystemExit("GITHUB_TOKEN or ARGUS_GITHUB_TOKEN is not set")
+    # Local weekly implies free-tier / Actions-out unless operator forces CI.
+    if "ARGUS_ACTIONS_UNAVAILABLE" not in os.environ:
+        os.environ["ARGUS_ACTIONS_UNAVAILABLE"] = "1"
+    reset_actions_unavailable_cache()
+    ensure_runtime_dirs()
+    out: dict = {"fallback": "local-weekly", "dry_run": dry_run}
+    summary = run_pipeline(
+        dry_run=dry_run,
+        profile="generic",
+        notify=not no_notify,
+        skip_profile=True,
+    )
+    out["run"] = {
+        "mode": summary.mode,
+        "repos": summary.repo_count,
+        "human_tasks": summary.human_tasks,
+        "yolo": summary.details.get("yolo"),
+        "artifacts": summary.artifacts,
+    }
+    if not skip_merge and not dry_run:
+        safety = load_safety()
+        with GitHubClient(token=token) as client:
+            out["actions_unavailable"] = actions_unavailable(client, safety=safety)
+            out["clear"] = clear_open_upgrade_blockers(
+                client,
+                max_merges=int((safety.get("yolo") or {}).get("max_yolo_actions_per_run") or 80),
+                loops=max(1, loops),
+                sleep_s=sleep_s,
+                soft_allowlist=True,
+                require_armed=False,
+                also_dependabot_patch=True,
+            )
+    click.echo(json.dumps(out, indent=2))
 
 
 @main.group("grok")

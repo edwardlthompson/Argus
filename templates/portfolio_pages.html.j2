@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex" />
+  <title>Argus — {{ view.target_label }}</title>
+  <style>
+    :root {
+      --bg0: #0b1220;
+      --bg1: #132033;
+      --ink: #e8eef7;
+      --muted: #8fa0b8;
+      --line: #243247;
+      --accent: #4aa3f0;
+      --good: #3dd68c;
+      --warn: #e6b84d;
+      --bad: #f07178;
+      --card: rgba(18, 28, 44, 0.72);
+      --track: #0a101a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: "Source Sans 3", "Segoe UI", sans-serif;
+      background:
+        radial-gradient(ellipse 80% 50% at 10% -10%, #1a3a5c 0%, transparent 55%),
+        radial-gradient(ellipse 60% 40% at 90% 0%, #1e2d4a 0%, transparent 50%),
+        linear-gradient(180deg, var(--bg1), var(--bg0));
+      min-height: 100vh;
+    }
+    .wrap { max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.25rem 3.5rem; }
+    .hero h1 {
+      font-family: "Fraunces", "Georgia", serif;
+      font-size: clamp(2.4rem, 6vw, 3.4rem);
+      letter-spacing: -0.03em;
+      margin: 0 0 0.4rem;
+      line-height: 1.05;
+    }
+    .hero p { color: var(--muted); margin: 0 0 1.25rem; max-width: 36rem; }
+    .banner {
+      border-left: 3px solid var(--accent);
+      background: rgba(74, 163, 240, 0.08);
+      padding: 0.7rem 0.9rem;
+      margin: 0 0 1.5rem;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 0.75rem;
+      margin: 1.5rem 0 2rem;
+    }
+    .stat {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      padding: 0.9rem 1rem;
+    }
+    .stat .n { font-size: 1.55rem; font-weight: 700; }
+    .stat .l { color: var(--muted); font-size: 0.8rem; }
+    h2 {
+      font-family: "Fraunces", Georgia, serif;
+      font-size: 1.35rem;
+      margin: 2rem 0 0.85rem;
+      font-weight: 600;
+    }
+    .charts {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 0.85rem;
+    }
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      padding: 1rem 1.1rem;
+    }
+    .panel h3 {
+      margin: 0 0 0.75rem;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      font-weight: 650;
+    }
+    .hbar { display: grid; gap: 0.4rem; }
+    .hbar-row {
+      display: grid;
+      grid-template-columns: minmax(4rem, 30%) 1fr auto;
+      gap: 0.45rem;
+      align-items: center;
+      font-size: 0.86rem;
+    }
+    .track { height: 9px; background: var(--track); border-radius: 999px; overflow: hidden; }
+    .track > i { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
+    .val { color: var(--muted); font-variant-numeric: tabular-nums; min-width: 2rem; text-align: right; }
+    .hist { display: flex; align-items: flex-end; gap: 0.4rem; height: 120px; border-bottom: 1px solid var(--line); }
+    .hist-col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; gap: 0.3rem; }
+    .hist-col .col {
+      width: 100%; max-width: 36px; min-height: 4px;
+      background: linear-gradient(180deg, #7ab8f5, var(--accent));
+      border-radius: 4px 4px 1px 1px;
+    }
+    .hist-col .lab { color: var(--muted); font-size: 0.7rem; }
+    .hist-col .cnt { font-size: 0.75rem; font-weight: 650; }
+    .donut-wrap { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; }
+    .donut {
+      width: 120px; height: 120px; border-radius: 50%; flex-shrink: 0;
+      background: conic-gradient(
+        var(--bad) 0 calc(var(--p-high) * 1%),
+        var(--warn) calc(var(--p-high) * 1%) calc((var(--p-high) + var(--p-medium)) * 1%),
+        var(--good) calc((var(--p-high) + var(--p-medium)) * 1%) 100%
+      );
+      position: relative;
+    }
+    .donut::after {
+      content: ""; position: absolute; inset: 28%; border-radius: 50%;
+      background: #121c2c; border: 1px solid var(--line);
+    }
+    .legend { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.35rem; font-size: 0.88rem; }
+    .swatch { width: 0.65rem; height: 0.65rem; border-radius: 2px; display: inline-block; margin-right: 0.35rem; }
+    .swatch-high { background: var(--bad); }
+    .swatch-medium { background: var(--warn); }
+    .swatch-good { background: var(--good); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th, td { text-align: left; padding: 0.5rem 0.35rem; border-bottom: 1px solid var(--line); }
+    th { color: var(--muted); font-weight: 600; }
+    footer { margin-top: 2.5rem; color: var(--muted); font-size: 0.82rem; }
+    a { color: var(--accent); }
+    .empty { color: var(--muted); margin: 0; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="hero">
+      <h1>Argus</h1>
+      <p>{{ view.target_label }} portfolio health · {{ view.generated_at }} · mode {{ view.mode }}</p>
+      {% if view.report_banner %}<div class="banner">{{ view.report_banner }}</div>{% endif %}
+      {% if view.actions_unavailable %}
+      <div class="banner">Actions unavailable — free-tier local path. Paying for minutes is not required.</div>
+      {% endif %}
+    </header>
+
+    <div class="stats">
+      <div class="stat"><div class="n">{{ view.stats.repos }}</div><div class="l">Repos</div></div>
+      <div class="stat"><div class="n">{{ view.stats.open_fixes }}</div><div class="l">Open fixes</div></div>
+      <div class="stat"><div class="n">{{ view.stats.mean_attention }}</div><div class="l">Mean attention</div></div>
+      <div class="stat"><div class="n">{{ view.stats.human_fixes }}</div><div class="l">Human class</div></div>
+      <div class="stat"><div class="n">{{ view.stats.auto_fixes }}</div><div class="l">Auto-safe</div></div>
+      <div class="stat"><div class="n">{{ view.stats.agent_fixes }}</div><div class="l">Agent class</div></div>
+    </div>
+
+    <h2>Measurements</h2>
+    <div class="charts">
+      <div class="panel">
+        <h3>Attention distribution</h3>
+        <div class="hist" role="img" aria-label="Attention histogram">
+          {% for b in view.charts.attention_hist %}
+          <div class="hist-col">
+            <span class="cnt">{{ b.count }}</span>
+            <div class="col" style="height: {{ b.pct if b.pct > 0 else 3 }}%"></div>
+            <span class="lab">{{ b.label }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Attention bands</h3>
+        {% set bands = view.charts.bands %}
+        <div class="donut-wrap">
+          <div class="donut" style="--p-high: {{ bands[0].pct }}; --p-medium: {{ bands[1].pct }};"></div>
+          <ul class="legend">
+            {% for b in bands %}
+            <li><span class="swatch swatch-{{ b.key }}"></span>{{ b.key }} · {{ b.count }} ({{ b.pct }}%)</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Fixes by class</h3>
+        <div class="hbar">
+          {% for row in view.charts.fix_classes %}
+          <div class="hbar-row">
+            <span>{{ row.label }}</span>
+            <div class="track"><i style="width: {{ row.pct if view.stats.open_fixes else 0 }}%"></i></div>
+            <span class="val">{{ row.count }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Check families</h3>
+        <div class="hbar">
+          {% for row in view.charts.prefix_groups %}
+          <div class="hbar-row">
+            <span>{{ row.label }}</span>
+            <div class="track"><i style="width: {{ row.pct }}%"></i></div>
+            <span class="val">{{ row.count }}</span>
+          </div>
+          {% else %}
+          <p class="empty">No open matches.</p>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Rubric category means</h3>
+        <div class="hbar">
+          {% for row in view.charts.rubric_means %}
+          <div class="hbar-row">
+            <span>{{ row.label }}</span>
+            <div class="track"><i style="width: {{ row.pct }}%"></i></div>
+            <span class="val">{{ row.value }}</span>
+          </div>
+          {% else %}
+          <p class="empty">No category scores.</p>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Top fix ids</h3>
+        <div class="hbar">
+          {% for row in view.charts.top_fixes %}
+          <div class="hbar-row">
+            <span><code>{{ row.label }}</code></span>
+            <div class="track"><i style="width: {{ row.pct }}%"></i></div>
+            <span class="val">{{ row.value }}</span>
+          </div>
+          {% else %}
+          <p class="empty">No open fixes.</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    {% if view.health_delta %}
+    <h2>This run</h2>
+    <div class="panel">
+      <p class="empty" style="color:var(--ink)">
+        Open fixes
+        {{ (view.health_delta.totals_before or {}).open_fixes }}
+        →
+        {{ (view.health_delta.totals_after or {}).open_fixes }}
+        (Δ {{ view.health_delta.delta_open_fixes }})
+      </p>
+    </div>
+    {% endif %}
+
+    <h2>Repos by attention</h2>
+    <div class="panel">
+      {% if view.priority_cards %}
+      <table>
+        <thead>
+          <tr><th>Repo</th><th>Attention</th><th>Open fixes</th><th>Band</th></tr>
+        </thead>
+        <tbody>
+          {% for c in view.priority_cards %}
+          <tr>
+            <td>{{ c.name }}</td>
+            <td>{{ c.attention }}</td>
+            <td>{{ c.open_fixes }}</td>
+            <td>{{ c.band }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="empty">No repositories in this scan.</p>
+      {% endif %}
+    </div>
+
+    <footer>
+      Public metrics only — never a weakness catalogue.
+      Full private report lives under <code>argus-history/reports/</code> on the private runner.
+    </footer>
+  </div>
+</body>
+</html>

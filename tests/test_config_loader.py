@@ -24,6 +24,10 @@ def test_load_safety_yolo_defaults():
     assert int(yolo["max_auto_merges_per_day"]) >= 1
     assert "close_stale_bot_prs_days" in yolo
     assert int(yolo.get("max_yolo_actions_per_run") or 0) >= 1
+    normal = load_safety().get("normal") or {}
+    assert normal.get("fix_upgrade_prs") is True
+    assert normal.get("merge_upgrade_prs") is False
+    assert normal.get("yolo_handlers") is False
     api = safety["github_api"]
     assert api["core_limit_hint"] == 5000
     assert api["max_repos_per_batch"] == 6

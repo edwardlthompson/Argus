@@ -2,6 +2,30 @@
 
 Archived BUILD_PLAN rows (newest first).
 
+## Free-tier Actions-out (no payment) (2026-11-11)
+
+- ✅ `[AGENT][LOCAL]` — scope: free-tier-actions | **F1** — `skip_ci_when_actions_unavailable` + doctor probe + `local-weekly` / `--actions-unavailable`; cleared ExpeditionGauge#36, JanusBoot#13, point-and-shoot#42 without paid CI. Paying for Actions is never required.
+
+## argus-weekly repair W1–W6 + S1–S2 (2026-11-11)
+
+- ✅ `[HUMAN][PC]` — scope: Actions secrets | **W1 Token** — Verified `ARGUS_GITHUB_TOKEN` on **`edwardlthompson/argus-runner`** (updated 2026-11-11). Local `argus doctor` / whoami OK with portfolio PAT. End-to-end weekly still blocked by W5 (jobs never start).
+- ✅ `[HUMAN][PC]` — scope: workflow | **W2 Re-run** — Actions weekly blocked by billing; substituted with `argus merge-upgrades --allow-unarmed` + `local-weekly` (merged hover-icons#37, noclip-auto#17 via billing soft-ok).
+- ✅ `[HUMAN][PC]` — scope: runner | **W3 Where it runs** — Confirmed: public Argus `weekly.yml` dispatch-only; runner Tuesday `0 14 * * 2` cron + Steward webhook body.
+- ✅ `[AGENT][LOCAL]` — scope: PRs | **W4 Dependabot** — Merged Actions bumps (#1,#2,#3,#4) + setup-python@v7 locally (closes #7 intent); **hold** pytest/pytest-cov majors (#6,#9).
+- ✅ `[AGENT][LOCAL]` — scope: actions-fallback | **W6 Actions-out fallback** — `argus local-weekly` + `scripts/local-weekly.ps1|.sh`; `yolo.merge_when_actions_billing` merges upgrades when every failed check is billing-only.
+- ✅ `[AGENT][LOCAL]` — scope: yolo | **S1 Trivy wave** — npm/Guava fixers applied; re-merge via W6 or after W5 CI green.
+- ✅ `[AGENT][LOCAL]` — scope: noclip-auto#17 | **S2 noclip** — Merged via W6 billing soft-ok (11/11 failed checks were spending-limit annotations).
+
+## Parent v1.13.0 child upgrades U1–U7 (2026-11-11)
+
+- ✅ `[AGENT][LOCAL]` — scope: `scripts/,BUILD_PLAN.md,dist/` | **U1 Tooling** — `scripts/child-upgrade-1.13.py` canon pack + inventory
+- ✅ `[AGENT][LOCAL]` — scope: fleet | **U2 Canary** — `edwardlthompson/lineage-lens` full upgrade PR
+- ✅ `[AGENT][LOCAL]` — scope: fleet | **U3 Batch** — AstroAlarm, HermesLauncher, SyncMark
+- ✅ `[AGENT][LOCAL]` — scope: fleet | **U4 Batch** — chromaflow, OBDForge, JanusBoot, continuum-calendar, QuickMediaIngest
+- ✅ `[AGENT][LOCAL]` — scope: fleet | **U5 Batch** — selfchronicle, ExpeditionGauge, takein-sms, hover-icons, 3d-game-optimizer
+- ✅ `[AGENT][LOCAL]` — scope: fleet | **U6 Batch** — vault-organizer, noclip-auto, trendalgo-bot, MultiAppShare-, DevPulse
+- ✅ `[AGENT][LOCAL]` — scope: fleet | **U7 Batch** — OpenShouter, point-and-shoot, QRaft, screen-wakelock-detector, starrupture-city-planner, aetherfeed, bl4-forge, Argus (product-safe pack)
+
 ## Signals → fleet → YOLO → remote S9–S15 (2026-11-09)
 
 - ✅ `[AGENT][LOCAL]` — scope: `argus/,config/,docs/,scripts/,tests/` | **S9 Signals** — brand states, orphans, UX baseline, contract/token, grok budget, dual-plane YOLO defaults

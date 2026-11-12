@@ -38,8 +38,21 @@ Edit `config/safety.yaml`, `config/allowlist.yaml`, and `config/inbox.yaml` to t
 
 | Mode | Behavior |
 |------|----------|
-| `normal` (default) | Dry-run or `apply=true` opens `auto_safe` PRs; **human merges** |
-| `yolo` | Same apply path, but policy prefers **auto-merge** when gate + required CI are green (Dependabot **patch** optional). Kill switch: set `apply_mode: normal` |
+| `normal` (default / **vanilla**) | Dry-run or explicit `--apply` opens `auto_safe` PRs; **human merges**. On `--apply`, also runs mechanical upgrade **fix/heal** on open PR heads (`config/safety.yaml` → `normal`). |
+| `yolo` | Same apply path + handlers + auto-merge when gate + CI policy allow. Kill switch: set `apply_mode: normal` / delete `yolo.on`. |
+
+### YOLO → vanilla (what is safe)
+
+| Capability | Vanilla (`normal` + `--apply`) | YOLO (armed) |
+|------------|--------------------------------|--------------|
+| `auto_safe` PRs (gated) | yes | yes |
+| Upgrade PR mechanical fix/heal | yes (`normal.fix_upgrade_prs`) | yes |
+| Free-tier Actions skip / `local-weekly` | yes (CLI opt-in) | yes (scheduled) |
+| Soft-merge allowlist / clear loop | no (use `merge-upgrades --allow-unarmed`) | yes |
+| Auto-merge upgrades / Dependabot patch | no (human or CLI) | yes |
+| YOLO API handlers (CodeQL enable, etc.) | no | yes |
+| Second pass / quiet yolo-digest | no | yes |
+| Imply apply without `--apply` | no | yes |
 
 Hard floors above still apply under YOLO. Grok Bots never merge — see [`GROK_BOTS.md`](GROK_BOTS.md) and [`YOLO.md`](YOLO.md). Prefer new Argus `auto_safe` matchers over LLM mutators.
 

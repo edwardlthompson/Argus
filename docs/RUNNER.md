@@ -29,11 +29,18 @@ Sync this product’s `weekly.yml` **job body** (and Tuesday cron) to the privat
 
 Every run writes:
 
-- `dist/report.html` — dark portfolio HTML
+- `dist/report.html` — full dark portfolio HTML (private; finding titles included)
 - `dist/portfolio-report.md` — matching Markdown
+- `dist/steward-brief.html` — Tuesday Steward visual (private; never Pages)
+- `dist/portfolio-pages.html` — sanitized public dashboard (metrics/graphs only)
 - `dist/runbook.md` — gated agent paste surface
 
-On the private controller, dated copies sync to `argus-history/reports/YYYY-MM-DD.html` (+ `.md`). Public product Pages stay **status-only** (no per-repo security gaps).
+On the private controller, sync to `argus-history/reports/`:
+
+- dated `YYYY-MM-DD.html|.md` plus `*-steward.html` / `*-infographic.svg`
+- `latest.html`, `latest.md`, `latest-steward.html`, `latest-infographic.svg`
+
+**Pages are world-readable.** Public product Pages deploy only `portfolio-pages.html` (or legacy status). Never stage `report.html`, `runbook.md`, `inbox.json`, or `steward-brief.html`.
 
 ### Apply history
 
@@ -49,6 +56,27 @@ Append-only `argus-history/` on the private runner (see [RATE_LIMIT.md](RATE_LIM
 | `ARGUS_WEBHOOK_URL` | — | Optional generic webhook |
 
 `GITHUB_TOKEN` from Actions is enough for CI and uploading artifacts on the runner itself; prefer `ARGUS_GITHUB_TOKEN` for portfolio writes.
+
+## Actions-out fallback (free tier / no payment card)
+
+Argus must keep working when GitHub Actions minutes are exhausted or the account has **no paid plan / no card**. **Do not** treat “add billing” as the fix.
+
+When Actions cannot start jobs, **argus-weekly on the runner will not run**. Use This Computer (free):
+
+```powershell
+# PowerShell — token already in env (same PAT as ARGUS_GITHUB_TOKEN)
+pwsh -File scripts/local-weekly.ps1
+# dry-run only:
+pwsh -File scripts/local-weekly.ps1 -DryRun
+```
+
+```bash
+bash scripts/local-weekly.sh
+# or: python -m argus local-weekly --apply
+# force free-tier merge path: argus merge-upgrades --allow-unarmed --actions-unavailable --fix
+```
+
+Defaults (`yolo.skip_ci_when_actions_unavailable`, `merge_when_actions_billing`): upgrade merges skip remote CI when Actions is unavailable (auto-detect zero-step failures, billing annotations, or `ARGUS_ACTIONS_UNAVAILABLE=1`). Ledger notes `actions_unavailable`. Paying for Actions is optional, never required.
 
 ## Projects board (optional)
 

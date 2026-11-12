@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import os
 from datetime import UTC, datetime
 from typing import Any
 
 from argus.models import RepoPlan, RepoStatus
+
+_PREFIX_ORDER = ("SEC", "HYGIENE", "CI", "LINEAGE", "AGENT", "PROF", "OTHER")
 
 
 def _raw(plan: RepoPlan) -> dict[str, Any]:
@@ -32,6 +35,11 @@ def _band(attention: float, open_any: bool) -> str:
     if attention >= 35:
         return "medium"
     return "good"
+
+
+def _fix_prefix(fix_id: str) -> str:
+    head = (fix_id or "").split("-", 1)[0].upper()
+    return head if head in _PREFIX_ORDER[:-1] else "OTHER"
 
 
 def _top_categories(plan: RepoPlan, *, limit: int = 3) -> list[dict[str, Any]]:
@@ -78,6 +86,39 @@ def _priority_spark(
     return {"points": pts, "line": line, "area": area}
 
 
+def _rubric_means(plans: list[RepoPlan]) -> list[dict[str, Any]]:
+    sums: dict[str, float] = {}
+    counts: dict[str, int] = {}
+    for p in plans:
+        for name, score in (p.score.category_scores or {}).items():
+            key = str(name)
+            sums[key] = sums.get(key, 0.0) + float(score)
+            counts[key] = counts.get(key, 0) + 1
+    rows = [
+        (k, round(sums[k] / max(1, counts[k]), 1))
+        for k in sums
+    ]
+    rows.sort(key=lambda kv: (-kv[1], kv[0]))
+    return _hbar(rows, limit=10)
+
+
+def _prefix_groups(fix_counts: dict[str, int]) -> list[dict[str, Any]]:
+    buckets = {k: 0 for k in _PREFIX_ORDER}
+    for fid, n in fix_counts.items():
+        buckets[_fix_prefix(fid)] += int(n)
+    total = sum(buckets.values()) or 1
+    return [
+        {
+            "key": k,
+            "label": k,
+            "count": buckets[k],
+            "pct": round(100.0 * buckets[k] / total, 1),
+        }
+        for k in _PREFIX_ORDER
+        if buckets[k] or k != "OTHER"
+    ]
+
+
 def build_report_view(
     plans: list[RepoPlan],
     *,
@@ -86,6 +127,8 @@ def build_report_view(
     report_banner: str | None = None,
     health_delta: dict[str, Any] | None = None,
     read_only: bool = False,
+    pages_safe: bool = False,
+    actions_unavailable: bool | None = None,
 ) -> dict[str, Any]:
     active = [p for p in plans if p.repo.status != RepoStatus.ARCHIVED]
     archived = [p for p in plans if p.repo.status == RepoStatus.ARCHIVED]
@@ -97,10 +140,14 @@ def build_report_view(
     human_n = sum(len(p.human_fixes) for p in plans)
     open_fixes = auto_n + agent_n + human_n
 
+    if actions_unavailable is None:
+        env = (os.environ.get("ARGUS_ACTIONS_UNAVAILABLE") or "").strip().lower()
+        actions_unavailable = env in ("1", "true", "yes", "on")
+
     fix_counts: dict[str, int] = {}
     lang_counts: dict[str, int] = {}
     band_counts = {"high": 0, "medium": 0, "good": 0}
-    hist = [0, 0, 0, 0, 0]  # 0-20 … 80-100
+    hist = [0, 0, 0, 0, 0]
     for p in plans:
         a = float(p.score.attention)
         hist[min(4, int(a // 20))] += 1
@@ -119,27 +166,31 @@ def build_report_view(
         open_any = bool(p.human_fixes or p.agent_fixes or p.auto_fixes)
         band = _band(p.score.attention, open_any)
         top_cats = _top_categories(p)
-        cards.append(
-            {
-                "full_name": p.repo.full_name,
-                "name": p.repo.name,
-                "url": p.repo.html_url or f"https://github.com/{p.repo.full_name}",
-                "status": p.repo.status.value,
-                "band": band,
-                "attention": p.score.attention,
-                "meta": _meta_line(p),
-                "top_categories": top_cats,
-                "categories_line": " · ".join(
-                    f"{c['name']} {c['score']}" for c in top_cats
-                ),
-                "bar_width": max(8, min(95, int(p.score.attention))),
-                "issues": [
-                    f"`{m.fix.id}` — {m.fix.title}"
-                    for m in (*p.auto_fixes, *p.agent_fixes, *p.human_fixes)[:8]
-                ],
-                "description": (p.repo.description or "")[:220],
-            }
-        )
+        open_n = len(p.auto_fixes) + len(p.agent_fixes) + len(p.human_fixes)
+        card: dict[str, Any] = {
+            "full_name": p.repo.full_name,
+            "name": p.repo.name,
+            "url": p.repo.html_url or f"https://github.com/{p.repo.full_name}",
+            "status": p.repo.status.value,
+            "band": band,
+            "attention": p.score.attention,
+            "meta": _meta_line(p),
+            "top_categories": top_cats,
+            "categories_line": " · ".join(
+                f"{c['name']} {c['score']}" for c in top_cats
+            ),
+            "bar_width": max(8, min(95, int(p.score.attention))),
+            "open_fixes": open_n,
+            "description": (p.repo.description or "")[:220],
+        }
+        if pages_safe:
+            card["issues"] = []
+        else:
+            card["issues"] = [
+                f"`{m.fix.id}` — {m.fix.title}"
+                for m in (*p.auto_fixes, *p.agent_fixes, *p.human_fixes)[:8]
+            ]
+        cards.append(card)
 
     assessment = [
         f"Portfolio size: {len(plans)} repositories "
@@ -162,33 +213,42 @@ def build_report_view(
             f"{(health_delta.get('totals_after') or {}).get('open_fixes')} "
             f"(Δ {health_delta.get('delta_open_fixes')})."
         )
-
-    grandma = []
-    for p in priority:
-        if not p.human_fixes:
-            continue
-        m = p.human_fixes[0]
-        grandma.append(
-            {
-                "index": len(grandma) + 1,
-                "title": f"{m.fix.title} ({p.repo.name})",
-                "why": m.fix.why,
-                "steps": (m.fix.human_steps or "").strip(),
-                "gate": m.fix.gate or "Steps above are complete.",
-                "url": p.repo.html_url or f"https://github.com/{p.repo.full_name}",
-            }
+    if actions_unavailable:
+        assessment.append(
+            "GitHub Actions unavailable (free-tier / no paid minutes) — local path in use."
         )
-        if len(grandma) >= 5:
-            break
+
+    grandma: list[dict[str, Any]] = []
+    if not pages_safe:
+        for p in priority:
+            if not p.human_fixes:
+                continue
+            m = p.human_fixes[0]
+            grandma.append(
+                {
+                    "index": len(grandma) + 1,
+                    "title": f"{m.fix.title} ({p.repo.name})",
+                    "why": m.fix.why,
+                    "steps": (m.fix.human_steps or "").strip(),
+                    "gate": m.fix.gate or "Steps above are complete.",
+                    "url": p.repo.html_url or f"https://github.com/{p.repo.full_name}",
+                }
+            )
+            if len(grandma) >= 5:
+                break
 
     band_total = sum(band_counts.values()) or 1
     fix_total = open_fixes or 1
+    prefixes = _prefix_groups(fix_counts)
+    rubric = _rubric_means(plans)
     return {
         "generated_at": datetime.now(UTC).strftime("%Y-%m-%d"),
         "generated_at_iso": datetime.now(UTC).isoformat(),
         "target_label": target_label,
         "mode": mode,
         "read_only": read_only,
+        "pages_safe": pages_safe,
+        "actions_unavailable": bool(actions_unavailable),
         "report_banner": report_banner,
         "health_delta": health_delta,
         "stats": {
@@ -220,13 +280,27 @@ def build_report_view(
                 for k in ("high", "medium", "good")
             ],
             "fix_classes": [
-                {"key": "auto", "label": "Auto-safe", "count": auto_n,
-                 "pct": round(100.0 * auto_n / fix_total, 1)},
-                {"key": "agent", "label": "Agent", "count": agent_n,
-                 "pct": round(100.0 * agent_n / fix_total, 1)},
-                {"key": "human", "label": "Human", "count": human_n,
-                 "pct": round(100.0 * human_n / fix_total, 1)},
+                {
+                    "key": "auto",
+                    "label": "Auto-safe",
+                    "count": auto_n,
+                    "pct": round(100.0 * auto_n / fix_total, 1),
+                },
+                {
+                    "key": "agent",
+                    "label": "Agent",
+                    "count": agent_n,
+                    "pct": round(100.0 * agent_n / fix_total, 1),
+                },
+                {
+                    "key": "human",
+                    "label": "Human",
+                    "count": human_n,
+                    "pct": round(100.0 * human_n / fix_total, 1),
+                },
             ],
+            "prefix_groups": prefixes,
+            "rubric_means": rubric,
             "top_fixes": _hbar([(a, b) for a, b in top_fixes]),
             "languages": _hbar(
                 sorted(lang_counts.items(), key=lambda kv: (-kv[1], kv[0])), limit=8
@@ -242,6 +316,7 @@ def build_report_view(
                 "issues": int(_raw(p).get("open_issues_count") or 0),
                 "lang": str(_raw(p).get("language") or "—"),
                 "attention": p.score.attention,
+                "open_fixes": len(p.auto_fixes) + len(p.agent_fixes) + len(p.human_fixes),
             }
             for p in priority[12:]
         ],
@@ -258,7 +333,7 @@ def build_report_view(
         "strong": [
             "Argus covers mechanical hygiene via gated auto_safe + YOLO handlers.",
             "YOLO merges only chore(argus) / Dependabot patch PRs; never force-push.",
-            "Private runner stores apply history + dated reports under argus-history/.",
+            "Full weakness detail stays private (argus-history); Pages stay sanitized.",
         ],
         "attention_blurb": (
             "Attention is a deterministic 0–100 “needs work” score: category rules "

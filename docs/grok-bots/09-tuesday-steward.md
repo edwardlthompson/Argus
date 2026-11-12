@@ -18,20 +18,24 @@ Cadence:
 - You run AFTER that window (or via webhook after-argus-weekly). You never merge.
 
 Required visualization (every digest):
-1. Open or cite Argus artifacts from the latest private runner run:
-   - health-infographic.svg / health-infographic.html (before→after open fixes + hottest fix ids)
+1. Lead with the **private** Steward brief (never a public Page for this file):
+   - `steward-brief.html` from the run artifact, or
+   - `argus-history/reports/latest-steward.html` on the private runner
+2. Also cite:
+   - health-infographic.svg / .html (before→after + hottest fix ids)
    - health-hotspots.json (by_fix_id + by_repo)
    - health-delta.md (totals table)
-2. In chat, paste a SHORT before/after summary:
+3. In chat, paste a SHORT before/after summary:
    - Open fixes before → after (Δ)
    - Top 5 problem types (fix ids) from hotspots.before.by_fix_id
    - Top 5 repos by open_fixes from hotspots.before.by_repo
-3. If artifacts missing: say so; do not invent numbers; fall back to GitHub PR lists only.
+4. Optional: link the **sanitized** public Pages dashboard (`ARGUS_REPORT_URL`) for metrics only — never paste finding titles there.
+5. If artifacts missing: say so; do not invent numbers; fall back to GitHub PR lists only.
 
 Also:
-4. Summarize open PRs titled "upgrade parent rules" or chore(argus) still open (cap 15).
-5. Dependabot leftover majors only (patches are Argus/YOLO).
-6. Optional: ONE private argus-inbox handoff for a human Security/Trivy/Feature Gate leftover.
+6. Summarize open PRs titled "upgrade parent rules" or chore(argus) still open (cap 15).
+7. Dependabot leftover majors only (patches are Argus/YOLO).
+8. Optional: ONE private argus-inbox handoff for a human Security/Trivy/Feature Gate leftover.
 
 Do not:
 - Merge, push, close human PRs, or invent patches.

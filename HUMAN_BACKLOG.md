@@ -8,6 +8,6 @@ Tasks Argus cannot finish via API without elevated org policies or UI-only contr
 | Secret scanning / push protection | SEC-* | Target → Settings → Code security |
 | CodeQL default setup | SEC-* | Target → Settings → Code security |
 | Profile pins | PROF-README suggestion | Profile → Customize pins |
-| Billing / Actions minutes | E6 heuristic | Org/user billing settings |
+| Actions minutes (optional) | E6 | Free-tier exhaustion is **supported** via `argus local-weekly` / `--actions-unavailable`. Do **not** require a payment card. |
 
 Do not delete this file; append rows when new human-only gates appear.

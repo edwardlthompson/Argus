@@ -283,8 +283,18 @@ def write_artifacts(
         encoding="utf-8",
     )
     write_status_artifacts(plans, dist_dir=out)
+    from argus.portfolio_pages import write_portfolio_pages
+
+    pages_paths = write_portfolio_pages(
+        plans,
+        health_delta=health_delta,
+        dist_dir=out,
+        target_label=target_label,
+        mode=mode,
+    )
     return {
         "runbook": md_path,
         "report": html_path,
         "portfolio": portfolio_path,
+        **pages_paths,
     }

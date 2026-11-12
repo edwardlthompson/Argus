@@ -6,7 +6,7 @@ YOLO is Argus’s **private-runner apply policy**: gated `auto_safe` + mechanica
 
 | Plane | YOLO |
 |-------|------|
-| **Public product / template** (`edwardlthompson/Argus`) | **Off** — `apply_mode: normal`, no `yolo.on` |
+| **Public product / template** (`edwardlthompson/Argus`) | **Off** — `apply_mode: normal`, no `yolo.on` (vanilla still gets upgrade **fix/heal** on explicit `--apply`; merges stay human — see [SAFETY.md](SAFETY.md)) |
 | **Private operator runner** (`YOU/argus-runner`) | **On** — bootstrap writes `yolo.on` + runner `apply_mode: yolo` |
 
 See [`docs/GROK_BOTS.md`](GROK_BOTS.md) and [ADR 0001](adr/0001-grok-bots-draft-digest-and-yolo.md).
@@ -59,7 +59,19 @@ argus merge-upgrades --allow-unarmed --fix --soft-allowlist --loop 10 --sleep 18
 
 `--fix` / scheduled YOLO runs a **mandatory clear loop** (`clear_upgrade_blockers`): heal + mechanical fixers (markdown pipes, F-Droid stubs, ADR Status→Accepted, CodeQL android drop when pruned, conventional titles, **Trivy npm overrides + lockfile regen**) → wait for CI → soft-merge → repeat. Soft-merge is template/hygiene noise only (`Template Upgrade Simulation`, `Validate Bootstrap Artifacts`, Conventional Commits title, …; umbrella `CI` ignored). **Hard floors stay:** Security/Trivy/CodeQL/Gitleaks/Dependency Review/Scorecard and product Feature Gate/build/ADR/assemble failures never soft-merge — fixers must clear them or they stay on the digest. Expand `NPM_OVERRIDES` / `CAPACITOR_PINS` in `argus/yolo_trivy_npm.py` when new recurring CVEs appear.
 
-**Hands-off defaults** (`config/safety.yaml` → `yolo`): `clear_upgrade_blockers: true`, `clear_upgrade_loops: 8`, `fix_upgrade_prs: true`, `soft_merge_upgrade_noise: true`, `auto_merge_upgrade_prs: true`. Cadence: Monday Dependabot → Tuesday `argus-weekly` (14:00 UTC) on **`argus-runner` only** → optional **Tuesday Steward** for true judgment leftovers. Public product must not schedule `argus-weekly` (dispatch-only; see [RUNNER.md](RUNNER.md)).
+**Hands-off defaults** (`config/safety.yaml` → `yolo`): `clear_upgrade_blockers: true`, `clear_upgrade_loops: 8`, `fix_upgrade_prs: true`, `soft_merge_upgrade_noise: true`, `auto_merge_upgrade_prs: true`, `merge_when_actions_billing: true`, `skip_ci_when_actions_unavailable: true`. Cadence: Monday Dependabot → Tuesday `argus-weekly` (14:00 UTC) on **`argus-runner` only** → optional **Tuesday Steward** for true judgment leftovers. Public product must not schedule `argus-weekly` (dispatch-only; see [RUNNER.md](RUNNER.md)).
+
+### Free-tier Actions / no payment card
+
+Paid GitHub Actions is **optional**. If free minutes are gone or jobs never start, do **not** buy a plan — run on This Computer:
+
+```bash
+python -m argus local-weekly --apply
+# or: pwsh -File scripts/local-weekly.ps1
+# or: argus merge-upgrades --allow-unarmed --actions-unavailable --fix --loop 4
+```
+
+`local-weekly` sets the free-tier path (`ARGUS_ACTIONS_UNAVAILABLE=1`): portfolio scan locally, then upgrade clear/merge **without** requiring remote CI. Auto-detect also watches zero-step failed workflow jobs on `argus-runner` / `Argus`. Ledger: `actions_unavailable`.
 
 ## Quiet posture (don’t bother the creator)
 

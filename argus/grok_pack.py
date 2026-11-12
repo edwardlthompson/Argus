@@ -48,11 +48,11 @@ Then create a routine:
 
 > Every Tuesday at 4:00 PM America/New_York (after Monday Dependabot and the
 > Argus weekly YOLO run at 14:00 UTC), run the Tuesday Steward portfolio digest
-> skill. Read Argus artifacts when linked: `health-delta.md`, `health-hotspots.json`,
-> and `health-infographic.svg` / `.html` from the latest private runner Actions
-> artifact or `argus-history/reports/`. Post a steward-digest in this chat.
-> Never merge, never push, never invent patches. If health artifacts are missing,
-> say so and list open upgrade/chore PRs from GitHub only.
+> skill. Lead with private `steward-brief.html` (or
+> `argus-history/reports/latest-steward.html`). Also use `health-delta.md`,
+> `health-hotspots.json`, and `health-infographic.svg`. Never publish finding
+> titles to a public Page. Post a steward-digest in this chat. Never merge.
+> If artifacts missing, say so and list open upgrade/chore PRs from GitHub only.
 
 Also accept a webhook trigger named **after-argus-weekly** so Argus can POST
 when the Tuesday scan finishes (optional).
