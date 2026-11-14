@@ -7,6 +7,7 @@ from typing import Any
 from argus.github_client import GitHubClient, GitHubError
 from argus.models import RepoRecord, SignalBundle
 from argus.signals import (
+    board,
     ci,
     contract,
     deps,
@@ -40,6 +41,7 @@ def collect_signals(client: GitHubClient, repo: RepoRecord) -> SignalBundle:
         "traffic": traffic.collect,
         "orphans": orphans.collect,
         "contract": contract.collect,
+        "board": board.collect,
     }
     for name, fn in collectors.items():
         try:
@@ -76,4 +78,5 @@ def fixture_bundle(data: dict[str, Any]) -> SignalBundle:
         traffic=data.get("traffic"),
         orphans=data.get("orphans"),
         contract=data.get("contract"),
+        board=data.get("board"),
     )

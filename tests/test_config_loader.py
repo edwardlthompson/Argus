@@ -35,7 +35,11 @@ def test_load_safety_yolo_defaults():
     assert yolo.get("continuous_zero") is True
     assert yolo.get("skip_profile") is True
     assert yolo.get("sync_profile") is True
+    assert yolo.get("auto_merge_dependabot") is True
+    assert yolo.get("dependabot_auto_merge_levels") == ["patch", "minor", "major"]
     assert normal.get("sync_profile") is True
+    assert normal.get("merge_dependabot") is True
+    assert normal.get("dependabot_auto_merge_levels") == ["patch", "minor"]
     api = safety["github_api"]
     assert api["core_limit_hint"] == 5000
     assert api["max_repos_per_batch"] == 6

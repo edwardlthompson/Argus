@@ -3,20 +3,14 @@
 from __future__ import annotations
 
 import base64
-import re
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from argus.apply import _content_pr, _lineage_version
+from argus.apply import _board_restructure, _content_pr, _lineage_version
 from argus.github_client import GitHubClient, GitHubError
 from argus.models import MatchedFix, RepoPlan
 from argus.state import StateStore
-
-_VERSION_BUMP_RE = re.compile(
-    r"from\s+v?(\d+)\.(\d+)\.(\d+)\s+to\s+v?(\d+)\.(\d+)\.(\d+)",
-    re.I,
-)
 
 
 @dataclass
@@ -42,36 +36,26 @@ def is_yolo_closable_stale_pr(head_ref: str, author_login: str) -> bool:
 
 def is_dependabot_patch_title(title: str, user_login: str | None = None) -> bool:
     """True for Dependabot patch/minor bumps; false for majors or unrelated PRs."""
-    t = title or ""
-    login = (user_login or "").lower()
-    is_bot = "dependabot" in t.lower() or "dependabot" in login
-    if not is_bot:
-        return False
-    if re.search(r"\bmajor\b", t, re.I):
-        return False
-    m = _VERSION_BUMP_RE.search(t)
-    if m:
-        a_maj, a_min = int(m.group(1)), int(m.group(2))
-        b_maj, b_min = int(m.group(4)), int(m.group(5))
-        if b_maj > a_maj:
-            return False
-        return b_maj == a_maj and b_min >= a_min
-    return bool(re.search(r"\b(patch|minor)\b", t, re.I))
+    from argus.dependabot_policy import bump_allowed, classify_dependabot_bump
+
+    level = classify_dependabot_bump(title, user_login)
+    return bump_allowed(level, ("patch", "minor"))
 
 
-def is_dependabot_auto_mergeable(title: str, user_login: str | None = None) -> bool:
-    """Patch/minor plus mechanical Actions majors and pip lower-bound bumps."""
-    if is_dependabot_patch_title(title, user_login):
-        return True
-    t = title or ""
-    login = (user_login or "").lower()
-    if "dependabot" not in login and "dependabot" not in t.lower():
-        return False
-    if re.search(r"actions/[\w-]+ from \d+ to \d+", t, re.I):
-        return True
-    if re.search(r"update .+ requirement from", t, re.I):
-        return True
-    return False
+def is_dependabot_auto_mergeable(
+    title: str,
+    user_login: str | None = None,
+    *,
+    levels: tuple[str, ...] | list[str] = ("patch", "minor", "major"),
+) -> bool:
+    """True when the PR is Dependabot and the bump level is in ``levels``.
+
+    YOLO passes patch+minor+major (all Dependabot updates). Vanilla passes
+    patch+minor only. Unknown bumps merge only when every level is allowed.
+    """
+    from argus.dependabot_policy import bump_allowed, classify_dependabot_bump
+
+    return bump_allowed(classify_dependabot_bump(title, user_login), levels)
 
 
 def _binary_pr(
@@ -303,6 +287,7 @@ YOLO_HANDLERS = {
     "AGENT-MEMORY-LAYOUT": _memory_layout,
     "ISSUE-PATTERNED-AUTO": _issue_patterned,
     "AGENT-STALE-ISSUES": _stale_issues,
+    "BOARD-RESTRUCTURE": _board_restructure,
 }
 
 # Deterministic agent-class handlers (always eligible when handlers run).
@@ -314,6 +299,7 @@ YOLO_AGENT_HANDLERS = frozenset({
     "LINEAGE-RECOMMEND-UPGRADE",
     "ISSUE-PATTERNED-AUTO",
     "AGENT-STALE-ISSUES",
+    "BOARD-RESTRUCTURE",
 })
 
 # Catalogue may still say human; continuous zero applies these via API.
@@ -458,8 +444,13 @@ def pr_ci_detail(
     sha: str | None,
     *,
     probe_billing: bool = False,
+    empty_as: str = "green",
 ) -> dict[str, Any]:
-    """Return {state, failed, failed_ids, pending, billing} for commit check-runs."""
+    """Return {state, failed, failed_ids, pending, billing} for commit check-runs.
+
+    ``empty_as`` is the state when the commit has no check-runs. Upgrade merges
+    treat that as green; Dependabot requires real CI so callers pass ``unknown``.
+    """
     empty = {
         "state": "unknown",
         "failed": [],
@@ -481,7 +472,7 @@ def pr_ci_detail(
         items = (runs or {}).get("check_runs") if isinstance(runs, dict) else None
         if not items:
             return {
-                "state": "green",
+                "state": empty_as,
                 "failed": [],
                 "failed_ids": [],
                 "pending": False,
@@ -739,16 +730,38 @@ def merge_upgrade_prs(
     )
 
 
-def merge_dependabot_patch_prs(
+def merge_dependabot_prs(
     client: GitHubClient,
     *,
     max_merges: int,
     login: str | None = None,
+    safety: dict[str, Any] | None = None,
+    require_armed: bool = True,
+    allowed_levels: list[str] | tuple[str, ...] | None = None,
 ) -> YoloResult:
-    """Squash-merge open Dependabot patch/minor PRs for the user portfolio."""
+    """Squash-merge open Dependabot PRs after the same pre-merge checks as other merges.
+
+    CI must be actually green. ``skip_ci_when_actions_unavailable`` never applies
+    here — if checks never started, the PR stays open.
+    """
+    from argus.config_loader import load_safety
+    from argus.dependabot_policy import allowed_levels as policy_levels
+    from argus.dependabot_policy import bump_allowed, classify_dependabot_bump
+    from argus.yolo_arm import is_yolo_armed
+    from argus.yolo_checks import evaluate_pre_merge
+
+    safety = safety or load_safety()
+    yolo_cfg = safety.get("yolo") or {}
+    skip_profile = bool(yolo_cfg.get("skip_profile", True))
+    levels = list(allowed_levels) if allowed_levels is not None else policy_levels(
+        safety, yolo=is_yolo_armed(safety) if require_armed else False
+    )
     result = YoloResult()
     if client.report_only:
         result.skipped.append("report_only")
+        return result
+    if require_armed and not is_yolo_armed(safety):
+        result.skipped.append("yolo_not_armed")
         return result
     try:
         me = login or str((client.whoami() or {}).get("login") or "")
@@ -763,7 +776,7 @@ def merge_dependabot_patch_prs(
             "/search/issues",
             params={
                 "q": f"user:{me} is:pr is:open author:app/dependabot",
-                "per_page": min(50, max_merges),
+                "per_page": min(50, max(1, max_merges)),
             },
         )
     except GitHubError as exc:
@@ -776,8 +789,9 @@ def merge_dependabot_patch_prs(
         title = str(it.get("title") or "")
         user = ((it.get("user") or {}) if isinstance(it.get("user"), dict) else {})
         login_u = str(user.get("login") or "")
-        if not is_dependabot_auto_mergeable(title, login_u):
-            result.skipped.append(f"major-or-skip:{title[:60]}")
+        level = classify_dependabot_bump(title, login_u)
+        if not bump_allowed(level, levels):
+            result.skipped.append(f"level={level or 'skip'}:{title[:60]}")
             continue
         repo_url = str(it.get("repository_url") or "")
         parts = repo_url.rstrip("/").split("/")
@@ -785,6 +799,31 @@ def merge_dependabot_patch_prs(
             continue
         owner, name = parts[-2], parts[-1]
         num = int(it["number"])
+        sha = None
+        try:
+            pr = client.get(f"/repos/{owner}/{name}/pulls/{num}")
+            sha = str(((pr or {}).get("head") or {}).get("sha") or "") or None
+        except GitHubError:
+            pass
+        detail = pr_ci_detail(client, owner, name, sha, empty_as="unknown")
+        ci_state = str(detail.get("state") or "unknown")
+        ci_ok = ci_state == "green"
+        is_profile = owner.lower() == name.lower()
+        ok, failed = evaluate_pre_merge(
+            safety=safety,
+            title=title,
+            ci_green=ci_ok,
+            is_profile_repo=is_profile,
+            skip_profile=skip_profile,
+            require_armed=require_armed,
+        )
+        if not ok:
+            tag = ",".join(failed)
+            if "ci_green" in failed:
+                extra = ",".join(list(detail.get("failed") or [])[:5]) or ci_state
+                tag = f"{tag}:{ci_state}:{extra}"
+            result.skipped.append(f"{owner}/{name}#{num}:checks={tag}")
+            continue
         try:
             client.put(
                 f"/repos/{owner}/{name}/pulls/{num}/merge",
@@ -792,6 +831,39 @@ def merge_dependabot_patch_prs(
                 json={"merge_method": "squash", "commit_title": title},
             )
             result.merged.append(f"{owner}/{name}#{num}")
+            try:
+                from argus.action_ledger import append_action
+
+                append_action(
+                    actor="yolo",
+                    repo=f"{owner}/{name}",
+                    action="squash_merge",
+                    detail=f"dependabot {level}: {title}",
+                    pr_url=str(it.get("html_url") or ""),
+                    sha_after=sha,
+                )
+            except Exception:  # noqa: BLE001
+                pass
         except GitHubError as exc:
             result.errors.append(f"{owner}/{name}#{num}:{exc}")
     return result
+
+
+def merge_dependabot_patch_prs(
+    client: GitHubClient,
+    *,
+    max_merges: int,
+    login: str | None = None,
+    safety: dict[str, Any] | None = None,
+    require_armed: bool = True,
+    allowed_levels: list[str] | tuple[str, ...] | None = None,
+) -> YoloResult:
+    """Alias for :func:`merge_dependabot_prs` (name kept for callers)."""
+    return merge_dependabot_prs(
+        client,
+        max_merges=max_merges,
+        login=login,
+        safety=safety,
+        require_armed=require_armed,
+        allowed_levels=allowed_levels,
+    )

@@ -568,12 +568,25 @@ Clear non-goals prevent wrong expectations and support tickets.
 In README.md, ensure a short "## What this is not" section with 3–5 concrete bullets.
 Keep tone plain. Do not invent features.
 
-GATE: grep -qi 'what this is not' README.md
+### BOARD-RESTRUCTURE: Restructure divergent BUILD_PLAN to APB format
+Custom boards cannot host News Bot lanes or venue tags. Restructure to BUILD_PLAN_TEMPLATE.md shape, preserve every open task and completed history, write a root BUILD_PLAN.md when the board lived in docs/.
+
+Restructure BUILD_PLAN to agent-project-bootstrap BUILD_PLAN_TEMPLATE.md shape.
+1. Locate the board: root BUILD_PLAN.md, else docs/BUILD_PLAN.md.
+2. Keep every open 🔲/❌ task — never invent work. [AGENT] rows go in local-agent-lane
+   (add [LOCAL] if venue is missing). [HUMAN]/[ADB] go under Waiting on a person.
+3. Fold any "## News inbox (synced)" rows into those sections, then drop that heading.
+4. Preserve completed history via COMPLETED_TASKS.md pointer (or quote ✅ rows). If the
+   board lived in docs/, write root BUILD_PLAN.md and leave docs/BUILD_PLAN.md as a pointer.
+Required markers: remaining-tally, local-agent-lane, cloud-agent-lane, open-prs-sync,
+template-gaps-sync. Prefer PR on chore/argus-board-restructure. No force-push.
+
+GATE: test -f BUILD_PLAN.md && python -c "from pathlib import Path; t=Path('BUILD_PLAN.md').read_text(encoding='utf-8'); assert all(m in t for m in ('remaining-tally','local-agent-lane','cloud-agent-lane','open-prs-sync','template-gaps-sync'))"
 
 ## Phase final — verify & PR
 
 1. Run project tests / verify script if present.
-2. Add a hand-written CHANGELOG note under [Unreleased] listing fix IDs: SEC-CODEQL, AGENT-WHAT-NOT
+2. Add a hand-written CHANGELOG note under [Unreleased] listing fix IDs: SEC-CODEQL, AGENT-WHAT-NOT, BOARD-RESTRUCTURE
 3. Push branch `chore/argus-agent` (or continue the existing Argus branch).
 4. Open a Pull Request whose body lists the fix IDs above.
 

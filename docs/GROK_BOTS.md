@@ -71,7 +71,7 @@ Prefer growing Argus matchers/`auto_safe` over giving Grok write power.
 |-----|---------|--------|------|
 | **Tuesday Steward** | Tuesday schedule (after Monday Dependabot + Argus weekly) | One `steward-digest YYYY-MM-DD`; optional single `argus-inbox` handoff | Digest only — Argus YOLO already fixed/merged what policy allows |
 | **Stale PR Nudge** | Weekly | One Slack/chat table (metadata only) | Argus may close abandoned *bot* PRs per policy; human PRs stay listed |
-| **Security / Dependabot digest** | Weekly | Grandma checklist (titles + severity + URL, cap 15) | Dependabot patch auto-merge via GitHub; Grok does not bump |
+| **Security / Dependabot digest** | Weekly | Grandma checklist (titles + severity + URL, cap 15) | Argus auto-merges Dependabot after CI green (vanilla patch+minor; YOLO all levels); Grok does not bump |
 | **Argus Inbox Translator** | Weekly or on-demand | ≤15 checklist lines from private `argus-inbox` | Less needed if Argus already applying; still useful for human leftovers |
 | **Incident postmortem stub** | `@mention` only | Timeline draft | Never auto |
 | **Docs / CHANGELOG helper** | `@mention` or after Release Notes | Keep-a-Changelog draft | Same Bot as Release Notes (second skill); draft only |

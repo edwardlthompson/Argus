@@ -178,11 +178,37 @@ def load_allowlist(path: Path | None = None) -> dict[str, Any]:
     }
 
 
+def _coalesce_dependabot_keys(
+    block: dict[str, Any],
+    src: dict[str, Any] | None,
+    *,
+    primary: str,
+    alias: str,
+    default_on: bool,
+    default_levels: list[str],
+) -> None:
+    from argus.dependabot_policy import normalize_levels
+
+    incoming = src or {}
+    if primary in incoming:
+        flag = bool(incoming[primary])
+    elif alias in incoming:
+        flag = bool(incoming[alias])
+    else:
+        flag = bool(block.get(primary, default_on))
+    block[primary] = flag
+    block[alias] = flag
+    levels_src = incoming.get("dependabot_auto_merge_levels", block.get("dependabot_auto_merge_levels"))
+    block["dependabot_auto_merge_levels"] = normalize_levels(levels_src, default_levels)
+
+
 def load_safety(path: Path | None = None) -> dict[str, Any]:
     path = path or (CONFIG_DIR / "safety.yaml")
     yolo_defaults: dict[str, Any] = {
         "auto_merge_auto_safe": True,
-        "auto_merge_dependabot_patch": True,
+        "auto_merge_dependabot": True,
+        "auto_merge_dependabot_patch": True,  # alias of auto_merge_dependabot
+        "dependabot_auto_merge_levels": ["patch", "minor", "major"],
         "auto_merge_upgrade_prs": True,
         "fix_upgrade_prs": True,
         "soft_merge_upgrade_noise": True,
@@ -211,7 +237,9 @@ def load_safety(path: Path | None = None) -> dict[str, Any]:
         "fix_upgrade_prs": True,
         "heal_upgrade_prs": True,
         "merge_upgrade_prs": False,
-        "merge_dependabot_patch": False,
+        "merge_dependabot": True,
+        "merge_dependabot_patch": True,  # alias of merge_dependabot
+        "dependabot_auto_merge_levels": ["patch", "minor"],
         "clear_upgrade_blockers": False,
         "yolo_handlers": True,
         "auto_rules_sync": True,
@@ -256,10 +284,26 @@ def load_safety(path: Path | None = None) -> dict[str, Any]:
     merged_yolo = dict(yolo_defaults)
     if isinstance(yolo_in, dict):
         merged_yolo.update(yolo_in)
+    _coalesce_dependabot_keys(
+        merged_yolo,
+        yolo_in if isinstance(yolo_in, dict) else None,
+        primary="auto_merge_dependabot",
+        alias="auto_merge_dependabot_patch",
+        default_on=True,
+        default_levels=["patch", "minor", "major"],
+    )
     defaults["yolo"] = merged_yolo
     merged_normal = dict(normal_defaults)
     if isinstance(normal_in, dict):
         merged_normal.update(normal_in)
+    _coalesce_dependabot_keys(
+        merged_normal,
+        normal_in if isinstance(normal_in, dict) else None,
+        primary="merge_dependabot",
+        alias="merge_dependabot_patch",
+        default_on=True,
+        default_levels=["patch", "minor"],
+    )
     defaults["normal"] = merged_normal
     merged_api = dict(github_api_defaults)
     if isinstance(api_in, dict):

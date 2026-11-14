@@ -24,6 +24,7 @@ def test_yolo_handlers_cover_cleanup_ids():
         "LINEAGE-RECOMMEND-UPGRADE",
         "AGENT-WHAT-NOT",
         "AGENT-MEMORY-LAYOUT",
+        "BOARD-RESTRUCTURE",
     ):
         assert fid in YOLO_HANDLERS
 
@@ -64,10 +65,17 @@ def test_dependabot_patch_filter():
     assert is_dependabot_auto_mergeable(
         "chore(deps): bump actions/checkout from 4 to 7",
         "dependabot[bot]",
+        levels=("patch", "minor", "major"),
+    )
+    assert not is_dependabot_auto_mergeable(
+        "chore(deps): bump actions/checkout from 4 to 7",
+        "dependabot[bot]",
+        levels=("patch", "minor"),
     )
     assert is_dependabot_auto_mergeable(
         "chore(deps): update httpx requirement from >=0.27 to >=0.28.1",
         "dependabot[bot]",
+        levels=("patch", "minor", "major"),
     )
 
 

@@ -18,6 +18,8 @@ discover → signals → score → match fixes → compose → auto-apply → ag
 | `match.py` + `expr.py` | Safe `applies_when` evaluation |
 | `compose.py` | Runbook + HTML (nine composition rules) |
 | `apply.py` | `auto_safe` only; prefers PRs; dry-run |
+| `board_classify.py` / `board_normalize.py` | APB BUILD_PLAN marker-lane append + divergent restructure |
+| `dependabot_policy.py` | Mode-aware bump levels (patch/minor vs all) |
 | `agent_dispatch.py` | Gated prompts + circuit breaker |
 | `notify.py` | Silent unless human/critical work |
 | `state.py` | SQLite status, resolutions, history |
@@ -31,6 +33,8 @@ Weights, fixes, notifications, safety limits, and profiles live under `config/`.
 - **run** — full portfolio path
 - **report** — forced read-only (`GitHubClient.report_only=True`); no writes
 - **doctor** — validate token + config
+
+`signals/board.py` classifies `BUILD_PLAN.md` (root, else `docs/BUILD_PLAN.md`) as canonical / partial / divergent / missing. Partial boards get `BOARD-MARKERS`; divergent boards get `BOARD-RESTRUCTURE`.
 
 ## Gates
 

@@ -19,7 +19,10 @@ normal:
   fix_upgrade_prs: true
   heal_upgrade_prs: true
   merge_upgrade_prs: false
-  merge_dependabot_patch: false
+  # Vanilla --apply: squash-merge Dependabot patch+minor after CI is actually green.
+  merge_dependabot: true
+  merge_dependabot_patch: true  # alias of merge_dependabot
+  dependabot_auto_merge_levels: [patch, minor]
   clear_upgrade_blockers: false
   yolo_handlers: true
   auto_rules_sync: true
@@ -51,7 +54,9 @@ yolo:
   apply_api_handlers: true  # run YOLO_HANDLERS even if catalogue class is human
   resolve_ci_when_actions_unavailable: true
   continuous_zero: true
-  auto_merge_dependabot_patch: true
+  auto_merge_dependabot: true
+  auto_merge_dependabot_patch: true  # alias of auto_merge_dependabot
+  dependabot_auto_merge_levels: [patch, minor, major]
   auto_dispatch_agents: true
   auto_merge_agent_prs: true
   max_auto_merges_per_day: 80

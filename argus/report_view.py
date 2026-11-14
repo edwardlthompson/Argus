@@ -377,7 +377,7 @@ def build_report_view(
         "grandma_tasks": grandma,
         "strong": [
             "Argus covers mechanical hygiene via gated auto_safe + YOLO handlers.",
-            "YOLO merges only chore(argus) / Dependabot patch PRs; never force-push.",
+            "YOLO merges chore(argus) / Dependabot (all bump levels, CI green); never force-push.",
             "Full weakness detail stays private (argus-history); Pages stay sanitized.",
         ],
         "attention_blurb": (

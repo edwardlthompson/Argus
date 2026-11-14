@@ -21,7 +21,7 @@ First week on a new runner: run once with `--dry-run`, inspect artifacts, then l
 
 ### YOLO
 
-Bootstrap writes `yolo.on` and sets runner `apply_mode: yolo` (public product template stays `normal`). Loop: apply → handlers → fix/heal upgrade PRs → six pre-merge checks → squash chore/upgrade (incl. soft-allowlist noise) / Dependabot patch → action ledger → optional second pass → private **yolo-digest** Issue for judgment leftovers only (no per-finding creator pings). **Tuesday Overview refresh:** `yolo.sync_profile: true` opens/updates the public `YOU/YOU` README PR with live stars/forks/views, icon rescan, and public↔private membership (`skip_profile` only blocks auto_safe into `YOU/YOU`). Weekly workflow passes `--with-profile`; `local-weekly` does the same when Actions is out. **Grok never merges** — optional **Tuesday Steward** digests leftovers after the Tuesday run. Kill: delete `yolo.on` or add `YOLO-OFF.md`. Full policy: [YOLO.md](YOLO.md) · [GROK_BOTS.md](GROK_BOTS.md).
+Bootstrap writes `yolo.on` and sets runner `apply_mode: yolo` (public product template stays `normal`). Loop: apply → handlers → fix/heal upgrade PRs → six pre-merge checks → squash chore/upgrade (incl. soft-allowlist noise) / Dependabot (all bump levels, **CI must be green** — `skip_ci_when_actions_unavailable` does not apply to dependency PRs) → action ledger → optional second pass → private **yolo-digest** Issue for judgment leftovers only (no per-finding creator pings). **Tuesday Overview refresh:** `yolo.sync_profile: true` opens/updates the public `YOU/YOU` README PR with live stars/forks/views, icon rescan, and public↔private membership (`skip_profile` only blocks auto_safe into `YOU/YOU`). Weekly workflow passes `--with-profile`; `local-weekly` does the same when Actions is out. **Grok never merges** — optional **Tuesday Steward** digests leftovers after the Tuesday run. Kill: delete `yolo.on` or add `YOLO-OFF.md`. Full policy: [YOLO.md](YOLO.md) · [GROK_BOTS.md](GROK_BOTS.md).
 
 Sync this product’s `weekly.yml` **job body** (and Tuesday cron) to the private `argus-runner` when upgrading the runner clone. Cron must remain on the runner only; the public product workflow stays dispatch-only.
 
@@ -76,7 +76,7 @@ bash scripts/local-weekly.sh
 # force free-tier merge path: argus merge-upgrades --allow-unarmed --actions-unavailable --fix
 ```
 
-Defaults (`yolo.skip_ci_when_actions_unavailable`, `merge_when_actions_billing`): upgrade merges skip remote CI when Actions is unavailable (auto-detect zero-step failures, billing annotations, or `ARGUS_ACTIONS_UNAVAILABLE=1`). Ledger notes `actions_unavailable`. Paying for Actions is optional, never required.
+Defaults (`yolo.skip_ci_when_actions_unavailable`, `merge_when_actions_billing`): **parent-upgrade** merges skip remote CI when Actions is unavailable (auto-detect zero-step failures, billing annotations, or `ARGUS_ACTIONS_UNAVAILABLE=1`). Ledger notes `actions_unavailable`. Dependabot merges never take this shortcut — if CI never started, the bump PR stays open. Paying for Actions is optional, never required.
 
 ## Projects board (optional)
 

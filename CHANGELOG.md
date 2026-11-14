@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+### Added
+
+- **BUILD_PLAN normalization:** `BOARD-MARKERS` (`auto_safe`) appends missing APB marker lanes and folds `## News inbox (synced)` into `local-agent-lane` / Waiting on a person. `BOARD-RESTRUCTURE` (gated agent + YOLO mechanical handler) rebuilds divergent boards to `BUILD_PLAN_TEMPLATE.md` shape without inventing tasks; writes root `BUILD_PLAN.md` when the board lived in `docs/`.
+- **Mode-aware Dependabot auto-merge:** `normal.dependabot_auto_merge_levels: [patch, minor]` on `--apply`; YOLO `dependabot_auto_merge_levels: [patch, minor, major]`. Both paths require `evaluate_pre_merge` with actually-green CI.
+
+### Changed
+
+- `*_patch` Dependabot keys are aliases (`merge_dependabot` / `auto_merge_dependabot`). `skip_ci_when_actions_unavailable` no longer applies to dependency bumps.
+- BUILD_PLAN non-goal clarified: format hygiene (marker lanes) is not “filing portfolio findings as chores.”
+
 ## [0.9.0] — 2026-11-12
 
 ### Added

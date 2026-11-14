@@ -1,5 +1,9 @@
 # BUILD_PLAN — Argus
 
+<!-- remaining-tally -->
+**Remaining:** AGENT 0 · LOCAL 0 · CLOUD 0 · AUTO 1 · HUMAN 1 · **2 open**
+<!-- /remaining-tally -->
+
 Status legend: 🔲 todo · ✅ done · ❌ blocked
 
 ## Product (do not drift)
@@ -20,7 +24,7 @@ Argus is the enforcer: multi-repo hygiene, scoring, gated apply, and (on the pri
 - Arming YOLO on public Argus
 - Requiring a GitHub payment card / paid Actions minutes
 - Inventing patches for red CI without a gate
-- Filing portfolio findings as BUILD_PLAN chores (product auto-clears them)
+- Filing portfolio **findings** as BUILD_PLAN chores (product auto-clears them). Marker-lane / APB-format hygiene on target boards is a gated fix (`BOARD-MARKERS` / `BOARD-RESTRUCTURE`), not a finding punch list.
 
 ## Sequential — Continuous zero product
 
@@ -32,6 +36,8 @@ Argus is the enforcer: multi-repo hygiene, scoring, gated apply, and (on the pri
 | ✅ | `[AGENT][LOCAL]` — scope: `argus/yolo.py,pipeline.py` | **CZ3 Handlers + pipeline loop** — vanilla handlers, API-safe human ids, CI soft-resolve, auto rules sync, second pass. |
 | ✅ | `[AGENT][LOCAL]` — scope: `config/fixes/` | **CZ4 Fix catalogue** — CodeQL + lineage → agent; Dependabot/rules/token aligns with continuous zero. |
 | ✅ | `[AGENT][LOCAL]` — scope: docs | **CZ5 Docs** — YOLO/SAFETY continuous-zero; this board. |
+| ✅ | `[AGENT][LOCAL]` — scope: `argus/board_*.py,config/fixes/portfolio.yaml` | **B1 BUILD_PLAN normalize** — `BOARD-MARKERS` auto_safe + `BOARD-RESTRUCTURE` gated agent; fold News inbox. |
+| ✅ | `[AGENT][LOCAL]` — scope: `argus/dependabot_policy.py,config/safety.yaml` | **D1 Dependabot merge policy** — mode-aware levels; CI-green via `evaluate_pre_merge`; no Actions-unavailable skip. |
 
 ## Parallel (operator cadence — not chores)
 
@@ -39,6 +45,38 @@ Argus is the enforcer: multi-repo hygiene, scoring, gated apply, and (on the pri
 |--------|-------|------|
 | 🔲 | `[AUTO][LOCAL]` — scope: weekly | **A1 Cadence** — Tuesday `local-weekly --apply` or armed runner YOLO. No BUILD_PLAN edits for open-fix counts. |
 | 🔲 | `[HUMAN][PC]` — scope: judgment | **H1 Judgment only** — brand art, park/archive, residual Dependabot accept/dismiss after automation. |
+
+### Open PRs (synced)
+
+> Auto-managed on product repos. Do not hand-edit rows inside the markers.
+
+<!-- open-prs-sync:begin -->
+_No open Dependabot or Release Please PRs._
+<!-- open-prs-sync:end -->
+
+### Template gaps (synced)
+
+> Auto-managed Monday cron + `sync-template-gaps-build-plan`. Do not hand-edit inside markers.
+
+<!-- template-gaps-sync:begin -->
+_No template gaps; Argus is a product child (see `docs/PARENT_GAP_LIST.md`)._
+<!-- template-gaps-sync:end -->
+
+### Local agent (This Computer)
+
+Standing queue for This Computer. Rows: `🔲 [AGENT][LOCAL] … — scope: path`. `/build` claims these only.
+
+<!-- local-agent-lane:begin -->
+_No local agent items._
+<!-- local-agent-lane:end -->
+
+### Cloud agent (Cursor Cloud)
+
+Standing queue for Cursor Cloud. Rows: `🔲 [AGENT][CLOUD] … — scope: path`. Cloud claims these only.
+
+<!-- cloud-agent-lane:begin -->
+_No cloud agent items._
+<!-- cloud-agent-lane:end -->
 
 ## Archived Sprints
 
