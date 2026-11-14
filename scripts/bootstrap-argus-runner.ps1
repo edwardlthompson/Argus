@@ -73,7 +73,9 @@ apply_mode: yolo
 yolo:
   skip_profile: true
   auto_merge_auto_safe: true
+  auto_merge_dependabot: true
   auto_merge_dependabot_patch: true
+  dependabot_auto_merge_levels: [patch, minor, major]
   auto_dispatch_agents: true
   auto_merge_agent_prs: true
   max_auto_merges_per_day: 80

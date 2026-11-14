@@ -1,12 +1,12 @@
 # YOLO mode (hands-off — private runner only)
 
-YOLO is Argus’s **private-runner apply policy**: gated `auto_safe` + mechanical handlers + squash-merge of Argus/Dependabot **patch** PRs in one loop. It is **not** “Grok can push anything.”
+YOLO is Argus’s **private-runner apply policy**: gated `auto_safe` + mechanical handlers + squash-merge of Argus PRs and **all Dependabot bump levels** (after CI is actually green) in one loop. It is **not** “Grok can push anything.”
 
 ## Dual-plane (locked)
 
 | Plane | YOLO |
 |-------|------|
-| **Public product / template** (`edwardlthompson/Argus`) | **Off** — `apply_mode: normal`, no `yolo.on` (vanilla still gets upgrade **fix/heal** on explicit `--apply`; merges stay human — see [SAFETY.md](SAFETY.md)) |
+| **Public product / template** (`edwardlthompson/Argus`) | **Off** — `apply_mode: normal`, no `yolo.on` (vanilla `--apply` still fix/heals upgrades and auto-merges Dependabot **patch+minor** after CI green; upgrade merges stay human — see [SAFETY.md](SAFETY.md)) |
 | **Private operator runner** (`YOU/argus-runner`) | **On** — bootstrap writes `yolo.on` + runner `apply_mode: yolo` |
 
 See [`docs/GROK_BOTS.md`](GROK_BOTS.md) and [ADR 0001](adr/0001-grok-bots-draft-digest-and-yolo.md).
@@ -31,7 +31,8 @@ yolo:
   skip_profile: true   # do not auto_safe / merge into YOU/YOU
   sync_profile: true   # still refresh Overview PR (stars/forks/views/icons/membership)
   auto_merge_auto_safe: true
-  auto_merge_dependabot_patch: true
+  auto_merge_dependabot: true
+  dependabot_auto_merge_levels: [patch, minor, major]
   auto_dispatch_agents: true
   auto_merge_agent_prs: true
   max_auto_merges_per_day: 80
@@ -47,7 +48,9 @@ When YOLO is armed, `argus run` / `argus fix` **apply** unless you pass `--dry-r
 
 ## Six pre-merge checks
 
-Before squash-merge: armed · hard floors · prefer PRs · title policy · CI green · not sacred profile.
+Before squash-merge (Argus chore PRs, parent upgrades, **and Dependabot**): armed · hard floors · prefer PRs · title policy · CI green · not sacred profile.
+
+Dependabot never uses `skip_ci_when_actions_unavailable`, billing skip, or soft-allowlist. Empty/never-started checks are **not** green — the PR stays open. Vanilla `--apply` uses the same evaluation with `require_armed=false` and `normal.dependabot_auto_merge_levels` (patch+minor).
 
 ## Parent upgrade merges
 
@@ -60,7 +63,7 @@ argus merge-upgrades --allow-unarmed --fix --soft-allowlist --loop 10 --sleep 18
 
 `--fix` / scheduled YOLO runs a **mandatory clear loop** (`clear_upgrade_blockers`): heal + mechanical fixers (markdown pipes, F-Droid stubs, ADR Status→Accepted, CodeQL android drop when pruned, conventional titles, **Trivy npm overrides + lockfile regen**) → wait for CI → soft-merge → repeat. Soft-merge is template/hygiene noise only (`Template Upgrade Simulation`, `Validate Bootstrap Artifacts`, Conventional Commits title, …; umbrella `CI` ignored). **Hard floors stay:** Security/Trivy/CodeQL/Gitleaks/Dependency Review/Scorecard and product Feature Gate/build/ADR/assemble failures never soft-merge — fixers must clear them or they stay on the digest. Expand `NPM_OVERRIDES` / `CAPACITOR_PINS` in `argus/yolo_trivy_npm.py` when new recurring CVEs appear.
 
-**Hands-off defaults** (`config/safety.yaml` → `yolo`): `clear_upgrade_blockers: true`, `clear_upgrade_loops: 8`, `fix_upgrade_prs: true`, `soft_merge_upgrade_noise: true`, `auto_merge_upgrade_prs: true`, `merge_when_actions_billing: true`, `skip_ci_when_actions_unavailable: true`. Cadence: Monday Dependabot → Tuesday `argus-weekly` (14:00 UTC) on **`argus-runner` only** → optional **Tuesday Steward** for true judgment leftovers. Public product must not schedule `argus-weekly` (dispatch-only; see [RUNNER.md](RUNNER.md)).
+**Hands-off defaults** (`config/safety.yaml` → `yolo`): `clear_upgrade_blockers: true`, `clear_upgrade_loops: 8`, `fix_upgrade_prs: true`, `soft_merge_upgrade_noise: true`, `auto_merge_upgrade_prs: true`, `merge_when_actions_billing: true`, `skip_ci_when_actions_unavailable: true` (upgrade PRs only — **not** Dependabot), `auto_merge_dependabot: true`, `dependabot_auto_merge_levels: [patch, minor, major]`. Cadence: Monday Dependabot → Tuesday `argus-weekly` (14:00 UTC) on **`argus-runner` only** → optional **Tuesday Steward** for true judgment leftovers. Public product must not schedule `argus-weekly` (dispatch-only; see [RUNNER.md](RUNNER.md)).
 
 ### Free-tier Actions / no payment card
 
@@ -112,7 +115,7 @@ Steady state leftovers (digest / Steward only): brand artwork, park/archive judg
 3. `auto_safe` apply.
 4. Deterministic handlers (`argus/yolo.py`) for agent + API-safe ids (`apply_api_handlers`).
 5. Soft-resolve `CI-LATEST-FAILED` when Actions unavailable.
-6. **Clear upgrade blockers** (YOLO mandatory): fix → wait → soft-merge loop on parent-upgrade PRs + Dependabot patches.
+6. **Clear upgrade blockers** (YOLO mandatory): fix → wait → soft-merge loop on parent-upgrade PRs + Dependabot (all bump levels, CI must be green).
 7. Squash-merge remaining `chore(argus)*` PRs (after six checks).
 8. Health delta + apply history + action ledger (`dist/actions.jsonl`).
 9. **Second pass** when budget remains.
@@ -130,7 +133,10 @@ Steady state leftovers (digest / Steward only): brand artwork, park/archive judg
 | `PR-STALE` | Close bot/`chore/argus-*` idle PRs; nudge comment only on human PRs |
 | `CI-LATEST-FAILED` | Soft-resolve when Actions unavailable; else digest (no invented patches) |
 | `ISSUE-PATTERNED-AUTO` / `AGENT-STALE-ISSUES` | Close `argus-auto` / digest / bot bump Issues; nudge other stale human Issues (never invent product patches) |
+| `BOARD-RESTRUCTURE` | Mechanical APB rebuild of divergent `BUILD_PLAN.md` (preserve open tasks; root board if it lived in `docs/`) |
 | `HUMAN-PARK-INACTIVE` / `HUMAN-ARCHIVE-JUDGMENT` | Digest only (never archive) |
+
+`BOARD-MARKERS` is `auto_safe` (append missing APB marker lanes + fold `## News inbox (synced)`). See [SAFETY.md](SAFETY.md) BUILD_PLAN format hygiene.
 
 ## Prefer Argus autoload over Grok mutators
 

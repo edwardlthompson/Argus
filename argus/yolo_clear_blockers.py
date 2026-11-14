@@ -5,11 +5,13 @@ from __future__ import annotations
 import time
 from typing import Any
 
+from argus.config_loader import load_safety
+from argus.dependabot_policy import allowed_levels as dependabot_levels
 from argus.github_client import GitHubClient
 from argus.yolo import (
     YoloResult,
     merge_argus_prs,
-    merge_dependabot_patch_prs,
+    merge_dependabot_prs,
     merge_upgrade_prs,
 )
 from argus.yolo_upgrade_fix import fix_open_upgrade_prs
@@ -26,6 +28,7 @@ def clear_open_upgrade_blockers(
     require_armed: bool = True,
     also_dependabot_patch: bool = True,
     also_argus_prs: bool = True,
+    safety: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Exhaust mechanical upgrade/patch/argus merges while CI settles.
 
@@ -65,7 +68,15 @@ def clear_open_upgrade_blockers(
         if also_dependabot_patch:
             used = len(up.merged) + (len(argus.merged) if argus else 0)
             rem_dep = max(0, remaining - used)
-            dep = merge_dependabot_patch_prs(client, max_merges=rem_dep, login=login)
+            safety_cfg = safety or load_safety()
+            dep = merge_dependabot_prs(
+                client,
+                max_merges=rem_dep,
+                login=login,
+                safety=safety_cfg,
+                require_armed=require_armed,
+                allowed_levels=dependabot_levels(safety_cfg, yolo=True),
+            )
         round_row = {
             "pass": i + 1,
             "merged": list(up.merged),

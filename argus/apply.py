@@ -222,6 +222,70 @@ def _lineage_markers(client: GitHubClient, plan: RepoPlan, matched: MatchedFix) 
     return urls[-1]
 
 
+def _read_repo_text(client: GitHubClient, plan: RepoPlan, path: str) -> str | None:
+    try:
+        data = client.get(f"/repos/{plan.repo.owner}/{plan.repo.name}/contents/{path}")
+    except GitHubError:
+        return None
+    if not isinstance(data, dict) or not data.get("content"):
+        return None
+    try:
+        return base64.b64decode(data["content"]).decode("utf-8", errors="replace")
+    except (TypeError, ValueError):
+        return None
+
+
+def _locate_board(client: GitHubClient, plan: RepoPlan) -> tuple[str | None, str | None]:
+    from argus.board_classify import locate_board_path
+
+    root = _read_repo_text(client, plan, "BUILD_PLAN.md")
+    docs = None if root is not None else _read_repo_text(client, plan, "docs/BUILD_PLAN.md")
+    path = locate_board_path(root_exists=root is not None, docs_exists=docs is not None)
+    return path, (root if root is not None else docs)
+
+
+def _board_markers(client: GitHubClient, plan: RepoPlan, matched: MatchedFix) -> str:
+    from argus.board_normalize import append_missing_markers
+
+    path, text = _locate_board(client, plan)
+    if not path or text is None:
+        return f"board-missing:{plan.repo.full_name}"
+    updated = append_missing_markers(text)
+    if updated == text:
+        return f"board-markers-ok:{plan.repo.full_name}"
+    return _content_pr(
+        client,
+        plan,
+        matched,
+        path,
+        updated,
+        "chore(argus): add BUILD_PLAN marker lanes",
+    )
+
+
+def _board_restructure(client: GitHubClient, plan: RepoPlan, matched: MatchedFix) -> str:
+    from argus.board_normalize import restructure_divergent
+
+    path, text = _locate_board(client, plan)
+    if not path or text is None:
+        return f"board-missing:{plan.repo.full_name}"
+    has_completed = _read_repo_text(client, plan, "COMPLETED_TASKS.md") is not None or (
+        _read_repo_text(client, plan, "docs/COMPLETED_TASKS.md") is not None
+    )
+    files = restructure_divergent(text, source_path=path, has_completed_tasks=has_completed)
+    url = ""
+    for fpath, body in files.items():
+        url = _content_pr(
+            client,
+            plan,
+            matched,
+            fpath,
+            body,
+            "chore(argus): normalize BUILD_PLAN to APB format",
+        )
+    return url or f"board-restructure:{plan.repo.full_name}"
+
+
 HANDLERS: dict[str, Handler] = {
     "HYGIENE-TOPICS": _put_topics,
     "HYGIENE-DESCRIPTION": _patch_description,
@@ -238,6 +302,7 @@ HANDLERS: dict[str, Handler] = {
     "SEC-SECRET-SCAN-ENABLE": _enable_secret_scanning,
     "LINEAGE-VERSION-STALE": _lineage_version,
     "LINEAGE-MISSING-MARKERS": _lineage_markers,
+    "BOARD-MARKERS": _board_markers,
 }
 
 

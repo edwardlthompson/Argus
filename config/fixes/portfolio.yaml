@@ -1,4 +1,50 @@
 fixes:
+  - id: BOARD-MARKERS
+    class: auto_safe
+    title: Append missing BUILD_PLAN marker lanes
+    why: >
+      Partial APB boards need remaining-tally, local-agent-lane, cloud-agent-lane,
+      open-prs-sync, and template-gaps-sync so News Bot and /build can target lanes.
+      Format hygiene only — never files portfolio findings as chores.
+    applies_when: >
+      board.get('kind') == 'partial' and
+      repo.get('status') in ('active', 'experimental', 'shipped')
+    phase: 3
+    depends_on: []
+    confidence: high
+    auto_safe: true
+    gate: "python -c \"from pathlib import Path; p=Path('BUILD_PLAN.md') if Path('BUILD_PLAN.md').is_file() else Path('docs/BUILD_PLAN.md'); t=p.read_text(encoding='utf-8'); assert all(m in t for m in ('remaining-tally','local-agent-lane','cloud-agent-lane','open-prs-sync','template-gaps-sync'))\""
+    profiles: [generic, edward]
+    resolution_ttl_days: 60
+
+  - id: BOARD-RESTRUCTURE
+    class: agent
+    title: Restructure divergent BUILD_PLAN to APB format
+    why: >
+      Custom boards cannot host News Bot lanes or venue tags. Restructure to
+      BUILD_PLAN_TEMPLATE.md shape, preserve every open task and completed history,
+      write a root BUILD_PLAN.md when the board lived in docs/.
+    applies_when: >
+      board.get('kind') == 'divergent' and
+      repo.get('status') in ('active', 'experimental', 'shipped')
+    phase: 3
+    depends_on: []
+    confidence: medium
+    auto_safe: false
+    agent_prompt: |
+      Restructure BUILD_PLAN to agent-project-bootstrap BUILD_PLAN_TEMPLATE.md shape.
+      1. Locate the board: root BUILD_PLAN.md, else docs/BUILD_PLAN.md.
+      2. Keep every open 🔲/❌ task — never invent work. [AGENT] rows go in local-agent-lane
+         (add [LOCAL] if venue is missing). [HUMAN]/[ADB] go under Waiting on a person.
+      3. Fold any "## News inbox (synced)" rows into those sections, then drop that heading.
+      4. Preserve completed history via COMPLETED_TASKS.md pointer (or quote ✅ rows). If the
+         board lived in docs/, write root BUILD_PLAN.md and leave docs/BUILD_PLAN.md as a pointer.
+      Required markers: remaining-tally, local-agent-lane, cloud-agent-lane, open-prs-sync,
+      template-gaps-sync. Prefer PR on chore/argus-board-restructure. No force-push.
+    gate: "test -f BUILD_PLAN.md && python -c \"from pathlib import Path; t=Path('BUILD_PLAN.md').read_text(encoding='utf-8'); assert all(m in t for m in ('remaining-tally','local-agent-lane','cloud-agent-lane','open-prs-sync','template-gaps-sync'))\""
+    profiles: [generic, edward]
+    resolution_ttl_days: 60
+
   - id: LINEAGE-VERSION-STALE
     class: auto_safe
     title: Bump .template-version toward parent
@@ -87,7 +133,7 @@ fixes:
     auto_safe: false
     human_steps: |
       1. Argus YOLO / local-weekly enables Dependabot security updates automatically.
-      2. Merge Dependabot patch PRs (YOLO/local-weekly clear loop).
+      2. Merge Dependabot PRs per mode (vanilla patch+minor; YOLO all levels) after CI is green.
       3. If alerts remain: Security → Dependabot → accept update or dismiss with reason.
     gate: "Open Dependabot alert count is 0"
     profiles: [generic, edward]

@@ -38,15 +38,15 @@ Edit `config/safety.yaml`, `config/allowlist.yaml`, and `config/inbox.yaml` to t
 
 | Mode | Behavior |
 |------|----------|
-| `normal` (default / **vanilla**) | Dry-run safe. Explicit `--apply` / `local-weekly --apply` runs **continuous zero**: `auto_safe` PRs, deterministic handlers, auto rules sync, second pass. **Human merges** on public product. |
-| `yolo` | Continuous zero + auto-merge when gate + CI policy allow. Kill switch: set `apply_mode: normal` / delete `yolo.on`. |
+| `normal` (default / **vanilla**) | Dry-run safe. Explicit `--apply` / `local-weekly --apply` runs **continuous zero**: `auto_safe` PRs, deterministic handlers, auto rules sync, second pass, **Dependabot patch+minor** squash-merge after CI is actually green. Upgrade merges stay human on public product. |
+| `yolo` | Continuous zero + auto-merge when gate + CI policy allow, including **all Dependabot bump levels**. Kill switch: set `apply_mode: normal` / delete `yolo.on`. |
 
 ### Continuous zero (config)
 
 Behaviour in `config/safety.yaml`:
 
-- `normal.yolo_handlers` / `normal.auto_rules_sync` / `normal.continuous_zero` / `normal.second_pass`
-- `yolo.apply_api_handlers` / `yolo.auto_rules_sync` / `yolo.resolve_ci_when_actions_unavailable` / `yolo.continuous_zero`
+- `normal.yolo_handlers` / `normal.auto_rules_sync` / `normal.continuous_zero` / `normal.second_pass` / `normal.merge_dependabot` + `dependabot_auto_merge_levels`
+- `yolo.apply_api_handlers` / `yolo.auto_rules_sync` / `yolo.resolve_ci_when_actions_unavailable` / `yolo.continuous_zero` / `yolo.auto_merge_dependabot` + `dependabot_auto_merge_levels`
 
 Controller-only signals (`RULES-STALE`, opt-in `SEC-RELEASE-TOKEN-MISSING`) never fan out to the portfolio. Judgment leftovers (brand art, park/archive, residual Dependabot accept/dismiss) stay on the private digest — see [`YOLO.md`](YOLO.md).
 
@@ -58,7 +58,8 @@ Controller-only signals (`RULES-STALE`, opt-in `SEC-RELEASE-TOKEN-MISSING`) neve
 | Upgrade PR mechanical fix/heal | yes (`normal.fix_upgrade_prs`) | yes |
 | Free-tier Actions skip / `local-weekly` | yes (CLI opt-in) | yes (scheduled) |
 | Soft-merge allowlist / clear loop | no (use `merge-upgrades --allow-unarmed`) | yes |
-| Auto-merge upgrades / Dependabot patch | no (human or CLI) | yes |
+| Auto-merge upgrades | no (human or CLI) | yes |
+| Auto-merge Dependabot (CI green required) | patch+minor (`normal.dependabot_auto_merge_levels`) | all levels including major |
 | Deterministic API handlers (CodeQL, lineage, …) | yes (`normal.yolo_handlers`) | yes (`apply_api_handlers`) |
 | Auto rules sync when stale | yes | yes |
 | Soft-resolve `CI-LATEST-FAILED` when Actions down | yes (via handlers cfg) | yes |
@@ -67,6 +68,26 @@ Controller-only signals (`RULES-STALE`, opt-in `SEC-RELEASE-TOKEN-MISSING`) neve
 | Imply apply without `--apply` | no | yes |
 
 Hard floors above still apply under YOLO. Grok Bots never merge — see [`GROK_BOTS.md`](GROK_BOTS.md) and [`YOLO.md`](YOLO.md). Prefer new Argus `auto_safe` matchers over LLM mutators.
+
+### Dependabot auto-merge (mode-aware)
+
+Both vanilla `--apply` and YOLO squash-merge Dependabot PRs only after `evaluate_pre_merge` (same six checks as other Argus merges). **CI must actually be green.** `yolo.skip_ci_when_actions_unavailable` and billing/soft-allowlist skips apply to parent-upgrade merges, not dependency bumps — if checks never started, the PR stays open.
+
+| Key | Vanilla (`normal`) | YOLO |
+|-----|--------------------|------|
+| Enable | `merge_dependabot` (alias `merge_dependabot_patch`) | `auto_merge_dependabot` (alias `auto_merge_dependabot_patch`) |
+| Levels | `dependabot_auto_merge_levels: [patch, minor]` | `dependabot_auto_merge_levels: [patch, minor, major]` |
+
+### BUILD_PLAN format hygiene
+
+Portfolio boards are normalized toward agent-project-bootstrap `BUILD_PLAN_TEMPLATE.md`. This is **format hygiene**, not filing findings as chores:
+
+| Fix | Class | Does |
+|-----|-------|------|
+| `BOARD-MARKERS` | `auto_safe` | Append missing marker lanes (`remaining-tally`, `local-agent-lane`, `cloud-agent-lane`, `open-prs-sync`, `template-gaps-sync`); fold `## News inbox (synced)` into lanes |
+| `BOARD-RESTRUCTURE` | `agent` | Rebuild divergent boards to APB shape; preserve every open task + completed history; root `BUILD_PLAN.md` when the board lived in `docs/` |
+
+Locator: root `BUILD_PLAN.md`, else `docs/BUILD_PLAN.md`. Gates are executable (markers present). PRs on `chore/argus-*`. See [`YOLO.md`](YOLO.md).
 
 ## Permissions
 

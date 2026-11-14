@@ -17,6 +17,12 @@ from argus.apply import apply_auto_safe, summarize_apply
 from argus.apply_history import record_apply_history
 from argus.compose import write_artifacts
 from argus.config_loader import load_fixes, load_profile, load_rubric, load_safety
+from argus.dependabot_policy import (
+    allowed_levels as dependabot_levels,
+)
+from argus.dependabot_policy import (
+    merge_enabled as dependabot_merge_enabled,
+)
 from argus.discover import discover_portfolio
 from argus.github_client import GitHubClient
 from argus.health import (
@@ -42,7 +48,7 @@ from argus.yolo import (
     YoloResult,
     apply_yolo_extras,
     merge_argus_prs,
-    merge_dependabot_patch_prs,
+    merge_dependabot_prs,
     merge_upgrade_prs,
 )
 from argus.yolo_arm import is_yolo_armed
@@ -360,6 +366,21 @@ def run_pipeline(
                                 **apply_summary,
                                 "vanilla_upgrade_error": str(exc),
                             }
+                    if (
+                        not yolo_on
+                        and not dry_run
+                        and not discovery.report_only
+                        and dependabot_merge_enabled(safety, yolo=False)
+                    ):
+                        rem = int(yolo_cfg.get("max_auto_merges_per_day") or 20)
+                        yolo_dep = merge_dependabot_prs(
+                            client,
+                            max_merges=rem,
+                            login=profile_login or None,
+                            safety=safety,
+                            require_armed=False,
+                            allowed_levels=dependabot_levels(safety, yolo=False),
+                        )
                     run_handlers = (
                         not discovery.report_only
                         and (
@@ -437,8 +458,8 @@ def run_pipeline(
                                     yolo_cfg.get("soft_merge_upgrade_noise", True)
                                 ),
                                 require_armed=True,
-                                also_dependabot_patch=bool(
-                                    yolo_cfg.get("auto_merge_dependabot_patch", True)
+                                also_dependabot_patch=dependabot_merge_enabled(
+                                    safety, yolo=True
                                 ),
                             )
                             up = YoloResult()
@@ -495,26 +516,32 @@ def run_pipeline(
                                 yolo_merge.merged.extend(up.merged)
                                 yolo_merge.skipped.extend(up.skipped)
                                 yolo_merge.errors.extend(up.errors)
-                            if yolo_cfg.get("auto_merge_dependabot_patch", True):
+                            if dependabot_merge_enabled(safety, yolo=True):
                                 rem = int(yolo_cfg.get("max_auto_merges_per_day") or 20)
                                 if yolo_merge:
                                     rem = max(0, rem - len(yolo_merge.merged))
-                                yolo_dep = merge_dependabot_patch_prs(
+                                yolo_dep = merge_dependabot_prs(
                                     client,
                                     max_merges=rem,
                                     login=profile_login or None,
+                                    safety=safety,
+                                    require_armed=True,
+                                    allowed_levels=dependabot_levels(safety, yolo=True),
                                 )
                         elif (
                             not dry_run
-                            and yolo_cfg.get("auto_merge_dependabot_patch", True)
+                            and dependabot_merge_enabled(safety, yolo=True)
                         ):
                             rem = int(yolo_cfg.get("max_auto_merges_per_day") or 20)
                             if yolo_merge:
                                 rem = max(0, rem - len(yolo_merge.merged))
-                            yolo_dep = merge_dependabot_patch_prs(
+                            yolo_dep = merge_dependabot_prs(
                                 client,
                                 max_merges=rem,
                                 login=profile_login or None,
+                                safety=safety,
+                                require_armed=True,
+                                allowed_levels=dependabot_levels(safety, yolo=True),
                             )
                     project_plans_after_apply(
                         current, apply_summary, dry_run=dry_run or discovery.report_only

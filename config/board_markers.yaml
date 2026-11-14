@@ -1,0 +1,38 @@
+# APB BUILD_PLAN marker stubs. Append-only auto_safe uses these; do not invent tasks.
+markers:
+  remaining-tally: |
+    <!-- remaining-tally -->
+    **Remaining:** (tally on next sync)
+    <!-- /remaining-tally -->
+  open-prs-sync: |
+    ### Open PRs (synced)
+
+    > Auto-managed. Do not hand-edit inside the markers.
+
+    <!-- open-prs-sync:begin -->
+    _No open Dependabot or Release Please PRs._
+    <!-- open-prs-sync:end -->
+  template-gaps-sync: |
+    ### Template gaps (synced)
+
+    > Auto-managed. Do not hand-edit inside the markers.
+
+    <!-- template-gaps-sync:begin -->
+    _No template gaps._
+    <!-- template-gaps-sync:end -->
+  local-agent-lane: |
+    ### Local agent (This Computer)
+
+    Standing queue for This Computer. Rows: `🔲 [AGENT][LOCAL] … — scope: path`.
+
+    <!-- local-agent-lane:begin -->
+    _No local agent items._
+    <!-- local-agent-lane:end -->
+  cloud-agent-lane: |
+    ### Cloud agent (Cursor Cloud)
+
+    Standing queue for Cursor Cloud. Rows: `🔲 [AGENT][CLOUD] … — scope: path`.
+
+    <!-- cloud-agent-lane:begin -->
+    _No cloud agent items._
+    <!-- cloud-agent-lane:end -->
