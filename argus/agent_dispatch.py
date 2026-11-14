@@ -96,6 +96,16 @@ def _mechanical_memory_layout(workdir: Path) -> bool:
     return False
 
 
+def _mechanical_ids_applied(workdir: Path, requested: set[str]) -> set[str]:
+    """Run mechanical fallbacks independently; only ids that actually changed."""
+    applied: set[str] = set()
+    if "AGENT-MEMORY-LAYOUT" in requested and _mechanical_memory_layout(workdir):
+        applied.add("AGENT-MEMORY-LAYOUT")
+    if "BOARD-RESTRUCTURE" in requested and _mechanical_board_restructure(workdir):
+        applied.add("BOARD-RESTRUCTURE")
+    return applied
+
+
 def _mechanical_board_restructure(workdir: Path) -> bool:
     from argus.board_classify import locate_board_path
     from argus.board_normalize import restructure_divergent
@@ -173,17 +183,15 @@ def execute_dispatches(
                 if not ran_agent:
                     dispatch.errors.append(f"{full}:agent_exit_{proc.returncode}")
 
-            mechanical = False
+            mechanical_ids: set[str] = set()
             if (not ran_agent) and cfg.get("mechanical_fallback", True):
-                ids = {m.fix.id for m in plan.agent_fixes}
-                if "AGENT-MEMORY-LAYOUT" in ids:
-                    mechanical = _mechanical_memory_layout(workdir)
-                if "BOARD-RESTRUCTURE" in ids:
-                    mechanical = _mechanical_board_restructure(workdir) or mechanical
-                if mechanical:
+                mechanical_ids = _mechanical_ids_applied(
+                    workdir, {m.fix.id for m in plan.agent_fixes}
+                )
+                if mechanical_ids:
                     dispatch.mechanical.append(full)
 
-            if ran_agent or mechanical:
+            if ran_agent or mechanical_ids:
                 # Commit + push branch + PR via gh if available
                 branch = "chore/argus-agent"
                 subprocess.run(["git", "checkout", "-B", branch], cwd=str(workdir), check=False)
@@ -214,8 +222,7 @@ def execute_dispatches(
                         )
                         for m in plan.agent_fixes:
                             if m.fix.class_ == FixClass.AGENT and (
-                                ran_agent
-                                or m.fix.id in ("AGENT-MEMORY-LAYOUT", "BOARD-RESTRUCTURE")
+                                ran_agent or m.fix.id in mechanical_ids
                             ):
                                 store.record_resolution(
                                     full,
