@@ -72,6 +72,7 @@ Standing queue for This Computer. Rows: `🔲 [AGENT][LOCAL] … — scope: path
 - 🔲 [AGENT][LOCAL] Audit the repo for wfx-loot IOCs — scope: .github/ (news P1, 2026-11-14) https://blog.gitguardian.com/wfx-loot-a-ci-secret-stealer-pushed-with-stolen-github-credentials/
 - 🔲 [AGENT][LOCAL] Add a fleet rule flagging wfx-loot IOCs and new npm lifecycle hooks — scope: config/fixes/ (news P2, 2026-11-14) https://blog.gitguardian.com/wfx-loot-a-ci-secret-stealer-pushed-with-stolen-github-credentials/
 - 🔲 [AGENT][LOCAL] Propagate a "never paste secrets into agent chats" AGENTS.md rule to child repos — scope: argus/rules_sync.py (news P2, 2026-11-15) https://cursor.com/blog/security-incident-update
+- 🔲 [AGENT][LOCAL] Add a hygiene rule that flags `on: pull_request_target` in public repo workflows — scope: config/fixes/ (news P2, 2026-11-16) https://github.blog/changelog/2026-11-02-pull_request_target-blocked-by-default-december-2/
 <!-- local-agent-lane:end -->
 
 ### Cloud agent (Cursor Cloud)
@@ -94,3 +95,9 @@ _No cloud agent items._
 | Signals → fleet → YOLO → remote S9–S15 | 2026-11-09 | `COMPLETED_TASKS.md` |
 | Dual-plane + profile + Sequential A–L | 2026-11-05 | `COMPLETED_TASKS.md` |
 | Sprints 0–8 + portfolio doctor + control plane + Cursor FOSS | 2026-11-05 | `COMPLETED_TASKS.md` |
+
+## News inbox (synced)
+
+P1/P2 tasks auto-synced by News Bot from [`docs/NEWS_INBOX.md`](docs/NEWS_INBOX.md).
+
+- 🔲 [HUMAN][PC] Update Git to 2.56.1+ on dev PCs and WSL, and have Argus flag hosts below the patched version (news P2, 2026-11-16) https://github.blog/open-source/git/git-security-vulnerabilities-announced-7/

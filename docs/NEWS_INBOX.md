@@ -44,3 +44,17 @@ A Cursor planning agent should review these items and fold the useful ones into 
 
 - [x] Propagate a "never paste secrets into agent chats" AGENTS.md rule to child repos — Cursor's incident showed credentials pasted into agent traces can be stolen and reused, so the fleet contract should forbid it. Label: `[AGENT][LOCAL]` · Priority: P2 · https://cursor.com/blog/security-incident-update (synced to BUILD_PLAN)
 - [ ] Add @claudecode/cli, zread_cli and @zread/cli-* to the agent-package denylist check — The portfolio scanner can flag these new agent-lure malware packages wherever they appear. Label: `[AGENT][LOCAL]` · Priority: P3 · https://github.com/advisories/GHSA-vp2q-gp5r-xh5j
+
+## 2026-11-16
+
+**News and updates**
+
+- GitHub Actions will block `pull_request_target` runs in public repos by default from Dec 2 unless an Actions event policy allows them; today (Nov 16) 12:00–14:00 AST is the second brownout. [source](https://github.blog/changelog/2026-11-02-pull_request_target-blocked-by-default-december-2/)
+- Git 2.56.1 (Nov 10) fixes 6 vulnerabilities, including code execution on recursive clone (CVE-2026-111760); backports 2.55.1–2.50.2 and Git for Windows 2.56.1 shipped the same day; GitHub is patching hosted runners. [source](https://github.blog/open-source/git/git-security-vulnerabilities-announced-7/)
+- Google Antigravity 2.32.0 adds Dynamic Workflows: a reviewable, saved Python script fans work out to sub-agents that return JSON-Schema-checked results (SDK 0.1.22 `beta.workflows`). [source](https://antigravity.google/docs/dynamic-workflows/) · [changelog](https://antigravity.google/docs/changelog)
+
+**Tasks for the planning agent**
+
+- [x] Add a hygiene rule that flags `on: pull_request_target` in public repo workflows — GitHub blocks these runs by default from Dec 2, so the fleet scan should catch any use (and any that sneak back in) and point to the pull_request fix. Label: `[AGENT][LOCAL]` · Priority: P2 · https://github.blog/changelog/2026-11-02-pull_request_target-blocked-by-default-december-2/ (synced to BUILD_PLAN)
+- [x] Update Git to 2.56.1+ on dev PCs and WSL, and have Argus flag hosts below the patched version — A recursive clone of a hostile repo can run code on unpatched Git, and Argus clones many repos. Label: `[HUMAN][PC]` · Priority: P2 · https://github.blog/open-source/git/git-security-vulnerabilities-announced-7/ (synced to BUILD_PLAN)
+- [ ] Consider a saved, schema-bound fan-out script for per-repo gated agents — Antigravity's reviewable workflow pattern could bound Argus's per-repo agent runs with checked JSON results. Label: `[AGENT][LOCAL]` · Priority: P3 · https://antigravity.google/docs/dynamic-workflows/
