@@ -99,7 +99,8 @@ def test_agent_only_omits_human_list():
 def test_every_agent_fix_in_some_fixture():
     agent_ids = {f.id for f in load_fixes() if f.class_.value == "agent"}
     seen: set[str] = set()
-    for name in FIXTURE_NAMES:
+    extra = ["release_irregular.json"]
+    for name in FIXTURE_NAMES + extra:
         plans = build_plans_from_fixtures([load_fixture(name)], profile="edward")
         for p in plans:
             seen.update(m.fix.id for m in p.agent_fixes)

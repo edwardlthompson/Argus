@@ -39,6 +39,7 @@ argus fix --apply --skip-profile --no-notify
 2. Set `apply_mode: yolo` on the private runner only.
 3. Enable GitHub auto-merge (or branch rules) so green Argus `auto_safe` / Dependabot PRs merge without a click (YOLO: all bump levels; vanilla `--apply`: patch+minor). CI must actually be green.
 4. Leave release publishing and unlabeled product bugs human; Grok stays draft/digest ([GROK_BOTS.md](GROK_BOTS.md)).
-5. Kill switch: `apply_mode: normal` + disable GitHub auto-merge.
+5. Run release freshness on a PC/crontab (`argus releases`) — **never** add it to `weekly.yml` / Actions ([RELEASE_FRESHNESS.md](RELEASE_FRESHNESS.md)).
+6. Kill switch: `apply_mode: normal` + disable GitHub auto-merge.
 
 Details: [YOLO.md](YOLO.md).

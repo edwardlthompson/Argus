@@ -8,6 +8,8 @@
 - Run LLMs inside scoring or runbook composition
 - Bypass dry-run in CI without an explicit opt-in
 - **Publish per-repo security gaps on public Pages or a public product Issues inbox**
+- Cut git tags or publish GitHub Releases (release-prep PRs only; operator tags)
+- Run `argus releases` from GitHub Actions / `weekly.yml` (local CLI; protects Actions minutes)
 
 ## Dual-plane surfaces
 
@@ -95,6 +97,7 @@ Locator: root `BUILD_PLAN.md`, else `docs/BUILD_PLAN.md`. Gates are executable (
 - Auto-apply: write to targets (contents + pull requests).
 - Inbox sync: `issues: write` on the **private** controller.
 - Profile README: write to public `YOU/YOU`.
+- `argus releases --open-prs`: contents + pull requests on target repos (local token; never Actions).
 
 Prefer fine-grained `ARGUS_GITHUB_TOKEN` on the private runner only.
 

@@ -4,6 +4,7 @@
 
 ### Added
 
+- **Release freshness (local CLI):** `argus releases --dry-run` / `--open-prs` scans the portfolio over GitHub REST, flags missing/stale/incomplete releases, and can open tag-only (`v*` + `workflow_dispatch`) release-prep PRs. Not wired to `weekly.yml` or any Actions workflow. Private repos omit `macos-latest`. Report includes a minutes table of existing push/PR/schedule workflows (read-only). Config: `config/releases.yaml`. Docs: `docs/RELEASE_FRESHNESS.md`.
 - **BUILD_PLAN normalization:** `BOARD-MARKERS` (`auto_safe`) appends missing APB marker lanes and folds `## News inbox (synced)` into `local-agent-lane` / Waiting on a person. `BOARD-RESTRUCTURE` (gated agent + YOLO mechanical handler) rebuilds divergent boards to `BUILD_PLAN_TEMPLATE.md` shape without inventing tasks; writes root `BUILD_PLAN.md` when the board lived in `docs/`.
 - **Mode-aware Dependabot auto-merge:** `normal.dependabot_auto_merge_levels: [patch, minor]` on `--apply`; YOLO `dependabot_auto_merge_levels: [patch, minor, major]`. Both paths require `evaluate_pre_merge` with actually-green CI.
 

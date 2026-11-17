@@ -1,0 +1,76 @@
+# Tag-only unsigned desktop artifacts. Pattern from
+# Google-Messages-For-Desktop `.github/workflows/release-desktop.yml`.
+# Matrix runs only on tags / workflow_dispatch — never on branch push or pull_request.
+# OS matrix is filled at PR plan time (private repos omit macOS runners).
+name: Release desktop
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [__OS_LIST__]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: __WORKDIR__
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install
+        run: npm ci
+      - name: Package (unsigned unless CSC_* secrets exist)
+        shell: bash
+        run: |
+          if [ -z "${CSC_LINK:-}" ]; then
+            unset CSC_LINK CSC_KEY_PASSWORD
+          fi
+          npm run package --if-present || npx electron-builder --publish never
+        env:
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          CSC_IDENTITY_AUTO_DISCOVERY: ${{ secrets.CSC_LINK != '' && 'true' || 'false' }}
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: __APP_SLUG__-${{ matrix.os }}-unsigned
+          path: |
+            **/dist/*.exe
+            **/dist/*.zip
+            **/dist/*.dmg
+            **/dist/*.deb
+            **/dist/*.AppImage
+            **/dist/*.rpm
+          if-no-files-found: warn
+
+  attach-release:
+    if: always() && startsWith(github.ref, 'refs/tags/')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Publish unsigned artifacts to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/**/*
+          generate_release_notes: true
+          body: |
+            Desktop artifacts are **unsigned** unless `CSC_LINK` / Apple notarization
+            secrets are set. Prefer signed installers for production.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

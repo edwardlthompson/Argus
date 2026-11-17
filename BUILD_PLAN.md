@@ -38,6 +38,7 @@ Argus is the enforcer: multi-repo hygiene, scoring, gated apply, and (on the pri
 | ✅ | `[AGENT][LOCAL]` — scope: docs | **CZ5 Docs** — YOLO/SAFETY continuous-zero; this board. |
 | ✅ | `[AGENT][LOCAL]` — scope: `argus/board_*.py,config/fixes/portfolio.yaml` | **B1 BUILD_PLAN normalize** — `BOARD-MARKERS` auto_safe + `BOARD-RESTRUCTURE` gated agent; fold News inbox. |
 | ✅ | `[AGENT][LOCAL]` — scope: `argus/dependabot_policy.py,config/safety.yaml` | **D1 Dependabot merge policy** — mode-aware levels; CI-green via `evaluate_pre_merge`; no Actions-unavailable skip. |
+| ✅ | `[AGENT][LOCAL]` — scope: `argus/release_*.py,config/releases.yaml` | **RF1 Release freshness** — local `argus releases` CLI (REST); tag-only prep PRs; not on Actions. |
 
 ## Parallel (operator cadence — not chores)
 
