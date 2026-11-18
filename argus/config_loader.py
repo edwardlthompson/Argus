@@ -178,6 +178,25 @@ def load_allowlist(path: Path | None = None) -> dict[str, Any]:
     }
 
 
+def load_releases(path: Path | None = None) -> dict[str, Any]:
+    """Release-freshness CLI config. Default dry-run; never used by GitHub Actions."""
+    path = path or (CONFIG_DIR / "releases.yaml")
+    defaults: dict[str, Any] = {
+        "enabled": True,
+        "stale_days": 90,
+        "bump": "patch",
+        "open_prs": False,
+        "max_prs_per_run": 5,
+        "branch": "chore/argus-release-prep",
+        "macos_runners": "public_only",
+    }
+    if not path.exists():
+        return defaults
+    data = load_yaml(path)
+    defaults.update(data if isinstance(data, dict) else {})
+    return defaults
+
+
 def _coalesce_dependabot_keys(
     block: dict[str, Any],
     src: dict[str, Any] | None,

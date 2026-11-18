@@ -14,6 +14,7 @@ Operators with many GitHub repositories need silent, opinionated hygiene with cl
 - Compose gated agent prompts (≤4 phases, every phase ends with `GATE:`)
 - Notify only when human work or critical security remains
 - Support third-party report-only scans
+- Local `argus releases` CLI for release freshness (REST only; never GitHub Actions; never tags)
 
 ## Non-goals
 
@@ -21,6 +22,8 @@ Operators with many GitHub repositories need silent, opinionated hygiene with cl
 - Replacing Dependabot/Renovate
 - Force-push, history rewrite, or repository deletion
 - LLMs in scoring or runbook composition
+- Cutting tags or publishing GitHub Releases (the operator does that)
+- Running release-freshness from Argus Actions / `weekly.yml` (minutes)
 
 ## Stack
 

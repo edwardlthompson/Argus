@@ -1,0 +1,42 @@
+# Tag-only unsigned Android artifacts. Signing secrets (if present) are optional;
+# without them this produces an unsigned APK. Argus never cuts the tag.
+name: Release Android
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Assemble unsigned release
+        run: |
+          chmod +x gradlew || true
+          ./gradlew assembleRelease --no-daemon
+      - name: Attach to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            **/*.apk
+            **/*.aab
+          fail_on_unmatched_files: false
+          generate_release_notes: true
+          body: |
+            APK/AAB from this workflow is **unsigned** unless Android signing
+            secrets are set on the repo. Prefer a signed artifact for stores.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -22,6 +22,7 @@ discover → signals → score → match fixes → compose → auto-apply → ag
 | `dependabot_policy.py` | Mode-aware bump levels (patch/minor vs all) |
 | `agent_dispatch.py` | Gated prompts + circuit breaker |
 | `notify.py` | Silent unless human/critical work |
+| `release_detect.py` / `release_scan.py` / `release_prep.py` | Local `argus releases` CLI (tag-only prep PRs) |
 | `state.py` | SQLite status, resolutions, history |
 
 ## Config is behaviour
@@ -33,6 +34,7 @@ Weights, fixes, notifications, safety limits, and profiles live under `config/`.
 - **run** — full portfolio path
 - **report** — forced read-only (`GitHubClient.report_only=True`); no writes
 - **doctor** — validate token + config
+- **releases** — local REST release-freshness (`argus releases`); not part of `weekly.yml`
 
 `signals/board.py` classifies `BUILD_PLAN.md` (root, else `docs/BUILD_PLAN.md`) as canonical / partial / divergent / missing. Partial boards get `BOARD-MARKERS`; divergent boards get `BOARD-RESTRUCTURE`.
 

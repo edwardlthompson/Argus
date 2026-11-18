@@ -60,13 +60,14 @@ Prefer `.env` secrets: `ARGUS_DISCORD_WEBHOOK`, Telegram pair, or `ARGUS_WEBHOOK
 argus fix                 # dry-run
 argus fix --apply         # auto_safe via API/PRs
 argus fix --apply --agent # optional agent batches (local)
+argus releases --dry-run  # local REST; not weekly.yml / Actions
 ```
 
-Archived repos skipped unless `--include-archived`.
+Archived repos skipped unless `--include-archived`. Release freshness: [RELEASE_FRESHNESS.md](RELEASE_FRESHNESS.md).
 
 ## Next reading
 
 - [FORKING.md](FORKING.md) · [PUBLISH.md](PUBLISH.md) · [RUNNER.md](RUNNER.md) · [WEEKLY_APPLY.md](WEEKLY_APPLY.md)
-- [SAFETY.md](SAFETY.md) · [RATE_LIMIT.md](RATE_LIMIT.md) · [YOLO.md](YOLO.md) · [GROK_BOTS.md](GROK_BOTS.md)
+- [SAFETY.md](SAFETY.md) · [RELEASE_FRESHNESS.md](RELEASE_FRESHNESS.md) · [RATE_LIMIT.md](RATE_LIMIT.md) · [YOLO.md](YOLO.md) · [GROK_BOTS.md](GROK_BOTS.md)
 - [THREAT_MODEL.md](THREAT_MODEL.md)
 - [FIRST_30_DAYS.md](FIRST_30_DAYS.md) · [GRANDMA_MODE.md](GRANDMA_MODE.md)

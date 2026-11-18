@@ -1,0 +1,73 @@
+# Release freshness — local CLI only (`argus releases`). Never run from GitHub Actions.
+# Behaviour lives here, not in Python. Argus never cuts tags or publishes releases.
+enabled: true
+stale_days: 90
+bump: patch  # next tag = last release + patch (or minor)
+open_prs: false  # live PR creation; CLI --open-prs overrides
+max_prs_per_run: 5
+branch: chore/argus-release-prep
+macos_runners: public_only  # private repos skip macos-latest (10× billed minutes)
+tag_pattern: "v*"
+
+skip:
+  statuses: [archived, parked]
+  forks: true
+  docs_only: true
+  profile_repos: true
+  deny: []
+  allow: []  # empty = all eligible after skip rules
+
+docs_only:
+  languages: [Markdown, HTML, CSS]
+  topics: [docs, documentation, handbook, guide]
+
+# Path matchers: a platform hits when any listed basename, suffix, or path fragment exists.
+platforms:
+  android:
+    any_suffix: ["/app/build.gradle", "/app/build.gradle.kts"]
+    any_name: [AndroidManifest.xml]
+    artifacts: [.apk, .aab]
+    template: android.yml
+    version_files: [app/build.gradle.kts, app/build.gradle]
+    version_kind: gradle
+  ios:
+    any_suffix: [.xcodeproj, .xcworkspace]
+    any_name: [Podfile]
+    artifacts: [.ipa]
+    template: null
+    irregular: true
+  electron:
+    any_name: [electron-builder.yml, electron-builder.yaml, electron-builder.json]
+    any_contains: [electron/, /electron/]
+    artifacts: [.exe, .dmg, .AppImage, .deb, .rpm, .zip]
+    template: desktop.yml
+    version_files: [electron/package.json, package.json]
+    version_kind: json
+  tauri:
+    any_suffix: [/src-tauri/tauri.conf.json]
+    any_name: [tauri.conf.json]
+    artifacts: [.exe, .dmg, .AppImage, .deb, .msi]
+    template: tauri.yml
+    version_files: [src-tauri/tauri.conf.json, package.json]
+    version_kind: json
+  python:
+    any_name: [pyproject.toml, setup.py, setup.cfg]
+    artifacts: [.whl, .tar.gz]
+    template: python.yml
+    version_files: [pyproject.toml, setup.cfg]
+    version_kind: toml
+  pwa:
+    any_name: [manifest.webmanifest]
+    artifacts: []  # zip is optional; do not flag GitHub Releases that ship no web archive
+    template: web.yml
+    version_files: [package.json]
+    version_kind: json
+
+desktop:
+  public_os: [windows-latest, macos-latest, ubuntu-latest]
+  private_os: [windows-latest, ubuntu-latest]
+
+pr:
+  title: "chore(argus): release-prep"
+  tag_note: >
+    Argus never creates tags or GitHub Releases. After you merge this PR, cut the tag yourself.

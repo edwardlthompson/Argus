@@ -1,0 +1,48 @@
+fixes:
+  - id: RELEASE-PREP
+    class: auto_safe
+    title: Open a tag-triggered release-prep PR
+    why: >
+      The repo is missing a recent GitHub Release, artifacts for a supported platform,
+      a tag-triggered attach workflow, or the source version does not match the last tag.
+    applies_when: >
+      releases.get('eligible') is True and releases.get('needs_prep') is True
+      and releases.get('irregular') is not True
+    phase: 4
+    depends_on: []
+    confidence: high
+    auto_safe: true
+    gate: "test -f .github/workflows/release-python.yml -o -f .github/workflows/release-android.yml -o -f .github/workflows/release-electron.yml -o -f .github/workflows/release-tauri.yml -o -f .github/workflows/release-pwa.yml -o -f .github/workflows/release-artifacts.yml"
+    profiles: [generic, edward]
+    resolution_ttl_days: 30
+
+  - id: RELEASE-IRREGULAR
+    class: agent
+    title: Release freshness needs a gated agent (not a guessed workflow)
+    why: >
+      Platforms or existing workflows are too irregular for a deterministic Argus PR
+      (for example iOS signing, a release workflow that already runs on every push, or
+      unknown packaging). Report-only plus this prompt — do not invent a pipeline.
+    applies_when: >
+      releases.get('eligible') is True and releases.get('needs_prep') is True
+      and releases.get('irregular') is True
+    phase: 4
+    depends_on: []
+    confidence: medium
+    auto_safe: false
+    agent_prompt: |
+      This repository needs a proper GitHub Release, but Argus will not guess a workflow.
+      1. Read the HTML/markdown release report row (platforms, last tag, what's missing).
+      2. Add or fix a workflow that triggers ONLY on `push.tags: v*` and `workflow_dispatch`.
+         Never on `push` to branches or `pull_request`. No matrix on every commit.
+      3. Attach unsigned artifacts for each supported platform. Skip macos-latest on private
+         repos (10× Actions minutes) unless the operator asks.
+      4. Bump the patch (or minor) version, update CHANGELOG, and put this exact command
+         in the PR body for Edward (Argus never tags):
+         git tag -a vX.Y.Z -m "vX.Y.Z" && git push origin vX.Y.Z
+      Prefer existing templates (agent-project-bootstrap tag-only release.yml patterns,
+      Google-Messages-For-Desktop release-desktop.yml). Do not force-push, merge, or
+      publish a GitHub Release. Stop after two GATE failures.
+    gate: "true"
+    profiles: [generic, edward]
+    resolution_ttl_days: 45

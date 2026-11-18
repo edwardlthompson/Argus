@@ -13,9 +13,10 @@ pip install -e ".[dev]"
 cp .env.example .env   # set GITHUB_TOKEN
 argus doctor
 argus run --dry-run
+argus releases --dry-run   # local REST only — not GitHub Actions
 ```
 
-Open `dist/report.html`.
+Open `dist/report.html`. Release freshness: `dist/releases-report.md` ([docs/RELEASE_FRESHNESS.md](docs/RELEASE_FRESHNESS.md)).
 
 Scan someone else’s public repos (read-only):
 
@@ -45,6 +46,7 @@ argus report --target some-user --public-only
 - [PROFILE_ICONS.md](docs/PROFILE_ICONS.md) — canonical app icons + hygiene
 - [ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - [SAFETY.md](docs/SAFETY.md)
+- [RELEASE_FRESHNESS.md](docs/RELEASE_FRESHNESS.md) — local `argus releases` (never Actions)
 - [GRANDMA_MODE.md](docs/GRANDMA_MODE.md)
 - [FORKING.md](docs/FORKING.md)
 - [THIRD_PARTY.md](docs/THIRD_PARTY.md)

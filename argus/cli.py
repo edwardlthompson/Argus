@@ -15,6 +15,7 @@ from argus.config_loader import (
     load_fixes,
     load_inbox,
     load_notifications,
+    load_releases,
     load_rubric,
     load_safety,
     load_status,
@@ -77,6 +78,43 @@ def run_cmd(
         "dry_run": dry_run if dry_run is not None else (summary.mode == "run"),
         "effective_dry_run_hint": effective_dry,
     }, indent=2))
+
+
+@main.command("releases")
+@click.option("--dry-run", is_flag=True, default=False, help="Plan only (default when --open-prs is omitted).")
+@click.option("--open-prs", is_flag=True, default=False, help="Open/update release-prep PRs. Never tags or publishes.")
+@click.option("--owner", default=None, help="Scan this GitHub user via REST (e.g. edwardlthompson).")
+@click.option("--repo", default=None, help="Limit to owner/name.")
+@click.option("--public-only", is_flag=True, default=False)
+@click.option("--max-prs", type=int, default=None, help="Cap live PRs this invocation.")
+@click.option("--notify", "do_notify", is_flag=True, default=False, help="Send grandma list to configured channels.")
+def releases_cmd(
+    dry_run: bool,
+    open_prs: bool,
+    owner: str | None,
+    repo: str | None,
+    public_only: bool,
+    max_prs: int | None,
+    do_notify: bool,
+) -> None:
+    """Local release-freshness scan (REST only). Do not run from GitHub Actions."""
+    from argus.release_run import run_releases
+
+    if dry_run and open_prs:
+        raise SystemExit("pass only one of --dry-run or --open-prs")
+    ensure_runtime_dirs()
+    payload = run_releases(
+        dry_run=not open_prs,
+        open_prs=open_prs,
+        owner=owner,
+        repo=repo,
+        public_only=public_only,
+        max_prs=max_prs,
+        notify=do_notify,
+    )
+    out = {k: v for k, v in payload.items() if k != "rows"}
+    out["flagged_rows"] = [r for r in (payload.get("rows") or []) if r.get("needs_prep")]
+    click.echo(json.dumps(out, indent=2))
 
 
 @main.command("fix")
@@ -338,6 +376,15 @@ def doctor_cmd() -> None:
         click.echo("status: ok")
     except ConfigError as exc:
         problems.append(f"status.yaml: {exc}")
+
+    try:
+        rel = load_releases()
+        click.echo(
+            f"releases: ok stale_days={rel.get('stale_days')} "
+            f"open_prs={rel.get('open_prs')} (local CLI only; not Actions)"
+        )
+    except ConfigError as exc:
+        problems.append(f"releases.yaml: {exc}")
 
     try:
         notif = load_notifications()
