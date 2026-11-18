@@ -98,8 +98,6 @@ _No cloud agent items._
 | Dual-plane + profile + Sequential A–L | 2026-11-05 | `COMPLETED_TASKS.md` |
 | Sprints 0–8 + portfolio doctor + control plane + Cursor FOSS | 2026-11-05 | `COMPLETED_TASKS.md` |
 
-## News inbox (synced)
-
-P1/P2 tasks auto-synced by News Bot from [`docs/NEWS_INBOX.md`](docs/NEWS_INBOX.md).
+### Waiting on a person
 
 - 🔲 [HUMAN][PC] Update Git to 2.56.1+ on dev PCs and WSL, and have Argus flag hosts below the patched version (news P2, 2026-11-16) https://github.blog/open-source/git/git-security-vulnerabilities-announced-7/
