@@ -56,6 +56,6 @@ def test_lineage_version_stale_matches():
     }
     plan = build_plans_from_fixtures([fixture])[0]
     auto_ids = {m.fix.id for m in plan.auto_fixes}
-    human_ids = {m.fix.id for m in plan.human_fixes}
+    agent_ids = {m.fix.id for m in plan.agent_fixes}
     assert "LINEAGE-VERSION-STALE" in auto_ids
-    assert "LINEAGE-RECOMMEND-UPGRADE" in human_ids
+    assert "LINEAGE-RECOMMEND-UPGRADE" in agent_ids

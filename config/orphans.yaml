@@ -1,0 +1,27 @@
+# Orphan signal classes (stage one). Driven by .goldenpath.json entrypoints when present.
+# Never report under examples/ in stage one.
+stage: 1
+skip_prefixes:
+  - examples/
+  - .cursor/
+allowlist: []
+exceptions: []
+classes:
+  - id: unused_export
+    title: Unused export
+  - id: unused_import
+    title: Unused import
+  - id: dead_file
+    title: Unreachable file outside entrypoints
+  - id: orphan_asset
+    title: Asset not referenced from entrypoints
+  - id: orphan_style
+    title: Stylesheet not linked
+  - id: orphan_test
+    title: Test without matching source
+  - id: orphan_config
+    title: Config file unused by stack tooling
+  - id: orphan_doc
+    title: Doc path not linked from README
+  - id: orphan_workflow
+    title: Workflow without callers or schedule

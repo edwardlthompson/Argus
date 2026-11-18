@@ -78,9 +78,13 @@ class SignalBundle:
     lineage: dict[str, Any] | None = None
     prs: dict[str, Any] | None = None
     releases: dict[str, Any] | None = None
+    traffic: dict[str, Any] | None = None
+    orphans: dict[str, Any] | None = None
+    contract: dict[str, Any] | None = None
+    board: dict[str, Any] | None = None
 
     def missing_categories(self) -> list[str]:
-        # Core categories affect confidence; lineage/prs/releases are additive when present.
+        # Core categories affect confidence; lineage/prs/releases/traffic are additive.
         cats = (
             "momentum",
             "responsiveness",
@@ -104,6 +108,10 @@ class SignalBundle:
             "lineage": self.lineage,
             "prs": self.prs,
             "releases": self.releases,
+            "traffic": self.traffic,
+            "orphans": self.orphans,
+            "contract": self.contract,
+            "board": self.board,
         }
 
 

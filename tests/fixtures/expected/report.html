@@ -72,7 +72,7 @@
     <h1>Argus</h1>
     <p class="summary">
       
-        Argus needs you for 20 small tasks.
+        Argus needs you for 11 small tasks.
       
     </p>
     
@@ -124,6 +124,12 @@
             
               <li><code>HYGIENE-SECURITY-MD</code> — Add SECURITY.md</li>
             
+              <li><code>HYGIENE-CODEOWNERS</code> — Add CODEOWNERS</li>
+            
+              <li><code>HYGIENE-GITIGNORE</code> — Add a starter .gitignore</li>
+            
+              <li><code>SEC-CODEQL-WORKFLOW</code> — Add CodeQL workflow pack</li>
+            
           </ul>
         
 
@@ -143,30 +149,7 @@
           <h3>Your tasks</h3>
           
             <div class="task">
-              <h3>H1. Turn on Dependabot alerts</h3>
-              <p class="why">GitHub can warn you when known-vulnerable packages appear.</p>
-              <pre style="white-space:pre-wrap;font-family:inherit;margin:0.5rem 0;">1. Open the repository on GitHub in your browser.
-2. Click **Settings**.
-3. In the left sidebar, click **Code security**.
-4. Find **Dependabot alerts** and click **Enable**.
-5. If GitHub asks to confirm, click **Enable Dependabot alerts**.
-</pre>
-              <div class="done"><strong>Done when:</strong> Dependabot alerts show as Enabled on the Code security settings page</div>
-            </div>
-          
-            <div class="task">
-              <h3>H2. Turn on secret scanning</h3>
-              <p class="why">Stops accidental passwords and API keys from sitting in git history unnoticed.</p>
-              <pre style="white-space:pre-wrap;font-family:inherit;margin:0.5rem 0;">1. Open the repository on GitHub.
-2. Click **Settings** → **Code security**.
-3. Find **Secret scanning** and click **Enable**.
-4. Leave the page only when it says Enabled.
-</pre>
-              <div class="done"><strong>Done when:</strong> Secret scanning shows as Enabled</div>
-            </div>
-          
-            <div class="task">
-              <h3>H3. Turn on CodeQL / default code scanning</h3>
+              <h3>H1. Turn on CodeQL / default code scanning</h3>
               <p class="why">Static analysis catches common security bugs before they ship.</p>
               <pre style="white-space:pre-wrap;font-family:inherit;margin:0.5rem 0;">1. Open the repository on GitHub.
 2. Settings → Code security → Code scanning.
@@ -176,7 +159,7 @@
             </div>
           
             <div class="task">
-              <h3>H4. Park or archive a long-inactive active repo</h3>
+              <h3>H2. Park or archive a long-inactive active repo</h3>
               <p class="why">Repos that look abandoned confuse visitors about what you still maintain.</p>
               <pre style="white-space:pre-wrap;font-family:inherit;margin:0.5rem 0;">1. Open the repository on GitHub.
 2. Decide: keep active, park (tell Argus), or archive.
@@ -220,6 +203,16 @@
             
               <li><code>HYGIENE-CI</code> — Add a basic CI workflow on the default branch</li>
             
+              <li><code>HYGIENE-CODEOWNERS</code> — Add CODEOWNERS</li>
+            
+              <li><code>HYGIENE-GITIGNORE</code> — Add a starter .gitignore</li>
+            
+              <li><code>SEC-CODEQL-WORKFLOW</code> — Add CodeQL workflow pack</li>
+            
+              <li><code>SEC-DEPENDABOT-ENABLE</code> — Enable Dependabot alerts via API</li>
+            
+              <li><code>SEC-SECRET-SCAN-ENABLE</code> — Enable secret scanning + push protection via API</li>
+            
           </ul>
         
 
@@ -260,6 +253,17 @@
           <p class="meta">Full gated prompt is in <code>dist/runbook.md</code>.</p>
         
 
+        
+          <h3>Safe auto-fixes</h3>
+          <ul>
+            
+              <li><code>HYGIENE-CODEOWNERS</code> — Add CODEOWNERS</li>
+            
+              <li><code>HYGIENE-GITIGNORE</code> — Add a starter .gitignore</li>
+            
+              <li><code>SEC-CODEQL-WORKFLOW</code> — Add CodeQL workflow pack</li>
+            
+          </ul>
         
 
         
@@ -305,6 +309,12 @@
             
               <li><code>HYGIENE-GITATTRIBUTES</code> — Add language attribution (.gitattributes)</li>
             
+              <li><code>HYGIENE-CODEOWNERS</code> — Add CODEOWNERS</li>
+            
+              <li><code>HYGIENE-GITIGNORE</code> — Add a starter .gitignore</li>
+            
+              <li><code>SEC-CODEQL-WORKFLOW</code> — Add CodeQL workflow pack</li>
+            
           </ul>
         
 
@@ -315,35 +325,23 @@
         <h2>example/human-only</h2>
         <p class="meta">
           
-            <span class="low">Needs a human read</span> — raw score 29.9/100
+            Attention 5.1/100 (medium confidence)
           
-          · status active
+          · status parked
         </p>
 
         
           <h3>Your tasks</h3>
           
             <div class="task">
-              <h3>H1. Turn on Dependabot alerts</h3>
-              <p class="why">GitHub can warn you when known-vulnerable packages appear.</p>
-              <pre style="white-space:pre-wrap;font-family:inherit;margin:0.5rem 0;">1. Open the repository on GitHub in your browser.
-2. Click **Settings**.
-3. In the left sidebar, click **Code security**.
-4. Find **Dependabot alerts** and click **Enable**.
-5. If GitHub asks to confirm, click **Enable Dependabot alerts**.
-</pre>
-              <div class="done"><strong>Done when:</strong> Dependabot alerts show as Enabled on the Code security settings page</div>
-            </div>
-          
-            <div class="task">
-              <h3>H2. Turn on secret scanning</h3>
-              <p class="why">Stops accidental passwords and API keys from sitting in git history unnoticed.</p>
+              <h3>H1. Decide whether to archive this parked repository</h3>
+              <p class="why">Parked repos that stay public forever confuse visitors about what is maintained.</p>
               <pre style="white-space:pre-wrap;font-family:inherit;margin:0.5rem 0;">1. Open the repository on GitHub.
-2. Click **Settings** → **Code security**.
-3. Find **Secret scanning** and click **Enable**.
-4. Leave the page only when it says Enabled.
+2. Read the README and decide: keep it visible, or archive it.
+3. If archiving: Settings → scroll to **Danger Zone** → **Archive this repository**.
+4. If keeping: reply on the Argus report that it should stay parked.
 </pre>
-              <div class="done"><strong>Done when:</strong> Secret scanning shows as Enabled</div>
+              <div class="done"><strong>Done when:</strong> Repo is archived, or you noted 'keep parked' on the Argus report</div>
             </div>
           
         
@@ -385,6 +383,15 @@
         
 
         
+          <h3>Safe auto-fixes</h3>
+          <ul>
+            
+              <li><code>HYGIENE-CODEOWNERS</code> — Add CODEOWNERS</li>
+            
+              <li><code>HYGIENE-GITIGNORE</code> — Add a starter .gitignore</li>
+            
+          </ul>
+        
 
         
       </section>
@@ -402,30 +409,7 @@
           <h3>Your tasks</h3>
           
             <div class="task">
-              <h3>H1. Turn on Dependabot alerts</h3>
-              <p class="why">GitHub can warn you when known-vulnerable packages appear.</p>
-              <pre style="white-space:pre-wrap;font-family:inherit;margin:0.5rem 0;">1. Open the repository on GitHub in your browser.
-2. Click **Settings**.
-3. In the left sidebar, click **Code security**.
-4. Find **Dependabot alerts** and click **Enable**.
-5. If GitHub asks to confirm, click **Enable Dependabot alerts**.
-</pre>
-              <div class="done"><strong>Done when:</strong> Dependabot alerts show as Enabled on the Code security settings page</div>
-            </div>
-          
-            <div class="task">
-              <h3>H2. Turn on secret scanning</h3>
-              <p class="why">Stops accidental passwords and API keys from sitting in git history unnoticed.</p>
-              <pre style="white-space:pre-wrap;font-family:inherit;margin:0.5rem 0;">1. Open the repository on GitHub.
-2. Click **Settings** → **Code security**.
-3. Find **Secret scanning** and click **Enable**.
-4. Leave the page only when it says Enabled.
-</pre>
-              <div class="done"><strong>Done when:</strong> Secret scanning shows as Enabled</div>
-            </div>
-          
-            <div class="task">
-              <h3>H3. Turn on CodeQL / default code scanning</h3>
+              <h3>H1. Turn on CodeQL / default code scanning</h3>
               <p class="why">Static analysis catches common security bugs before they ship.</p>
               <pre style="white-space:pre-wrap;font-family:inherit;margin:0.5rem 0;">1. Open the repository on GitHub.
 2. Settings → Code security → Code scanning.
@@ -462,6 +446,16 @@
             
               <li><code>HYGIENE-CI</code> — Add a basic CI workflow on the default branch</li>
             
+              <li><code>HYGIENE-CODEOWNERS</code> — Add CODEOWNERS</li>
+            
+              <li><code>HYGIENE-GITIGNORE</code> — Add a starter .gitignore</li>
+            
+              <li><code>SEC-CODEQL-WORKFLOW</code> — Add CodeQL workflow pack</li>
+            
+              <li><code>SEC-DEPENDABOT-ENABLE</code> — Enable Dependabot alerts via API</li>
+            
+              <li><code>SEC-SECRET-SCAN-ENABLE</code> — Enable secret scanning + push protection via API</li>
+            
           </ul>
         
 
@@ -481,30 +475,7 @@
           <h3>Your tasks</h3>
           
             <div class="task">
-              <h3>H1. Turn on Dependabot alerts</h3>
-              <p class="why">GitHub can warn you when known-vulnerable packages appear.</p>
-              <pre style="white-space:pre-wrap;font-family:inherit;margin:0.5rem 0;">1. Open the repository on GitHub in your browser.
-2. Click **Settings**.
-3. In the left sidebar, click **Code security**.
-4. Find **Dependabot alerts** and click **Enable**.
-5. If GitHub asks to confirm, click **Enable Dependabot alerts**.
-</pre>
-              <div class="done"><strong>Done when:</strong> Dependabot alerts show as Enabled on the Code security settings page</div>
-            </div>
-          
-            <div class="task">
-              <h3>H2. Turn on secret scanning</h3>
-              <p class="why">Stops accidental passwords and API keys from sitting in git history unnoticed.</p>
-              <pre style="white-space:pre-wrap;font-family:inherit;margin:0.5rem 0;">1. Open the repository on GitHub.
-2. Click **Settings** → **Code security**.
-3. Find **Secret scanning** and click **Enable**.
-4. Leave the page only when it says Enabled.
-</pre>
-              <div class="done"><strong>Done when:</strong> Secret scanning shows as Enabled</div>
-            </div>
-          
-            <div class="task">
-              <h3>H3. Turn on CodeQL / default code scanning</h3>
+              <h3>H1. Turn on CodeQL / default code scanning</h3>
               <p class="why">Static analysis catches common security bugs before they ship.</p>
               <pre style="white-space:pre-wrap;font-family:inherit;margin:0.5rem 0;">1. Open the repository on GitHub.
 2. Settings → Code security → Code scanning.
@@ -543,6 +514,16 @@
             
               <li><code>HYGIENE-CI</code> — Add a basic CI workflow on the default branch</li>
             
+              <li><code>HYGIENE-CODEOWNERS</code> — Add CODEOWNERS</li>
+            
+              <li><code>HYGIENE-GITIGNORE</code> — Add a starter .gitignore</li>
+            
+              <li><code>SEC-CODEQL-WORKFLOW</code> — Add CodeQL workflow pack</li>
+            
+              <li><code>SEC-DEPENDABOT-ENABLE</code> — Enable Dependabot alerts via API</li>
+            
+              <li><code>SEC-SECRET-SCAN-ENABLE</code> — Enable secret scanning + push protection via API</li>
+            
           </ul>
         
 
@@ -576,6 +557,17 @@
         
 
         
+          <h3>Safe auto-fixes</h3>
+          <ul>
+            
+              <li><code>HYGIENE-CODEOWNERS</code> — Add CODEOWNERS</li>
+            
+              <li><code>HYGIENE-GITIGNORE</code> — Add a starter .gitignore</li>
+            
+              <li><code>SEC-CODEQL-WORKFLOW</code> — Add CodeQL workflow pack</li>
+            
+          </ul>
+        
 
         
       </section>
@@ -593,30 +585,7 @@
           <h3>Your tasks</h3>
           
             <div class="task">
-              <h3>H1. Turn on Dependabot alerts</h3>
-              <p class="why">GitHub can warn you when known-vulnerable packages appear.</p>
-              <pre style="white-space:pre-wrap;font-family:inherit;margin:0.5rem 0;">1. Open the repository on GitHub in your browser.
-2. Click **Settings**.
-3. In the left sidebar, click **Code security**.
-4. Find **Dependabot alerts** and click **Enable**.
-5. If GitHub asks to confirm, click **Enable Dependabot alerts**.
-</pre>
-              <div class="done"><strong>Done when:</strong> Dependabot alerts show as Enabled on the Code security settings page</div>
-            </div>
-          
-            <div class="task">
-              <h3>H2. Turn on secret scanning</h3>
-              <p class="why">Stops accidental passwords and API keys from sitting in git history unnoticed.</p>
-              <pre style="white-space:pre-wrap;font-family:inherit;margin:0.5rem 0;">1. Open the repository on GitHub.
-2. Click **Settings** → **Code security**.
-3. Find **Secret scanning** and click **Enable**.
-4. Leave the page only when it says Enabled.
-</pre>
-              <div class="done"><strong>Done when:</strong> Secret scanning shows as Enabled</div>
-            </div>
-          
-            <div class="task">
-              <h3>H3. Turn on CodeQL / default code scanning</h3>
+              <h3>H1. Turn on CodeQL / default code scanning</h3>
               <p class="why">Static analysis catches common security bugs before they ship.</p>
               <pre style="white-space:pre-wrap;font-family:inherit;margin:0.5rem 0;">1. Open the repository on GitHub.
 2. Settings → Code security → Code scanning.
@@ -652,6 +621,16 @@
               <li><code>HYGIENE-COC</code> — Add CODE_OF_CONDUCT.md</li>
             
               <li><code>HYGIENE-CI</code> — Add a basic CI workflow on the default branch</li>
+            
+              <li><code>HYGIENE-CODEOWNERS</code> — Add CODEOWNERS</li>
+            
+              <li><code>HYGIENE-GITIGNORE</code> — Add a starter .gitignore</li>
+            
+              <li><code>SEC-CODEQL-WORKFLOW</code> — Add CodeQL workflow pack</li>
+            
+              <li><code>SEC-DEPENDABOT-ENABLE</code> — Enable Dependabot alerts via API</li>
+            
+              <li><code>SEC-SECRET-SCAN-ENABLE</code> — Enable secret scanning + push protection via API</li>
             
           </ul>
         

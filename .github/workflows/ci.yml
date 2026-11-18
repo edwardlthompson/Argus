@@ -9,8 +9,9 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      # Pinned major tags; SHAs refreshed periodically (J4).
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
       - name: Install
@@ -19,5 +20,10 @@ jobs:
         run: ruff check argus tests
       - name: Test
         run: pytest
+      - name: pip-audit
+        run: pip install pip-audit && pip-audit
+        continue-on-error: true
+      - name: Encoding
+        run: python scripts/agent-run.py check-file-encoding
       - name: Verify
         run: bash scripts/verify.sh

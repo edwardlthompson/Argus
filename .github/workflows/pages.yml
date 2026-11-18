@@ -3,7 +3,7 @@ name: pages
 on:
   workflow_dispatch:
   workflow_run:
-    workflows: ["argus-weekly"]
+    workflows: ["argus-weekly", "argus-scan"]
     types: [completed]
 
 permissions:
@@ -20,25 +20,41 @@ jobs:
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - name: Install
         run: pip install -e ".[dev]"
-      - name: Generate report (dry-run)
+      - name: Generate status-only site (dry-run)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: argus run --dry-run --no-notify || true
-      - name: Stage Pages site
+      - name: Stage sanitized portfolio Pages only
         run: |
           mkdir -p _site
-          if [ -f dist/report.html ]; then cp dist/report.html _site/index.html; fi
-          if [ -f dist/runbook.md ]; then cp dist/runbook.md _site/runbook.md; fi
-          if [ ! -f _site/index.html ]; then
-            printf '%s\n' '<!DOCTYPE html><html><body><h1>Argus</h1><p>No report yet. Run the weekly workflow.</p></body></html>' > _site/index.html
+          # Never publish report.html / runbook.md / inbox.json / steward-brief.html
+          # (world-readable Pages must not expose per-repo weakness titles).
+          if [ -f dist/portfolio-pages.html ]; then
+            cp dist/portfolio-pages.html _site/index.html
+          elif [ -f dist/status.html ]; then
+            cp dist/status.html _site/index.html
           fi
-      - uses: actions/upload-pages-artifact@v3
+          if [ -f dist/portfolio-pages.json ]; then
+            cp dist/portfolio-pages.json _site/portfolio-pages.json
+          fi
+          if [ -f dist/status.json ]; then
+            cp dist/status.json _site/status.json
+          fi
+          if [ -f dist/badge.svg ]; then
+            cp dist/badge.svg _site/badge.svg
+          fi
+          if [ ! -f _site/index.html ]; then
+            printf '%s\n' '<!DOCTYPE html><html><body><h1>Argus</h1><p>No status yet. Run the scan or weekly workflow.</p></body></html>' > _site/index.html
+          fi
+          # Hard deny accidental staging of private detail
+          rm -f _site/report.html _site/runbook.md _site/inbox.json _site/steward-brief.html
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: _site
 
@@ -50,4 +66,4 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

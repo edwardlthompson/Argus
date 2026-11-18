@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="264" viewBox="0 0 720 264">
+<rect width="100%" height="100%" fill="#f4f6f8"/>
+<text x="24" y="32" font-size="18" font-weight="700" font-family="Segoe UI,system-ui,sans-serif" fill="#111">Argus scan — before / after</text>
+<text x="24" y="52" font-size="12" font-family="Segoe UI,system-ui,sans-serif" fill="#444">Δ open fixes -33 · Δ mean attention 0.0</text>
+<text x="24" y="88" font-size="13" font-weight="600" font-family="Segoe UI,system-ui,sans-serif" fill="#333">Open fixes</text>
+<rect x="24.0" y="98.0" width="220.0" height="28.0" rx="3" fill="#c45c26"/><text x="28.0" y="120.0" font-size="11" font-family="Segoe UI,system-ui,sans-serif" fill="#1a1a1a">Before 33</text>
+<rect x="24.0" y="134.0" width="0.0" height="28.0" rx="3" fill="#2f6f4e"/><text x="28.0" y="156.0" font-size="11" font-family="Segoe UI,system-ui,sans-serif" fill="#1a1a1a">After 0</text>
+<text x="24" y="190" font-size="13" font-weight="600" font-family="Segoe UI,system-ui,sans-serif" fill="#333">Hottest problem types (before)</text>
+<rect x="24.0" y="204.0" width="400.0" height="16.0" rx="3" fill="#5b7c99"/><text x="28.0" y="214.0" font-size="11" font-family="Segoe UI,system-ui,sans-serif" fill="#1a1a1a">ISSUE-PATTERNED-AUTO ×31</text>
+<rect x="24.0" y="226.0" width="25.8" height="16.0" rx="3" fill="#5b7c99"/><text x="28.0" y="236.0" font-size="11" font-family="Segoe UI,system-ui,sans-serif" fill="#1a1a1a">CI-LATEST-FAILED ×2</text>
+</svg>

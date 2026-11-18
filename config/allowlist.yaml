@@ -1,5 +1,9 @@
 # Blast-radius control.
-# mode: owner_only | allowlist | all
+# mode: owner_only | allowlist | all | org | collaborator
 mode: owner_only
 allow: []
 deny: []
+# org mode: list org logins to scan (uses /orgs/{org}/repos)
+orgs: []
+# optional affiliation override for viewer listing
+# affiliation: owner,collaborator,organization_member

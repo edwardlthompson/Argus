@@ -1,0 +1,8 @@
+{
+  "name": "argus-foss",
+  "description": "FOSS Cursor stack for Argus (commands, hooks, curated skills, agents). Product child of agent-project-bootstrap — no full template lifecycle.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Argus"
+  }
+}

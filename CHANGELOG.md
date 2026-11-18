@@ -4,7 +4,127 @@
 
 ### Added
 
+- **BUILD_PLAN normalization:** `BOARD-MARKERS` (`auto_safe`) appends missing APB marker lanes and folds `## News inbox (synced)` into `local-agent-lane` / Waiting on a person. `BOARD-RESTRUCTURE` (gated agent + YOLO mechanical handler) rebuilds divergent boards to `BUILD_PLAN_TEMPLATE.md` shape without inventing tasks; writes root `BUILD_PLAN.md` when the board lived in `docs/`.
+- **Mode-aware Dependabot auto-merge:** `normal.dependabot_auto_merge_levels: [patch, minor]` on `--apply`; YOLO `dependabot_auto_merge_levels: [patch, minor, major]`. Both paths require `evaluate_pre_merge` with actually-green CI.
+
+### Changed
+
+- `*_patch` Dependabot keys are aliases (`merge_dependabot` / `auto_merge_dependabot`). `skip_ci_when_actions_unavailable` no longer applies to dependency bumps.
+- BUILD_PLAN non-goal clarified: format hygiene (marker lanes) is not “filing portfolio findings as chores.”
+
+## [0.9.0] — 2026-11-12
+
+### Added
+
+- **Weekly Overview refresh:** `sync_profile` (default on) refreshes `YOU/YOU` stars/forks/watches/views, full icon rescan, and public↔private membership on every apply / Tuesday weekly / `local-weekly` (independent of `skip_profile` auto_safe guard).
+
+### Changed
+
+- Reports drop **Priority Attention** / **Rest of fleet** split — one **Fleet** table lists every active repo (Issues → open PRs) with an attention bar in the final column; Overall Assessment sits at the bottom.
+
+### Fixed
+
+- Report Priority used GitHub `open_issues_count` (includes PRs). Now Issues-only with a separate **Open PRs** column/count so PRs are identified without false-positive “Issues.”
+- `local-weekly` clear loop also merges `chore(argus)*` PRs; Dependabot Actions majors + pip lower-bound bumps are auto-mergeable.
+
+## [0.8.0] — 2026-11-12
+
+### Added
+
+- **Continuous zero:** every `--apply` / `local-weekly --apply` / armed YOLO run auto-syncs rules, runs deterministic handlers (including API-safe CodeQL / lineage / Dependabot enable), soft-resolves `CI-LATEST-FAILED` when Actions is unavailable, and second-passes when budget remains (`safety.normal` + `safety.yolo`).
+- **Patterned Issue triage:** `ISSUE-PATTERNED-AUTO` + `AGENT-STALE-ISSUES` handlers close `argus-auto` / digest / bot bump Issues; nudge only on other stale human Issues (`argus/yolo_issues.py`).
+
+### Changed
+
+- `RULES-STALE` and `SEC-RELEASE-TOKEN-MISSING` no longer fan out to every portfolio repo (controller-only; release token opt-in via `ARGUS_REQUIRE_RELEASE_TOKEN=1`).
+- Vanilla `--apply` runs YOLO deterministic handlers (`normal.yolo_handlers: true`); public product still does not auto-merge.
+- Report Priority / Rest of fleet: sort by GitHub Issues (most first); omit green repos with zero Issues.
+
+## [0.7.0] — 2026-11-12
+
+### Added
+
+- YOLO **mandatory clear loop** (`clear_upgrade_blockers`): fix → wait → soft-merge upgrades/patches until green or hard leftover; new fixers for ADR Status, pruned-android CodeQL, conventional PR titles, Trivy npm overrides (`yolo_trivy_npm`).
+- **Free-tier Actions fallback (no payment required):** `argus local-weekly` + `scripts/local-weekly.ps1|.sh`; `skip_ci_when_actions_unavailable` skips remote CI for upgrade merges when Actions is dead (auto-detect or `ARGUS_ACTIONS_UNAVAILABLE=1` / `--actions-unavailable`). Paying for Actions is never the fix.
+- **Portfolio Pages + Tuesday Steward brief:** sanitized `portfolio-pages.html` for public Pages (metrics/graphs only); full `report.html` + `steward-brief.html` sync to private `argus-history/reports/latest*`; never publish finding titles to Pages.
+- Public `docs/index.html` Pages source (sanitized dashboard) so graphics stay viewable without Actions minutes.
+
+### Changed
+
+- Soft-merge allowlist expanded for template/hygiene noise only; when Actions is unavailable (free minutes / no card), upgrade merges skip remote CI entirely (`actions_unavailable`) instead of waiting on paid runners.
+- Vanilla (`apply_mode: normal`): explicit `--apply` now runs upgrade **fix/heal** (`safety.normal`); auto-merge / YOLO handlers / clear-loop stay YOLO-only (see SAFETY.md matrix).
+
+## [0.6.0] — 2026-11-10
+
+### Added
+
+- YOLO parent-upgrade merges: `yolo.auto_merge_upgrade_prs` + `argus merge-upgrades` (squash-merge `chore/argus-upgrade-*` after six pre-merge checks; `--loop` retries pending CI).
+- Upgrade heal: `--heal` / `yolo.heal_upgrade_prs` patches `TEMPLATE_INDEX.json` on open upgrade heads (version sync, index Argus workflows, retarget `AGENT_MEMORY.md`).
+- Upgrade auto-fix: `argus fix-upgrades` / `merge-upgrades --fix --soft-allowlist` (markdown table pipes, F-Droid changelog stubs; soft-merge allowlisted template noise only).
+- Hands-off YOLO defaults: `fix_upgrade_prs` + `soft_merge_upgrade_noise` on; `argus-weekly` cron Tuesday 14:00 UTC (after Monday Dependabot); Grok **Tuesday Steward** digest skill (`docs/grok-bots/09-tuesday-steward.md`).
+- Health before/after **infographic** (`dist/health-infographic.svg|.html`) + `health-hotspots.json` (hottest fix ids / repos); `argus grok pack tuesday-steward` one-paste Bot bootstrap; optional Steward webhook after weekly.
+
+## [0.5.0] — 2026-11-09
+
+### Added
+
+- S9 signals: brand icon states (`owned`/`inherited`/`missing`/`placeholder`), orphans probe, UX rule loader, `CONTRACT-STALE` / `SEC-RELEASE-TOKEN-MISSING`, `config/grok_bots.yaml` budget + breaker.
+- Dual-plane YOLO: product `apply_mode: normal`; runner bootstrap arms `yolo.on`; quiet one-line run log; action ledger + fleet plan/halt/revert receipts; six pre-merge checks.
+- S10 staging + triage: `config/ux_rollout.yaml` + `state/ux_rollout.json` observe→soft→enforce; `argus triage` / `--fleet`; `dist/triage.json`.
+- S11–S15: `argus.upstream.json` + rules sync/diff/bump + RULES-STALE; fleet plan/execute/drift/revert/halt; `argus.remote.json` + `argus off`; CLI `digest`/`focus`/`cost`/`fleet`/`rules`.
+
+### Changed
+
+- YOLO brand handler opens design-brief PR only (no PNG generation). Hands-off YOLO skips per-finding inbox/notify (digest leftovers only).
+- YOLO extras consume **agent-class** deterministic handlers only; human-class handler ids go to digest.
+
+## [0.4.0] — 2026-11-05
+
+### Added
+
+- Hands-off YOLO loop: Dependabot patch merge, PR-STALE bot-close, second pass under budget, private `yolo-digest` Issue, `skip_profile` default; YOLO implies apply unless `--dry-run`.
+- Shareable dark portfolio report (`templates/report.html.j2` + `portfolio_report.md.j2`) via `argus/report_view.py`; light/dark theme toggle; charts; sync to `argus-history/reports/YYYY-MM-DD.*`.
+- Grok Bots operator pack: `docs/GROK_BOTS.md`, skill templates under `docs/grok-bots/`, ADR 0001 (draft/digest only; Argus owns mutators).
+- Optional YOLO policy stub: `apply_mode` / `yolo` in `config/safety.yaml`, `docs/YOLO.md`, doctor `apply_mode` report.
+- Health before/after artifacts (`dist/health-*.json`, `health-delta.md`) on every run/fix; `--skip-profile` leaves `YOU/YOU` untouched.
+- GitHub REST core budget: live `/rate_limit` + header pacing, wait-until-reset, repo batches (`github_api` in `safety.yaml`, `docs/RATE_LIMIT.md`).
+- Append-only apply history (`dist/APPLY_HISTORY.md` + sync to private `argus-runner` `argus-history/`).
+- YOLO implemented: `apply_mode: yolo` auto-merges `chore(argus)` PRs + API handlers for selected human/agent fixes (`argus/yolo.py`).
+- Profile Overview operator template: `config/profile_readme.yaml.example`, `docs/PROFILE_OVERVIEW.md`, configurable `argus_repo` footer, neutral inbox/status defaults.
+- Portfolio icon standard (`config/profile_icons.yaml`, `docs/PROFILE_ICONS.md`) + hygiene `BRAND-ICON-MISSING` for missing/stub marks.
+- Featured showcase stats under each app name (stars · watches · forks); `max_featured_repos: 0` shows all eligible projects including forks.
+- Generated Golden Path PNG marks (`assets/argus-icons/`) when a repo has no discoverable icon.
+- Self-hosted colored Primer Octicons; featured stats include Insights Views; sort by Views+Stars+Watching+Forks; animated banner/divider SVGs; `TRAFFIC-INSIGHTS-UNAVAILABLE` human fix.
+
+### Changed
+
+- Report badge bands: no open Argus fixes → always `good`; cards show top category scores + attention blurb.
+- Weekly/scan workflows: unset apply respects `safety.yaml` (YOLO implies apply).
+- Profile Overview portfolio polish: live languages + FOSS devicons, auto skill cards (`profile_skills.yaml`), centered HTML hero/banner, featured icon grid (no traffic/pins/topics dump).
+- Profile redesign pass: banner-carried identity (no H1/tagline dupe), skip throwaway bios, wide OG featured cards + captions, richer banner, empty YAML roles → live auto cards.
+- Profile gap close: curated `featured_repos` + icon tree scan/`icon_overrides`, grouped stack (`profile_stack.yaml`), richer self-hosted banner + drop-in docs, GitHub contact badge, `current_focus` / `open_to_cards`, featured star captions.
+
+## [0.3.0] — 2026-11-05
+
+### Added
+
+- Dual-plane docs + `bootstrap-argus-runner.*`; doctor public-controller guard; profile Overview compose/PR (`PROF-README`).
+- Projects v2 inbox sync; `repository_dispatch` scan; profile packs; org/collaborator discover; hygiene signals (SPDX, CODEOWNERS, stale branches).
+- `argus explain` / `inbox` / `status --safe` / `report --open`; notify quiet hours + digest coalesce; auto-safe CODEOWNERS/gitignore/CodeQL + Dependabot/secret-scan API; dry-run `would_prs`.
+- CodeQL, gitleaks, SBOM workflows; pinned CI Action SHAs; `update-deps` / `gc-worktrees` / encoding gates.
+
+## [0.2.0] — 2026-11-05
+
+### Added
+
+- Cursor FOSS parity: `.cursor/commands/` (45), hooks, curated skills/subagents, `argus-foss` plugin, thin `scripts/agent-run.py` shim (G13 closed).
+- Private control plane: status-only public Pages; GitHub Issues inbox (`argus-inbox`); full report as Actions artifacts (30d); safe chat digests with Issue/Actions deep links; `scan.yml` workflow_dispatch.
 - Initial Argus controller: discovery, signals, scoring, fix catalogue, composition, dry-run auto-apply, notifications, agent dispatch, report-only mode, CLI, docs, and fixture snapshot tests (Sprints 0–7).
 - Sprint 8 hardening: archived/experimental fixtures, depends_on + gate tests, API rate limiter, doctor safety checks, GitHub Pages workflow for `report.html`.
-- Declared product-child lineage to `edwardlthompson/agent-project-bootstrap@1.12.0`; closed `docs/PARENT_GAP_LIST.md` (G01–G11; G12–G15 wont).
+- Declared product-child lineage to `edwardlthompson/agent-project-bootstrap@1.12.0`; closed `docs/PARENT_GAP_LIST.md` (G01–G11, G13; G12/G14/G15 wont).
 - Portfolio doctor: skip archived by default; lineage/PR/CI/security signals; real `auto_safe` apply; `argus fix [--apply] [--agent]`; notify env secrets + weekly wire; publish docs for self-scan.
+
+### Changed
+
+- Public Pages no longer publish `report.html` / runbook / inbox detail (attacker checklist risk).
+- `scripts/verify.*` invoke ruff via `python -m ruff` for PATH-safe Windows runs.

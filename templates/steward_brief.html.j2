@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>Tuesday Steward — Argus</title>
+  <style>
+    :root {
+      --bg: #101820;
+      --glow: #1c3348;
+      --ink: #f2f6fb;
+      --muted: #9aabbf;
+      --line: #2a3d52;
+      --accent: #5eb1ff;
+      --good: #45d19a;
+      --warn: #e8c15a;
+      --bad: #ff7b84;
+      --panel: rgba(22, 34, 48, 0.88);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; color: var(--ink);
+      font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+      background:
+        radial-gradient(ellipse at 20% 0%, var(--glow), transparent 50%),
+        radial-gradient(ellipse at 100% 10%, #243050 0%, transparent 45%),
+        var(--bg);
+      min-height: 100vh;
+    }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 2.25rem 1.2rem 3rem; }
+    .brand {
+      font-family: "Fraunces", Georgia, serif;
+      font-size: clamp(2.2rem, 5vw, 3rem);
+      margin: 0;
+      letter-spacing: -0.03em;
+    }
+    .sub { color: var(--muted); margin: 0.35rem 0 1.25rem; }
+    .private {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--warn);
+      border: 1px solid color-mix(in srgb, var(--warn) 45%, transparent);
+      padding: 0.2rem 0.5rem;
+      border-radius: 999px;
+      margin-bottom: 1rem;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+      gap: 0.65rem;
+      margin: 1rem 0 1.5rem;
+    }
+    .stat {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 0.85rem;
+    }
+    .stat .n { font-size: 1.45rem; font-weight: 700; }
+    .stat .l { color: var(--muted); font-size: 0.78rem; }
+    h2 { font-size: 1.15rem; margin: 1.75rem 0 0.7rem; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 0.75rem;
+    }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 1rem;
+    }
+    .panel h3 {
+      margin: 0 0 0.65rem;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+    }
+    .hbar { display: grid; gap: 0.35rem; }
+    .row {
+      display: grid;
+      grid-template-columns: minmax(4rem, 32%) 1fr auto;
+      gap: 0.4rem;
+      align-items: center;
+      font-size: 0.86rem;
+    }
+    .track { height: 8px; background: #0c121a; border-radius: 999px; overflow: hidden; }
+    .track i { display: block; height: 100%; background: var(--accent); }
+    .val { color: var(--muted); font-variant-numeric: tabular-nums; }
+    .delta { font-size: 1.05rem; margin: 0; }
+    .hist { display: flex; align-items: flex-end; gap: 0.35rem; height: 100px; }
+    .hist-col { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; gap: 0.25rem; }
+    .hist-col .col {
+      width: 100%; max-width: 32px; min-height: 3px;
+      background: linear-gradient(180deg, #89c4ff, var(--accent));
+      border-radius: 4px 4px 1px 1px;
+    }
+    .hist-col .lab { font-size: 0.65rem; color: var(--muted); }
+    ol.needs { margin: 0; padding-left: 1.2rem; }
+    ol.needs li { margin: 0.45rem 0; }
+    footer { margin-top: 2rem; color: var(--muted); font-size: 0.82rem; }
+    a { color: var(--accent); }
+    code { font-family: "IBM Plex Mono", Consolas, monospace; font-size: 0.85em; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="private">Private — not for Pages</div>
+    <h1 class="brand">Tuesday Steward</h1>
+    <p class="sub">Argus {{ view.target_label }} · {{ view.generated_at }} · mode {{ view.mode }}</p>
+
+    <div class="stats">
+      <div class="stat"><div class="n">{{ view.stats.repos }}</div><div class="l">Repos</div></div>
+      <div class="stat"><div class="n">{{ view.stats.open_fixes }}</div><div class="l">Open fixes</div></div>
+      <div class="stat"><div class="n">{{ view.stats.mean_attention }}</div><div class="l">Mean attention</div></div>
+      <div class="stat"><div class="n">{{ view.stats.human_fixes }}</div><div class="l">Human leftovers</div></div>
+    </div>
+
+    {% if view.health_delta %}
+    <div class="panel">
+      <h3>Health delta</h3>
+      <p class="delta">
+        Open fixes
+        <strong>{{ (view.health_delta.totals_before or {}).open_fixes }}</strong>
+        →
+        <strong>{{ (view.health_delta.totals_after or {}).open_fixes }}</strong>
+        (Δ {{ view.health_delta.delta_open_fixes }})
+      </p>
+    </div>
+    {% endif %}
+
+    <h2>Portfolio charts</h2>
+    <div class="grid">
+      <div class="panel">
+        <h3>Attention</h3>
+        <div class="hist">
+          {% for b in view.charts.attention_hist %}
+          <div class="hist-col">
+            <div class="col" style="height: {{ b.pct if b.pct > 0 else 3 }}%"></div>
+            <span class="lab">{{ b.label }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Fix classes</h3>
+        <div class="hbar">
+          {% for row in view.charts.fix_classes %}
+          <div class="row">
+            <span>{{ row.label }}</span>
+            <div class="track"><i style="width: {{ row.pct if view.stats.open_fixes else 0 }}%"></i></div>
+            <span class="val">{{ row.count }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Check families</h3>
+        <div class="hbar">
+          {% for row in view.charts.prefix_groups %}
+          <div class="row">
+            <span>{{ row.label }}</span>
+            <div class="track"><i style="width: {{ row.pct }}%"></i></div>
+            <span class="val">{{ row.count }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Top fix ids</h3>
+        <div class="hbar">
+          {% for row in view.charts.top_fixes %}
+          <div class="row">
+            <span><code>{{ row.label }}</code></span>
+            <div class="track"><i style="width: {{ row.pct }}%"></i></div>
+            <span class="val">{{ row.value }}</span>
+          </div>
+          {% else %}
+          <p class="sub">None open.</p>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Rubric means</h3>
+        <div class="hbar">
+          {% for row in view.charts.rubric_means %}
+          <div class="row">
+            <span>{{ row.label }}</span>
+            <div class="track"><i style="width: {{ row.pct }}%"></i></div>
+            <span class="val">{{ row.value }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Hotspots</h3>
+        <div class="hbar">
+          {% for row in hotspot_rows[:8] %}
+          <div class="row">
+            <span><code>{{ row.id }}</code></span>
+            <div class="track"><i style="width: {{ row.count * 12 if row.count * 12 < 100 else 100 }}%"></i></div>
+            <span class="val">{{ row.count }}</span>
+          </div>
+          {% else %}
+          <p class="sub">No hotspot rows.</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    {% if view.grandma_tasks %}
+    <h2>Needs judgment</h2>
+    <div class="panel">
+      <ol class="needs">
+        {% for t in view.grandma_tasks %}
+        <li><strong>{{ t.title }}</strong> — {{ t.why }}</li>
+        {% endfor %}
+      </ol>
+    </div>
+    {% endif %}
+
+    <footer>
+      {{ history_hint }}
+      {% if pages_url %}<br />Sanitized public dashboard: <a href="{{ pages_url }}">{{ pages_url }}</a>{% endif %}
+      <br />Do not paste this brief to a public Page — it may list finding titles.
+    </footer>
+  </div>
+</body>
+</html>

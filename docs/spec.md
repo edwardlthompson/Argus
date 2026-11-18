@@ -9,6 +9,8 @@ Operators with many GitHub repositories need silent, opinionated hygiene with cl
 - Discover portfolio changes (new / removed / parked / archived)
 - Score attention deterministically from signals + `config/rubric.yaml`
 - Auto-apply only `auto_safe` fixes (PR preference, dry-run default)
+- Normalize portfolio `BUILD_PLAN.md` toward APB marker lanes (format hygiene, not a findings punch list)
+- Mode-aware Dependabot auto-merge after `evaluate_pre_merge` (vanilla patch+minor; YOLO includes major; CI must be green)
 - Compose gated agent prompts (≤4 phases, every phase ends with `GATE:`)
 - Notify only when human work or critical security remains
 - Support third-party report-only scans
