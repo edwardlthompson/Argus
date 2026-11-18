@@ -1,0 +1,21 @@
+name: release-sbom
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  sbom:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - run: pip install cyclonedx-bom
+      - run: cyclonedx-py environment -o sbom.json || cyclonedx-py requirements -o sbom.json || echo '[]' > sbom.json
+      - uses: actions/upload-artifact@v7
+        with:
+          name: sbom
+          path: sbom.json

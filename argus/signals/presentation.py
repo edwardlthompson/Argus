@@ -7,9 +7,16 @@ from typing import Any
 from argus.github_client import GitHubClient, GitHubError
 from argus.models import RepoRecord
 
-GENERIC_TOPICS = frozenset(
-    {"foss", "mit", "open-source", "opensource", "github", "repo", "project"}
-)
+
+def _generic_topics() -> frozenset[str]:
+    from argus.config_loader import load_yaml
+    from argus.paths import CONFIG_DIR
+
+    path = CONFIG_DIR / "topics.yaml"
+    if path.exists():
+        data = load_yaml(path) or {}
+        return frozenset(str(t).lower() for t in (data.get("generic") or []))
+    return frozenset({"foss", "mit", "open-source", "opensource", "github", "repo", "project"})
 
 
 def collect(client: GitHubClient, repo: RepoRecord) -> dict[str, Any]:
@@ -21,7 +28,8 @@ def collect(client: GitHubClient, repo: RepoRecord) -> dict[str, Any]:
             topics = list(data.get("names") or [])
         except GitHubError:
             topics = []
-    specific = [t for t in topics if t.lower() not in GENERIC_TOPICS]
+    banned = _generic_topics()
+    specific = [t for t in topics if t.lower() not in banned]
     has_readme = False
     try:
         client.get(f"/repos/{repo.owner}/{repo.name}/readme")

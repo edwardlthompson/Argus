@@ -1,8 +1,75 @@
-max_auto_prs_per_run: 5
-max_concurrent_agent_sessions: 1
+# Blast-radius and apply policy. See docs/SAFETY.md and docs/YOLO.md.
+max_auto_prs_per_run: 25
+max_auto_prs_per_owner: 25
+max_concurrent_agent_sessions: 8
 max_agent_prompt_chars: 12000
 max_gate_failures_before_pause: 2
 prefer_pull_requests: true
 never_delete_repos: true
 never_force_push: true
 attention_threshold_for_agents: 60
+
+# Public product / template: normal (YOLO off). Private runner: bootstrap sets yolo + yolo.on.
+# See docs/YOLO.md dual-plane.
+apply_mode: normal
+
+# Vanilla (--apply, not armed): continuous-zero subset. Merges stay human.
+# Dry-run (default) never mutates. See docs/YOLO.md continuous zero.
+normal:
+  fix_upgrade_prs: true
+  heal_upgrade_prs: true
+  merge_upgrade_prs: false
+  # Vanilla --apply: squash-merge Dependabot patch+minor after CI is actually green.
+  merge_dependabot: true
+  merge_dependabot_patch: true  # alias of merge_dependabot
+  dependabot_auto_merge_levels: [patch, minor]
+  clear_upgrade_blockers: false
+  yolo_handlers: true
+  auto_rules_sync: true
+  continuous_zero: true
+  second_pass: true
+  # Refresh public YOU/YOU Overview (stars/forks/views/icons/membership) on --apply.
+  sync_profile: true
+  quiet_digest_only: false
+
+yolo:
+  # Do not auto_safe / merge into YOU/YOU; still refresh Overview stats (sync_profile).
+  skip_profile: true
+  sync_profile: true
+  auto_merge_auto_safe: true
+  auto_merge_upgrade_prs: true
+  heal_upgrade_prs: true
+  # Hands-off: mandatory fix→wait→merge until green or hard leftover (security stays hard).
+  fix_upgrade_prs: true
+  soft_merge_upgrade_noise: true
+  clear_upgrade_blockers: true
+  clear_upgrade_loops: 8
+  clear_upgrade_sleep_s: 90
+  # Free-tier / no payment card: never require paid GitHub Actions.
+  # Prefer scripts/local-weekly.* when scheduled Actions cannot run.
+  merge_when_actions_billing: true
+  skip_ci_when_actions_unavailable: true
+  assume_actions_unavailable: false  # or set ARGUS_ACTIONS_UNAVAILABLE=1
+  auto_rules_sync: true
+  apply_api_handlers: true  # run YOLO_HANDLERS even if catalogue class is human
+  resolve_ci_when_actions_unavailable: true
+  continuous_zero: true
+  auto_merge_dependabot: true
+  auto_merge_dependabot_patch: true  # alias of auto_merge_dependabot
+  dependabot_auto_merge_levels: [patch, minor, major]
+  auto_dispatch_agents: true
+  auto_merge_agent_prs: true
+  max_auto_merges_per_day: 80
+  max_yolo_actions_per_run: 100
+  close_stale_bot_prs_days: 14
+  second_pass_if_budget: true
+  stale_pr_idle_days: 30
+
+github_api:
+  core_limit_hint: 5000
+  reserve: 250
+  min_interval_ms: 80
+  max_interval_ms: 2000
+  calls_per_repo_estimate: 50
+  max_repos_per_batch: 6
+  max_wait_seconds: 3700

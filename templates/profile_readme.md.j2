@@ -1,0 +1,192 @@
+<!-- argus:profile-readme -->
+<div align="center">
+
+<img src="{{ banner_path }}" alt="{{ display_name }}" width="100%" />
+
+{% if not banner_carries_identity %}
+# {{ display_name }}
+
+{% if tagline %}_{{ tagline }}_{% endif %}
+{% endif %}
+
+{% if include_badges %}
+<p>
+{% if login %}
+<a href="https://github.com/{{ login }}"><img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub" /></a>
+{% endif %}
+{% if location %}
+<img src="https://img.shields.io/badge/{{ location | replace(' ', '_') }}-location-0ea5e9?style=for-the-badge" alt="{{ location }}" />
+{% endif %}
+{% if blog %}
+<a href="{{ blog }}"><img src="https://img.shields.io/badge/Website-0ea5e9?style=for-the-badge&logo=google-chrome&logoColor=white" alt="Website" /></a>
+{% endif %}
+{% if twitter %}
+<a href="https://twitter.com/{{ twitter }}"><img src="https://img.shields.io/badge/@{{ twitter }}-1DA1F2?style=for-the-badge&logo=x&logoColor=white" alt="@{{ twitter }}" /></a>
+{% endif %}
+{% if email %}
+<a href="mailto:{{ email }}"><img src="https://img.shields.io/badge/Email-6b7280?style=for-the-badge&logo=gmail&logoColor=white" alt="Email" /></a>
+{% endif %}
+</p>
+{% endif %}
+
+</div>
+
+## About
+
+{{ about }}
+
+{% if bio %}
+_{{ bio }}_
+{% endif %}
+
+{% if roles %}
+## Focus
+
+<table>
+<tr>
+{% for r in roles %}
+<td width="{{ (100 / (roles|length)) | int }}%" valign="top" align="center">
+<strong>{{ r.title }}</strong><br/>
+{{ r.blurb }}
+</td>
+{% endfor %}
+</tr>
+</table>
+{% endif %}
+
+{% if capabilities %}
+## What I build
+
+<table>
+<tr>
+{% for c in capabilities %}
+<td width="{{ (100 / (capabilities|length)) | int }}%" valign="top" align="center">
+<strong>{{ c.title }}</strong><br/>
+{{ c.blurb }}
+</td>
+{% if loop.index % 3 == 0 and not loop.last %}
+</tr><tr>
+{% endif %}
+{% endfor %}
+</tr>
+</table>
+{% endif %}
+
+## Featured projects
+
+<div align="center">
+<img src="./assets/argus-divider.svg" width="100%" alt="" />
+</div>
+
+<div align="center">
+{% if featured_rows %}
+<table>
+{% for row in featured_rows %}
+<tr>
+{% for repo in row %}
+<td align="center" valign="top" width="{{ (100 / featured_columns) | int }}%">
+{% if repo %}
+<a href="{{ repo.html_url }}">
+<img src="{{ repo.icon_url }}" alt="{{ repo.short }}" width="{{ featured_icon_size }}" />
+</a><br/>
+<a href="{{ repo.html_url }}"><sub>{{ repo.short }}</sub></a>
+{% if show_featured_stats %}
+<br/><sub>
+<img src="{{ octicon_star }}" alt="Stars" width="12" height="12" /> {{ repo.stars }}
+·
+<img src="{{ octicon_watch }}" alt="Watching" width="12" height="12" /> {{ repo.watches }}
+·
+<img src="{{ octicon_fork }}" alt="Forks" width="12" height="12" /> {{ repo.forks }}
+·
+<img src="{{ octicon_views }}" alt="Views" width="12" height="12" /> {{ repo.views }}
+</sub>
+{% endif %}
+{% endif %}
+</td>
+{% endfor %}
+</tr>
+{% endfor %}
+</table>
+{% else %}
+_Featured public repositories will appear here after a portfolio scan._
+{% endif %}
+{% if show_profile_views and profile_views is not none %}
+<p><sub>Profile README views (14d Insights): {{ profile_views }}</sub></p>
+{% endif %}
+</div>
+
+## Tech stack
+
+<div align="center">
+<img src="./assets/argus-divider.svg" width="100%" alt="" />
+</div>
+
+{% if stack_groups %}
+{% for group in stack_groups %}
+### {{ group.title }}
+
+<div align="center">
+{% for icon in group.icons %}
+<img src="{{ icon.icon_url }}" alt="{{ icon.name }}" width="40" height="40" title="{{ icon.name }}" />
+{% endfor %}
+</div>
+{% endfor %}
+{% elif languages %}
+<div align="center">
+{% for lang in languages %}
+<img src="{{ lang.icon_url }}" alt="{{ lang.name }}" width="48" height="48" title="{{ lang.name }}" />
+{% endfor %}
+</div>
+{% else %}
+_Languages appear after Argus scans your public repos._
+{% endif %}
+
+{% if current_focus %}
+## Current focus
+
+<table>
+<tr>
+{% for item in current_focus %}
+<td width="{{ (100 / (current_focus|length)) | int }}%" valign="top" align="center">
+<strong>{{ item.title }}</strong><br/>
+{{ item.blurb }}
+</td>
+{% if loop.index % 2 == 0 and not loop.last %}
+</tr><tr>
+{% endif %}
+{% endfor %}
+</tr>
+</table>
+{% endif %}
+
+{% if principles %}
+## Development principles
+
+> {{ principles }}
+{% endif %}
+
+{% if open_to_cards %}
+## Also open to
+
+<table>
+<tr>
+{% for item in open_to_cards %}
+<td width="{{ (100 / (open_to_cards|length)) | int }}%" valign="top" align="center">
+<strong>{{ item.title }}</strong><br/>
+{{ item.blurb }}
+</td>
+{% if loop.index % 2 == 0 and not loop.last %}
+</tr><tr>
+{% endif %}
+{% endfor %}
+</tr>
+</table>
+{% elif open_to %}
+## Also open to
+
+{{ open_to }}
+{% endif %}
+
+---
+
+_Updated by [Argus](https://github.com/{{ argus_repo }}). Marker: `argus:profile-readme`._

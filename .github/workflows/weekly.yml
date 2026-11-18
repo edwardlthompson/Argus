@@ -1,23 +1,24 @@
 name: argus-weekly
 
+# Public product: dispatch-only. Tuesday cron lives solely on private argus-runner
+# (see docs/RUNNER.md). Do not re-add schedule: here — empty ARGUS_GITHUB_TOKEN → 403.
 on:
-  schedule:
-    - cron: "0 14 * * 1" # Mondays 14:00 UTC
   workflow_dispatch:
     inputs:
       apply:
-        description: "Set true to allow non-dry-run auto-apply"
+        description: "true=apply, false=dry-run, empty=respect safety.yaml (YOLO implies apply)"
         required: false
-        default: "false"
+        default: ""
 
 jobs:
   run:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      issues: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - name: Install
@@ -29,21 +30,71 @@ jobs:
       - name: Run
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ARGUS_GITHUB_TOKEN: ${{ secrets.ARGUS_GITHUB_TOKEN }}
           ARGUS_DISCORD_WEBHOOK: ${{ secrets.ARGUS_DISCORD_WEBHOOK }}
           ARGUS_TELEGRAM_BOT_TOKEN: ${{ secrets.ARGUS_TELEGRAM_BOT_TOKEN }}
           ARGUS_TELEGRAM_CHAT_ID: ${{ secrets.ARGUS_TELEGRAM_CHAT_ID }}
           ARGUS_WEBHOOK_URL: ${{ secrets.ARGUS_WEBHOOK_URL }}
           ARGUS_REPORT_URL: ${{ vars.ARGUS_REPORT_URL }}
         run: |
+          if [ -n "$ARGUS_GITHUB_TOKEN" ]; then
+            export GITHUB_TOKEN="$ARGUS_GITHUB_TOKEN"
+          fi
           REPORT_FLAG=""
           if [ -n "$ARGUS_REPORT_URL" ]; then REPORT_FLAG="--report-url $ARGUS_REPORT_URL"; fi
-          if [ "${{ inputs.apply }}" = "true" ]; then
-            argus run --apply $REPORT_FLAG
+          APPLY="${{ inputs.apply }}"
+          # Overview sync (stars/forks/views/icons/public↔private) via safety.sync_profile.
+          # Use --with-profile so CLI never treats Tuesday as --skip-profile.
+          if [ "$APPLY" = "true" ]; then
+            argus run --apply --with-profile $REPORT_FLAG
+          elif [ "$APPLY" = "false" ]; then
+            argus run --dry-run --with-profile $REPORT_FLAG
           else
-            argus run --dry-run $REPORT_FLAG
+            # schedule / unset: YOLO implies apply (docs/YOLO.md) + weekly Overview refresh
+            argus run --with-profile $REPORT_FLAG
           fi
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+      - name: Upload private artifacts
+        uses: actions/upload-artifact@v7
         with:
           name: argus-dist
           path: dist/
+          retention-days: 30
+      - name: Ping Tuesday Steward (optional Grok webhook)
+        env:
+          GROK_STEWARD_WEBHOOK_URL: ${{ secrets.GROK_STEWARD_WEBHOOK_URL }}
+          GROK_STEWARD_WEBHOOK_KEY: ${{ secrets.GROK_STEWARD_WEBHOOK_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${GROK_STEWARD_WEBHOOK_URL:-}" ]; then
+            echo "GROK_STEWARD_WEBHOOK_URL unset — skip Steward ping"
+            exit 0
+          fi
+          BODY=$(python - <<'PY'
+          import json, os, pathlib
+          d = pathlib.Path("dist")
+          pages = (os.environ.get("ARGUS_REPORT_URL") or "").strip()
+          payload = {
+            "event": "after-argus-weekly",
+            "artifacts": {
+              "steward_brief": (d / "steward-brief.html").exists(),
+              "health_delta": (d / "health-delta.md").exists(),
+              "health_hotspots": (d / "health-hotspots.json").exists(),
+              "health_infographic": (d / "health-infographic.svg").exists(),
+              "portfolio_pages_sanitized": (d / "portfolio-pages.html").exists(),
+            },
+            "pages_url_sanitized": pages or None,
+            "instruction": (
+              "Run Tuesday Steward. Lead with private steward-brief.html "
+              "(or argus-history/reports/latest-steward.html). "
+              "Do not publish finding titles to a public Page. "
+              "Sanitized dashboard only if pages_url_sanitized is set."
+            ),
+          }
+          print(json.dumps(payload))
+          PY
+          )
+          HDR=(-H "Content-Type: application/json")
+          if [ -n "${GROK_STEWARD_WEBHOOK_KEY:-}" ]; then
+            HDR+=(-H "Authorization: Bearer ${GROK_STEWARD_WEBHOOK_KEY}")
+          fi
+          curl -fsS -X POST "${GROK_STEWARD_WEBHOOK_URL}" "${HDR[@]}" -d "$BODY" || true

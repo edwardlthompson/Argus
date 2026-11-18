@@ -27,5 +27,6 @@ def test_handlers_cover_core_auto_safe():
         "HYGIENE-DESCRIPTION",
         "HYGIENE-SECURITY-MD",
         "LINEAGE-VERSION-STALE",
+        "BOARD-MARKERS",
     ):
         assert fid in HANDLERS

@@ -1,0 +1,10 @@
+# Topic taxonomy — generic tags are stripped when suggesting HYGIENE-TOPICS.
+generic:
+  - foss
+  - mit
+  - open-source
+  - opensource
+  - github
+  - repo
+  - project
+preferred_prefixes: []

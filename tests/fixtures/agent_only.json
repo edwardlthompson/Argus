@@ -14,6 +14,15 @@
     "presentation": {"description": "Needs agent judgment for README non-goals", "description_len": 41, "topics": ["rust", "cli", "tools"], "specific_topic_count": 3, "has_readme": true, "has_what_not_section": false},
     "hygiene": {"security_md": true, "contributing_md": true, "code_of_conduct_md": true, "gitattributes": true, "license_file": true, "agent_files_at_root": true},
     "security": {"secret_scanning_enabled": true, "private": false, "archived": false, "codeql_likely": true},
-    "prs": {"open_prs": 2, "stale_prs_30d": 1, "draft_prs": 0}
+    "prs": {"open_prs": 2, "stale_prs_30d": 1, "draft_prs": 0},
+    "lineage": {
+      "is_template_child": true,
+      "has_template_version": true,
+      "template_version": "1.0.0",
+      "expected_version": "1.13.0",
+      "version_behind": true,
+      "missing_lineage_files": [],
+      "points_upstream": true
+    }
   }
 }

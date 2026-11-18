@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex" />
+  <title>Argus — edwardlthompson</title>
+  <style>
+    :root {
+      --bg0: #0b1220;
+      --bg1: #132033;
+      --ink: #e8eef7;
+      --muted: #8fa0b8;
+      --line: #243247;
+      --accent: #4aa3f0;
+      --good: #3dd68c;
+      --warn: #e6b84d;
+      --bad: #f07178;
+      --card: rgba(18, 28, 44, 0.72);
+      --track: #0a101a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: "Source Sans 3", "Segoe UI", sans-serif;
+      background:
+        radial-gradient(ellipse 80% 50% at 10% -10%, #1a3a5c 0%, transparent 55%),
+        radial-gradient(ellipse 60% 40% at 90% 0%, #1e2d4a 0%, transparent 50%),
+        linear-gradient(180deg, var(--bg1), var(--bg0));
+      min-height: 100vh;
+    }
+    .wrap { max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.25rem 3.5rem; }
+    .hero h1 {
+      font-family: "Fraunces", "Georgia", serif;
+      font-size: clamp(2.4rem, 6vw, 3.4rem);
+      letter-spacing: -0.03em;
+      margin: 0 0 0.4rem;
+      line-height: 1.05;
+    }
+    .hero p { color: var(--muted); margin: 0 0 1.25rem; max-width: 36rem; }
+    .banner {
+      border-left: 3px solid var(--accent);
+      background: rgba(74, 163, 240, 0.08);
+      padding: 0.7rem 0.9rem;
+      margin: 0 0 1.5rem;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 0.75rem;
+      margin: 1.5rem 0 2rem;
+    }
+    .stat {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      padding: 0.9rem 1rem;
+    }
+    .stat .n { font-size: 1.55rem; font-weight: 700; }
+    .stat .l { color: var(--muted); font-size: 0.8rem; }
+    h2 {
+      font-family: "Fraunces", Georgia, serif;
+      font-size: 1.35rem;
+      margin: 2rem 0 0.85rem;
+      font-weight: 600;
+    }
+    .charts {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 0.85rem;
+    }
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      padding: 1rem 1.1rem;
+    }
+    .panel h3 {
+      margin: 0 0 0.75rem;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      font-weight: 650;
+    }
+    .hbar { display: grid; gap: 0.4rem; }
+    .hbar-row {
+      display: grid;
+      grid-template-columns: minmax(4rem, 30%) 1fr auto;
+      gap: 0.45rem;
+      align-items: center;
+      font-size: 0.86rem;
+    }
+    .track { height: 9px; background: var(--track); border-radius: 999px; overflow: hidden; }
+    .track > i { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
+    .val { color: var(--muted); font-variant-numeric: tabular-nums; min-width: 2rem; text-align: right; }
+    .hist { display: flex; align-items: flex-end; gap: 0.4rem; height: 120px; border-bottom: 1px solid var(--line); }
+    .hist-col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; gap: 0.3rem; }
+    .hist-col .col {
+      width: 100%; max-width: 36px; min-height: 4px;
+      background: linear-gradient(180deg, #7ab8f5, var(--accent));
+      border-radius: 4px 4px 1px 1px;
+    }
+    .hist-col .lab { color: var(--muted); font-size: 0.7rem; }
+    .hist-col .cnt { font-size: 0.75rem; font-weight: 650; }
+    .donut-wrap { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; }
+    .donut {
+      width: 120px; height: 120px; border-radius: 50%; flex-shrink: 0;
+      background: conic-gradient(
+        var(--bad) 0 calc(var(--p-high) * 1%),
+        var(--warn) calc(var(--p-high) * 1%) calc((var(--p-high) + var(--p-medium)) * 1%),
+        var(--good) calc((var(--p-high) + var(--p-medium)) * 1%) 100%
+      );
+      position: relative;
+    }
+    .donut::after {
+      content: ""; position: absolute; inset: 28%; border-radius: 50%;
+      background: #121c2c; border: 1px solid var(--line);
+    }
+    .legend { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.35rem; font-size: 0.88rem; }
+    .swatch { width: 0.65rem; height: 0.65rem; border-radius: 2px; display: inline-block; margin-right: 0.35rem; }
+    .swatch-high { background: var(--bad); }
+    .swatch-medium { background: var(--warn); }
+    .swatch-good { background: var(--good); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th, td { text-align: left; padding: 0.5rem 0.35rem; border-bottom: 1px solid var(--line); }
+    th { color: var(--muted); font-weight: 600; }
+    footer { margin-top: 2.5rem; color: var(--muted); font-size: 0.82rem; }
+    a { color: var(--accent); }
+    .empty { color: var(--muted); margin: 0; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="hero">
+      <h1>Argus</h1>
+      <p>edwardlthompson portfolio health · 2026-11-12 · mode report</p>
+      <div class="banner">Public dashboard — metrics only. Per-repo security findings are never listed here.</div>
+      
+    </header>
+
+    <div class="stats">
+      <div class="stat"><div class="n">27</div><div class="l">Repos</div></div>
+      <div class="stat"><div class="n">0</div><div class="l">Open fixes</div></div>
+      <div class="stat"><div class="n">15.0</div><div class="l">Mean attention</div></div>
+      <div class="stat"><div class="n">0</div><div class="l">Human class</div></div>
+      <div class="stat"><div class="n">0</div><div class="l">Auto-safe</div></div>
+      <div class="stat"><div class="n">0</div><div class="l">Agent class</div></div>
+    </div>
+
+    <h2>Measurements</h2>
+    <div class="charts">
+      <div class="panel">
+        <h3>Attention distribution</h3>
+        <div class="hist" role="img" aria-label="Attention histogram">
+          
+          <div class="hist-col">
+            <span class="cnt">25</span>
+            <div class="col" style="height: 100.0%"></div>
+            <span class="lab">0–20</span>
+          </div>
+          
+          <div class="hist-col">
+            <span class="cnt">2</span>
+            <div class="col" style="height: 8.0%"></div>
+            <span class="lab">20–40</span>
+          </div>
+          
+          <div class="hist-col">
+            <span class="cnt">0</span>
+            <div class="col" style="height: 3%"></div>
+            <span class="lab">40–60</span>
+          </div>
+          
+          <div class="hist-col">
+            <span class="cnt">0</span>
+            <div class="col" style="height: 3%"></div>
+            <span class="lab">60–80</span>
+          </div>
+          
+          <div class="hist-col">
+            <span class="cnt">0</span>
+            <div class="col" style="height: 3%"></div>
+            <span class="lab">80–100</span>
+          </div>
+          
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Attention bands</h3>
+        
+        <div class="donut-wrap">
+          <div class="donut" style="--p-high: 0.0; --p-medium: 0.0;"></div>
+          <ul class="legend">
+            
+            <li><span class="swatch swatch-high"></span>high · 0 (0.0%)</li>
+            
+            <li><span class="swatch swatch-medium"></span>medium · 0 (0.0%)</li>
+            
+            <li><span class="swatch swatch-good"></span>good · 27 (100.0%)</li>
+            
+          </ul>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Fixes by class</h3>
+        <div class="hbar">
+          
+          <div class="hbar-row">
+            <span>Auto-safe</span>
+            <div class="track"><i style="width: 0%"></i></div>
+            <span class="val">0</span>
+          </div>
+          
+          <div class="hbar-row">
+            <span>Agent</span>
+            <div class="track"><i style="width: 0%"></i></div>
+            <span class="val">0</span>
+          </div>
+          
+          <div class="hbar-row">
+            <span>Human</span>
+            <div class="track"><i style="width: 0%"></i></div>
+            <span class="val">0</span>
+          </div>
+          
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Check families</h3>
+        <div class="hbar">
+          
+          <div class="hbar-row">
+            <span>SEC</span>
+            <div class="track"><i style="width: 0.0%"></i></div>
+            <span class="val">0</span>
+          </div>
+          
+          <div class="hbar-row">
+            <span>HYGIENE</span>
+            <div class="track"><i style="width: 0.0%"></i></div>
+            <span class="val">0</span>
+          </div>
+          
+          <div class="hbar-row">
+            <span>CI</span>
+            <div class="track"><i style="width: 0.0%"></i></div>
+            <span class="val">0</span>
+          </div>
+          
+          <div class="hbar-row">
+            <span>LINEAGE</span>
+            <div class="track"><i style="width: 0.0%"></i></div>
+            <span class="val">0</span>
+          </div>
+          
+          <div class="hbar-row">
+            <span>AGENT</span>
+            <div class="track"><i style="width: 0.0%"></i></div>
+            <span class="val">0</span>
+          </div>
+          
+          <div class="hbar-row">
+            <span>PROF</span>
+            <div class="track"><i style="width: 0.0%"></i></div>
+            <span class="val">0</span>
+          </div>
+          
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Rubric category means</h3>
+        <div class="hbar">
+          
+          <div class="hbar-row">
+            <span>deps</span>
+            <div class="track"><i style="width: 100.0%"></i></div>
+            <span class="val">30.6</span>
+          </div>
+          
+          <div class="hbar-row">
+            <span>responsiveness</span>
+            <div class="track"><i style="width: 65.4%"></i></div>
+            <span class="val">20.0</span>
+          </div>
+          
+          <div class="hbar-row">
+            <span>ci</span>
+            <div class="track"><i style="width: 56.9%"></i></div>
+            <span class="val">17.4</span>
+          </div>
+          
+          <div class="hbar-row">
+            <span>momentum</span>
+            <div class="track"><i style="width: 49.0%"></i></div>
+            <span class="val">15.0</span>
+          </div>
+          
+          <div class="hbar-row">
+            <span>hygiene</span>
+            <div class="track"><i style="width: 45.1%"></i></div>
+            <span class="val">13.8</span>
+          </div>
+          
+          <div class="hbar-row">
+            <span>lineage</span>
+            <div class="track"><i style="width: 36.3%"></i></div>
+            <span class="val">11.1</span>
+          </div>
+          
+          <div class="hbar-row">
+            <span>presentation</span>
+            <div class="track"><i style="width: 32.7%"></i></div>
+            <span class="val">10.0</span>
+          </div>
+          
+          <div class="hbar-row">
+            <span>prs</span>
+            <div class="track"><i style="width: 32.7%"></i></div>
+            <span class="val">10.0</span>
+          </div>
+          
+          <div class="hbar-row">
+            <span>security</span>
+            <div class="track"><i style="width: 32.7%"></i></div>
+            <span class="val">10.0</span>
+          </div>
+          
+          <div class="hbar-row">
+            <span>releases</span>
+            <div class="track"><i style="width: 27.1%"></i></div>
+            <span class="val">8.3</span>
+          </div>
+          
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Top fix ids</h3>
+        <div class="hbar">
+          
+          <p class="empty">No open fixes.</p>
+          
+        </div>
+      </div>
+    </div>
+
+    
+    <h2>This run</h2>
+    <div class="panel">
+      <p class="empty" style="color:var(--ink)">
+        Open fixes
+        0
+        →
+        0
+        (Δ 0)
+      </p>
+    </div>
+    
+
+    <h2>Fleet</h2>
+    <p class="empty">Every active repo — sorted by Issues, then open PRs. Columns stay separate (GitHub’s issue count wrongly includes PRs).</p>
+    <div class="panel">
+      
+      <table>
+        <thead>
+          <tr><th>Repo</th><th>Issues</th><th>Open PRs</th><th>Argus fixes</th><th>Attention</th><th>Band</th></tr>
+        </thead>
+        <tbody>
+          
+          <tr>
+            <td>OpenShouter</td>
+            <td>1</td>
+            <td>4</td>
+            <td>0</td>
+            <td>
+              <span>16.6</span>
+              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
+                <i style="display:block;height:100%;width:16%;background:var(--plot-fill)"></i>
+              </span>
+            </td>
+            <td>good</td>
+          </tr>
+          
+          <tr>
+            <td>3d-game-optimizer</td>
+            <td>0</td>
+            <td>8</td>
+            <td>0</td>
+            <td>
+              <span>18.2</span>
+              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
+                <i style="display:block;height:100%;width:18%;background:var(--plot-fill)"></i>
+              </span>
+            </td>
+            <td>good</td>
+          </tr>
+          
+          <tr>
+            <td>Argus</td>
+            <td>0</td>
+            <td>7</td>
+            <td>0</td>
+            <td>
+              <span>12.2</span>
+              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
+                <i style="display:block;height:100%;width:12%;background:var(--plot-fill)"></i>
+              </span>
+            </td>
+            <td>good</td>
+          </tr>
+          
+          <tr>
+            <td>screen-wakelock-detector</td>
+            <td>0</td>
+            <td>7</td>
+            <td>0</td>
+            <td>
+              <span>13.7</span>
+              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
+                <i style="display:block;height:100%;width:13%;background:var(--plot-fill)"></i>
+              </span>
+            </td>
+            <td>good</td>
+          </tr>
+          
+          <tr>
+            <td>point-and-shoot</td>
+            <td>0</td>
+            <td>6</td>
+            <td>0</td>
+            <td>
+              <span>19.7</span>
+              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
+                <i style="display:block;height:100%;width:19%;background:var(--plot-fill)"></i>
+              </span>
+            </td>
+            <td>good</td>
+          </tr>
+          
+          <tr>
+            <td>vault-organizer</td>
+            <td>0</td>
+            <td>6</td>
+            <td>0</td>
+            <td>
+              <span>18.2</span>
+              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
+                <i style="display:block;height:100%;width:18%;background:var(--plot-fill)"></i>
+              </span>
+            </td>
+            <td>good</td>
+          </tr>
+          
+          <tr>
+            <td>continuum-calendar</td>
+            <td>0</td>
+            <td>5</td>
+            <td>0</td>
+            <td>
+              <span>13.9</span>
+              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
+                <i style="display:block;height:100%;width:13%;background:var(--plot-fill)"></i>
+              </span>
+            </td>
+            <td>good</td>
+          </tr>
+          
+          <tr>
+            <td>MultiAppShare-</td>
+            <td>0</td>
+            <td>5</td>
+            <td>0</td>
+            <td>
+              <span>12.3</span>
+              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
+                <i style="display:block;height:100%;width:12%;background:var(--plot-fill)"></i>
+              </span>
+            </td>
+            <td>good</td>
+          </tr>
+          
+          <tr>
+            <td>DevPulse</td>
+            <td>0</td>
+            <td>4</td>
+            <td>0</td>
+            <td>
+              <span>17.4</span>
+              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
+                <i style="display:block;height:100%;width:17%;background:var(--plot-fill)"></i>
+              </span>
+            </td>
+            <td>good</td>
+          </tr>
+          
+          <tr>
+            <td>trendalgo-bot</td>
+            <td>0</td>
+            <td>4</td>
+            <td>0</td>
+            <td>
+              <span>12.8</span>
+              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
+                <i style="display:block;height:100%;width:12%;background:var(--plot-fill)"></i>
+              </span>
+            </td>
+            <td>good</td>
+          </tr>
+          
+          <tr>
+            <td>HermesLauncher</td>
+            <td>0</td>
+            <td>3</td>
+            <td>0</td>
+            <td>
+              <span>11.7</span>
+              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
+                <i style="display:block;height:100%;width:11%;background:var(--plot-fill)"></i>
+              </span>
+            </td>
+            <td>good</td>
+          </tr>
+          
+          <tr>
+            <td>JanusBoot</td>
+            <td>0</td>
+            <td>3</td>
+            <td>0</td>
+            <td>
+              <span>15.7</span>
+              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
+                <i style="display:block;height:100%;width:15%;background:var(--plot-fill)"></i>
+              </span>
+            </td>
+            <td>good</td>
+          </tr>
+          
+          <tr>
+            <td>QRaft</td>
+            <td>0</td>
+            <td>3</td>
+            <td>0</td>
+            <td>
+              <span>11.7</span>
+              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
+                <i style="display:block;height:100%;width:11%;background:var(--plot-fill)"></i>
+              </span>
+            </td>
+            <td>good</td>
+          </tr>
+          
+          <tr>
+            <td>AstroAlarm</td>
+            <td>0</td>
+            <td>2</td>
+            <td>0</td>
+            <td>
+              <span>11.7</span>
+              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
+                <i style="display:block;height:100%;width:11%;background:var(--plot-fill)"></i>
+              </span>
+            </td>
+            <td>good</td>
+          </tr>
+          
+          <tr>
+            <td>bl4-forge</td>
+            <td>0</td>
+            <td>2</td>
+            <td>0</td>
+            <td>
+              <span>11.2</span>
+              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
+                <i style="display:block;height:100%;width:11%;background:var(--plot-fill)"></i>
+              </span>
+            </td>
+            <td>good</td>
+          </tr>
+          
+          <tr>
+            <td>ExpeditionGauge</td>
+            <td>0</td>
+            <td>2</td>
+            <td>0</td>
+            <td>
+              <span>13.0</span>
+              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
+                <i style="display:block;height:100%;width:13%;background:var(--plot-fill)"></i>
+              </span>
+            </td>
+            <td>good</td>
+          </tr>
+          
+          <tr>
+            <td>Google-Messages-For-Desktop</td>
+            <td>0</td>
+            <td>2</td>
+            <td>0</td>
+            <td>
+              <span>21.1</span>
+              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
+                <i style="display:block;height:100%;width:21%;background:var(--plot-fill)"></i>
+              </span>
+            </td>
+            <td>good</td>
+          </tr>
+          
+          <tr>
+            <td>lineage-lens</td>
+            <td>0</td>
+            <td>2</td>
+            <td>0</td>
+            <td>
+              <span>12.7</span>
+              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
+                <i style="display:block;height:100%;width:12%;background:var(--plot-fill)"></i>
+              </span>
+            </td>
+            <td>good</td>
+          </tr>
+          
+          <tr>
+            <td>linkslander-edwardlthompson</td>
+            <td>0</td>
+            <td>2</td>
+            <td>0</td>
+            <td>
+              <span>28.2</span>
+              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
+                <i style="display:block;height:100%;width:28%;background:var(--plot-fill)"></i>
+              </span>
+            </td>
+            <td>good</td>
+          </tr>
+          
+          <tr>
+            <td>QuickMediaIngest</td>
+            <td>0</td>
+            <td>2</td>
+            <td>0</td>
+            <td>
+              <span>12.8</span>
+              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
+                <i style="display:block;height:100%;width:12%;background:var(--plot-fill)"></i>
+              </span>
+            </td>
+            <td>good</td>
+          </tr>
+          
+          <tr>
+            <td>SyncMark</td>
+            <td>0</td>
+            <td>2</td>
+            <td>0</td>
+            <td>
+              <span>11.2</span>
+              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
+                <i style="display:block;height:100%;width:11%;background:var(--plot-fill)"></i>
+              </span>
+            </td>
+            <td>good</td>
+          </tr>
+          
+          <tr>
+            <td>aetherfeed</td>
+            <td>0</td>
+            <td>1</td>
+            <td>0</td>
+            <td>
+              <span>12.8</span>
+              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
+                <i style="display:block;height:100%;width:12%;background:var(--plot-fill)"></i>
+              </span>
+            </td>
+            <td>good</td>
+          </tr>
+          
+          <tr>
+            <td>agent-project-bootstrap</td>
+            <td>0</td>
+            <td>1</td>
+            <td>0</td>
+            <td>
+              <span>11.7</span>
+              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
+                <i style="display:block;height:100%;width:11%;background:var(--plot-fill)"></i>
+              </span>
+            </td>
+            <td>good</td>
+          </tr>
+          
+          <tr>
+            <td>chromaflow</td>
+            <td>0</td>
+            <td>1</td>
+            <td>0</td>
+            <td>
+              <span>13.9</span>
+              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
+                <i style="display:block;height:100%;width:13%;background:var(--plot-fill)"></i>
+              </span>
+            </td>
+            <td>good</td>
+          </tr>
+          
+          <tr>
+            <td>OBDForge</td>
+            <td>0</td>
+            <td>1</td>
+            <td>0</td>
+            <td>
+              <span>12.7</span>
+              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
+                <i style="display:block;height:100%;width:12%;background:var(--plot-fill)"></i>
+              </span>
+            </td>
+            <td>good</td>
+          </tr>
+          
+          <tr>
+            <td>takein-sms</td>
+            <td>0</td>
+            <td>1</td>
+            <td>0</td>
+            <td>
+              <span>19.9</span>
+              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
+                <i style="display:block;height:100%;width:19%;background:var(--plot-fill)"></i>
+              </span>
+            </td>
+            <td>good</td>
+          </tr>
+          
+          <tr>
+            <td>edwardlthompson</td>
+            <td>0</td>
+            <td>0</td>
+            <td>0</td>
+            <td>
+              <span>16.8</span>
+              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
+                <i style="display:block;height:100%;width:16%;background:var(--plot-fill)"></i>
+              </span>
+            </td>
+            <td>good</td>
+          </tr>
+          
+        </tbody>
+      </table>
+      
+    </div>
+
+    <footer>
+      Public metrics only — never a weakness catalogue.
+      Full private report lives under <code>argus-history/reports/</code> on the private runner.
+    </footer>
+  </div>
+</body>
+</html>

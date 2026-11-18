@@ -1,0 +1,13 @@
+fixes:
+  - id: PROF-README
+    class: auto_safe
+    title: Refresh GitHub profile Overview README
+    why: Keep the public profile Overview aligned with live repos and operator voice YAML.
+    applies_when: "repo.get('is_profile_repo', False) == True"
+    phase: 2
+    depends_on: []
+    confidence: high
+    auto_safe: true
+    gate: "test -f README.md"
+    profiles: [generic, edward]
+    resolution_ttl_days: 7

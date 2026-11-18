@@ -7,7 +7,7 @@ Skeleton → discovery → scoring → composition → auto-apply → notify →
 ## Milestone 1 (next)
 
 - First real `argus run --dry-run` against the operator portfolio; triage human tasks
-- Enable GitHub Pages for `report.html` (`pages` workflow)
+- Enable GitHub Pages for status-only `status.html` (`pages` workflow); full report via Actions artifacts + Issues inbox
 - Optional: adopt parent `check-template-updates` script on `/upgrade`
 
 ## Risks

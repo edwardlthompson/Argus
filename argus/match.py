@@ -13,6 +13,8 @@ def build_context(repo: RepoRecord, signals: SignalBundle) -> dict[str, Any]:
     ctx: dict[str, Any] = {
         "repo": {
             "full_name": repo.full_name,
+            "owner": repo.owner,
+            "name": repo.name,
             "status": repo.status.value,
             "private": repo.private,
             "archived": repo.archived,
@@ -20,6 +22,7 @@ def build_context(repo: RepoRecord, signals: SignalBundle) -> dict[str, Any]:
             "can_write": repo.can_write,
             "description": repo.description or "",
             "topics": list(repo.topics),
+            "is_profile_repo": repo.owner == repo.name,
         },
         "signals": signals.as_dict(),
     }

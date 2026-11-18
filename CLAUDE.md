@@ -5,8 +5,9 @@ Canonical spec: `AGENTS.md`. Product brief: `AGENT.md`. Parent template: `edward
 ## Do
 
 - Follow BUILD_PLAN Sequential then Parallel
-- Run `bash scripts/verify.sh` (or `scripts/verify.ps1`) before marking rows ✅
+- Run `python scripts/agent-run.py verify` (or `scripts/verify.*`) before marking rows ✅
 - Keep behaviour in `config/*.yaml`
+- Slash commands: `.cursor/commands/` · help: `docs/help/BATCH_COMMANDS.md`
 
 ## Do not
 

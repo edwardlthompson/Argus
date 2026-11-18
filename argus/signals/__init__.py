@@ -7,16 +7,20 @@ from typing import Any
 from argus.github_client import GitHubClient, GitHubError
 from argus.models import RepoRecord, SignalBundle
 from argus.signals import (
+    board,
     ci,
+    contract,
     deps,
     hygiene,
     lineage,
     momentum,
+    orphans,
     presentation,
     prs,
     releases,
     responsiveness,
     security,
+    traffic,
 )
 
 
@@ -34,12 +38,28 @@ def collect_signals(client: GitHubClient, repo: RepoRecord) -> SignalBundle:
         "lineage": lineage.collect,
         "prs": prs.collect,
         "releases": releases.collect,
+        "traffic": traffic.collect,
+        "orphans": orphans.collect,
+        "contract": contract.collect,
+        "board": board.collect,
     }
     for name, fn in collectors.items():
         try:
             setattr(bundle, name, fn(client, repo))
         except (GitHubError, KeyError, TypeError, ValueError):
             setattr(bundle, name, None)
+    # GitHub open_issues_count includes PRs — stamp Issues-only for reports/fixes.
+    mom = bundle.momentum if isinstance(bundle.momentum, dict) else None
+    prs_sig = bundle.prs if isinstance(bundle.prs, dict) else None
+    if mom is not None:
+        total = int(mom.get("open_issues") or (repo.raw or {}).get("open_issues_count") or 0)
+        pr_n = int((prs_sig or {}).get("open_prs") or 0)
+        mom["open_issues_including_prs"] = total
+        mom["open_issues"] = max(0, total - pr_n)
+        raw = dict(repo.raw or {})
+        raw["open_prs_count"] = pr_n
+        raw["open_issues_only"] = mom["open_issues"]
+        repo.raw = raw
     return bundle
 
 
@@ -55,4 +75,8 @@ def fixture_bundle(data: dict[str, Any]) -> SignalBundle:
         lineage=data.get("lineage"),
         prs=data.get("prs"),
         releases=data.get("releases"),
+        traffic=data.get("traffic"),
+        orphans=data.get("orphans"),
+        contract=data.get("contract"),
+        board=data.get("board"),
     )

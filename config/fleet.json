@@ -1,0 +1,18 @@
+{
+  "enabled": false,
+  "eligibility": {
+    "require_private_runner": true,
+    "require_rules_not_stale": true,
+    "require_yolo_or_approve": true
+  },
+  "caps": {
+    "max_repos_per_brief": 25,
+    "canary_size": 1,
+    "batch_after_canary": 3,
+    "batch_size": 5,
+    "max_duration_minutes": 60,
+    "max_reverts_per_brief": 2
+  },
+  "verify_timeout_s": 900,
+  "preview_url_env": "PREVIEW_URL"
+}
