@@ -9,7 +9,7 @@ authors = [{ name = "Argus contributors" }]
 keywords = ["github", "hygiene", "controller", "automation"]
 dependencies = [
   "click>=8.1",
-  "httpx>=0.27",
+  "httpx>=0.28.1",
   "jinja2>=3.1",
   "jsonschema>=4.22",
   "pyyaml>=6.0",
