@@ -1,0 +1,61 @@
+# Tag-only unsigned Tauri bundles. Never on branch push or pull_request.
+# OS matrix filled at PR plan time (private repos omit macOS runners).
+name: Release tauri
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [__OS_LIST__]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install frontend
+        run: npm ci
+      - name: Build Tauri (unsigned)
+        run: npm run tauri build --if-present || npx tauri build
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: __APP_SLUG__-${{ matrix.os }}-unsigned
+          path: |
+            **/src-tauri/target/release/bundle/**/*.exe
+            **/src-tauri/target/release/bundle/**/*.msi
+            **/src-tauri/target/release/bundle/**/*.dmg
+            **/src-tauri/target/release/bundle/**/*.AppImage
+            **/src-tauri/target/release/bundle/**/*.deb
+          if-no-files-found: warn
+
+  attach-release:
+    if: always() && startsWith(github.ref, 'refs/tags/')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Publish unsigned artifacts to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/**/*
+          generate_release_notes: true
+          body: |
+            Tauri artifacts are **unsigned** unless platform signing secrets are set.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

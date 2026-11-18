@@ -47,7 +47,7 @@ platforms:
     any_suffix: [/src-tauri/tauri.conf.json]
     any_name: [tauri.conf.json]
     artifacts: [.exe, .dmg, .AppImage, .deb, .msi]
-    template: desktop.yml
+    template: tauri.yml
     version_files: [src-tauri/tauri.conf.json, package.json]
     version_kind: json
   python:

@@ -7,8 +7,9 @@ from typing import Any
 
 from argus.config_loader import load_releases
 
+_GRADLE = re.compile(r'versionName(\s*[=:]?\s*)(["\'])([0-9][0-9.]*)\2')
 _KINDS = {
-    "gradle": (re.compile(r'versionName\s*[=:]\s*["\']([0-9][0-9.]*)'), 'versionName "{v}"'),
+    "gradle": (_GRADLE, None),
     "toml": (re.compile(r'(?m)^version\s*=\s*["\']([0-9][0-9.]*)["\']'), 'version = "{v}"'),
     "json": (re.compile(r'"version"\s*:\s*"([0-9][0-9.]*)"'), '"version": "{v}"'),
 }
@@ -20,12 +21,15 @@ def cfg(data: dict[str, Any] | None = None) -> dict[str, Any]:
 
 def parse_semver(text: str | None) -> tuple[int, ...]:
     core = str(text or "").strip().lstrip("vV").split("-")[0]
-    parts = [int(p) for p in core.split(".") if p.isdigit()]
-    return tuple(parts[:3]) if parts else ()
+    parts = [int(p) for p in core.split(".") if p.isdigit()][:3]
+    return tuple(parts + [0] * (3 - len(parts))) if parts else ()
 
 
 def next_version(tag: str | None, *, bump: str = "patch", source: str | None = None) -> str:
-    n = list((parse_semver(source) or parse_semver(tag) or (0, 1, 0)) + (0, 0, 0))
+    src, tg = parse_semver(source), parse_semver(tag)
+    if src and tg and src > tg:  # source already ahead of tag — do not bump again
+        return f"{src[0]}.{src[1]}.{src[2]}"
+    n = list(src or tg or (0, 1, 0))
     if bump == "minor":
         n[1], n[2] = n[1] + 1, 0
     else:
@@ -36,12 +40,17 @@ def next_version(tag: str | None, *, bump: str = "patch", source: str | None = N
 def extract_version(text: str, kind: str) -> str | None:
     spec = _KINDS.get(kind)
     m = spec[0].search(text) if spec and text else None
-    return m.group(1) if m else None
+    return (m.group(3) if kind == "gradle" else m.group(1)) if m else None
 
 
 def bump_version_text(text: str, kind: str, new: str) -> str:
     spec = _KINDS.get(kind)
-    return spec[0].sub(spec[1].format(v=new), text, count=1) if spec and text else text
+    if not spec or not text:
+        return text
+    pat, tmpl = spec
+    if tmpl is None:
+        return pat.sub(lambda m: f"versionName{m.group(1)}{m.group(2)}{new}{m.group(2)}", text, count=1)
+    return pat.sub(tmpl.format(v=new), text, count=1)
 
 
 def match_platforms(paths: list[str], config: dict[str, Any] | None = None) -> list[str]:
@@ -50,8 +59,7 @@ def match_platforms(paths: list[str], config: dict[str, Any] | None = None) -> l
     for pid, rule in (cfg(config).get("platforms") or {}).items():
         if any(
             p.endswith(s) or p.endswith(s.lstrip("/")) or s.lstrip("/") in p
-            for s in (str(x) for x in (rule.get("any_suffix") or []))
-            for p in paths
+            for s in (str(x) for x in (rule.get("any_suffix") or [])) for p in paths
         ):
             hits.append(pid)
         elif any(n == str(x) for n in names for x in (rule.get("any_name") or [])):
@@ -84,9 +92,7 @@ def hot_triggers(on: Any) -> list[str]:
 
 
 def use_authenticated_owner(owner: str | None, login: str | None, *, public_only: bool) -> bool:
-    """`/users/{user}/repos` is public-only; same-login scans must use `/user/repos`."""
     return bool(owner and login and str(owner).lower() == str(login).lower() and not public_only)
-
 
 def skip_reason(repo: dict[str, Any], platforms: list[str], config: dict[str, Any] | None = None) -> str | None:
     c, skip = cfg(config), (cfg(config).get("skip") or {})
@@ -127,23 +133,18 @@ def evaluate(facts: dict[str, Any], config: dict[str, Any] | None = None) -> dic
     src, tag = parse_semver(facts.get("source_version")), parse_semver(facts.get("latest_tag"))
     mismatch, no_wf = bool(src and tag and src != tag), not bool(facts.get("has_tag_release_workflow"))
     missing = [k for k, v in (
-        ("missing release", missing_release),
-        (f"stale (>{stale_n}d with commits since)", stale),
+        ("missing release", missing_release), (f"stale (>{stale_n}d with commits since)", stale),
         ("missing artifacts: " + ", ".join(missing_art), bool(missing_art)),
-        ("source version != last tag", mismatch),
-        ("no tag-triggered release workflow", no_wf),
+        ("source version != last tag", mismatch), ("no tag-triggered release workflow", no_wf),
     ) if v]
     has_tmpl = any((rules.get(p) or {}).get("template") for p in platforms)
-    irreg = facts.get("irregular_reason") or (
-        "no_template" if platforms and not has_tmpl else None
-    )
+    irreg = facts.get("irregular_reason") or ("no_template" if platforms and not has_tmpl else None)
     eligible, needs = skip is None, skip is None and bool(missing)
     nxt = next_version(facts.get("latest_tag"), bump=str(c.get("bump") or "patch"), source=facts.get("source_version"))
     return {
         "skip": skip, "eligible": eligible, "missing_release": missing_release and eligible,
         "stale": stale and eligible, "missing_artifacts": missing_art if eligible else [],
         "version_mismatch": mismatch and eligible, "no_release_workflow": no_wf and eligible,
-        "needs_prep": needs, "irregular": bool(irreg) and needs,
-        "irregular_reason": irreg if needs else None, "missing": missing if eligible else [],
-        "next_version": nxt, "next_tag": f"v{nxt}", "stale_days": stale_n,
+        "needs_prep": needs, "irregular": bool(irreg) and needs, "irregular_reason": irreg if needs else None,
+        "missing": missing if eligible else [], "next_version": nxt, "next_tag": f"v{nxt}", "stale_days": stale_n,
     }

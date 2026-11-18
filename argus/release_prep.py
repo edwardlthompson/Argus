@@ -21,7 +21,6 @@ class PrepPlan:
     body: str
     files: dict[str, str] = field(default_factory=dict)
     irregular: bool = False
-    existing_pr: str | None = None
     tag_cmd: str = ""
 
 
@@ -30,8 +29,7 @@ def _render(name: str, row: dict[str, Any], config: dict[str, Any]) -> str:
     key = "private_os" if row.get("private") else "public_os"
     os_list = ", ".join(str(x) for x in (desk.get(key) or ["ubuntu-latest"]))
     text = (CONFIG_DIR / "release_workflows" / name).read_text(encoding="utf-8")
-    workdir = str(row.get("electron_workdir") or ".")
-    slug = str(row.get("name") or "app").lower()
+    workdir, slug = str(row.get("electron_workdir") or "."), str(row.get("name") or "app").lower()
     return text.replace("__OS_LIST__", os_list).replace("__WORKDIR__", workdir).replace("__APP_SLUG__", slug)
 
 
@@ -52,7 +50,8 @@ def _body(row: dict[str, Any], files: dict[str, str], config: dict[str, Any]) ->
         last = f"{last} ({row['latest_date']})"
     macos = ""
     plats = config.get("platforms") or {}
-    desktop = any((plats.get(p) or {}).get("template") == "desktop.yml" for p in row.get("platforms") or [])
+    tmpls = {"desktop.yml", "tauri.yml"}
+    desktop = any((plats.get(p) or {}).get("template") in tmpls for p in row.get("platforms") or [])
     if row.get("private") and desktop:
         macos = "\nThis repo is **private** — macOS runners omitted (10× billed minutes).\n"
     return (
@@ -103,7 +102,7 @@ def find_existing_pr(client: GitHubClient, repo: RepoRecord, branch: str) -> dic
         pulls = []
     for pr in pulls if isinstance(pulls, list) else []:
         head = str((pr.get("head") or {}).get("ref") or "")
-        if head == branch or "release-prep" in str(pr.get("title") or "").lower():
+        if head == branch or str(pr.get("title") or "").lower().startswith("chore(argus): release-prep"):
             return pr if isinstance(pr, dict) else None
     return None
 
@@ -148,3 +147,4 @@ def apply_prep(client: GitHubClient, repo: RepoRecord, plan: PrepPlan, *, dry_ru
             raise
         found = find_existing_pr(client, repo, plan.branch) or {}
         return {"action": "existing", "pr": str(found.get("html_url") or "")}
+

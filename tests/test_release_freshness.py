@@ -16,10 +16,11 @@ from argus.release_detect import (
     hot_triggers,
     match_platforms,
     next_version,
+    parse_semver,
     skip_reason,
     use_authenticated_owner,
 )
-from argus.release_prep import plan_prep
+from argus.release_prep import find_existing_pr, plan_prep
 from argus.release_report import compose_markdown, grandma_lines
 
 
@@ -99,9 +100,17 @@ def test_version_mismatch_and_next_tag():
     }
     out = evaluate(facts, _cfg())
     assert out["version_mismatch"] is True
+    assert out["next_version"] == "1.2.4"  # source already ahead — no double bump
     assert next_version("v1.2.3", bump="patch") == "1.2.4"
+    assert next_version("v1.2.3", bump="patch", source="1.2.4") == "1.2.4"
+    assert parse_semver("1.2") == parse_semver("1.2.0")
     assert extract_version('version = "0.9.0"\n', "toml") == "0.9.0"
     assert 'version = "1.0.0"' in bump_version_text('version = "0.9.0"\n', "toml", "1.0.0")
+    groovy = 'versionName "1.0.0"\n'
+    kotlin = 'versionName = "1.0.0"\n'
+    assert extract_version(groovy, "gradle") == "1.0.0"
+    assert bump_version_text(groovy, "gradle", "1.1.0") == 'versionName "1.1.0"\n'
+    assert bump_version_text(kotlin, "gradle", "1.1.0") == 'versionName = "1.1.0"\n'
 
 
 def test_same_login_owner_uses_private_listing():
@@ -118,7 +127,7 @@ def test_hot_triggers_ignore_tag_only():
 
 
 def test_workflow_templates_are_tag_and_dispatch_only():
-    for name in ("python.yml", "android.yml", "desktop.yml", "web.yml"):
+    for name in ("python.yml", "android.yml", "desktop.yml", "web.yml", "tauri.yml"):
         text = (CONFIG_DIR / "release_workflows" / name).read_text(encoding="utf-8")
         data = yaml.safe_load(text)
         on = data.get("on") if isinstance(data, dict) else None
@@ -126,6 +135,23 @@ def test_workflow_templates_are_tag_and_dispatch_only():
             on = data.get(True)
         assert hot_triggers(on) == []
         assert "pull_request" not in yaml.dump(on)
+    assert (_cfg().get("platforms") or {}).get("tauri", {}).get("template") == "tauri.yml"
+    assert "electron-builder" not in (CONFIG_DIR / "release_workflows" / "tauri.yml").read_text(encoding="utf-8")
+
+
+def test_find_existing_pr_requires_argus_title_or_branch():
+    class _Client:
+        def get(self, *_a, **_k):
+            return [
+                {"title": "feat: release-prep notes", "head": {"ref": "docs/notes"}, "html_url": "u1"},
+                {"title": "chore(argus): release-prep", "head": {"ref": "chore/argus-release-prep"}, "html_url": "u2"},
+            ]
+
+    from argus.models import RepoRecord
+
+    repo = RepoRecord(full_name="o/r", owner="o", name="r")
+    hit = find_existing_pr(_Client(), repo, "chore/argus-release-prep")
+    assert hit and hit["html_url"] == "u2"
 
 
 def test_plan_omits_macos_on_private_desktop():
