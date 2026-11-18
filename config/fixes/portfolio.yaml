@@ -139,6 +139,28 @@ fixes:
     profiles: [generic, edward]
     resolution_ttl_days: 30
 
+  - id: SEC-DEPENDABOT-ALERT-PAUSE-RISK
+    class: human
+    title: Push or park before Dependabot alerts pause on inactivity
+    why: >
+      GitHub pauses Dependabot alerts after ~1 year with no activity (a push
+      re-enables them). Flag repos idle ≥300 days while alerts are enabled.
+    applies_when: >
+      deps.get('dependabot_alert_pause_risk') is True
+      and deps.get('vulnerability_alerts_enabled') is True
+      and repo.get('status') in ('active', 'shipped', 'experimental')
+    phase: 2
+    depends_on: []
+    confidence: high
+    auto_safe: false
+    human_steps: |
+      1. Open the repo on GitHub. Prefer a real maintenance push (deps, docs, CI).
+      2. Or park/archive if the project is done (`argus park owner/repo` / Settings → Archive).
+      3. Re-run Argus; SEC-DEPENDABOT-ALERT-PAUSE-RISK clears when days_since_push < 300.
+    gate: "deps.dependabot_alert_pause_risk is false, or vulnerability alerts intentionally off"
+    profiles: [generic, edward]
+    resolution_ttl_days: 30
+
   - id: SEC-CODEQL
     class: agent
     title: Turn on CodeQL / default code scanning
