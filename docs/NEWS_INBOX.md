@@ -58,3 +58,16 @@ A Cursor planning agent should review these items and fold the useful ones into 
 - [x] Add a hygiene rule that flags `on: pull_request_target` in public repo workflows — GitHub blocks these runs by default from Dec 2, so the fleet scan should catch any use (and any that sneak back in) and point to the pull_request fix. Label: `[AGENT][LOCAL]` · Priority: P2 · https://github.blog/changelog/2026-11-02-pull_request_target-blocked-by-default-december-2/ (synced to BUILD_PLAN)
 - [x] Update Git to 2.56.1+ on dev PCs and WSL, and have Argus flag hosts below the patched version — A recursive clone of a hostile repo can run code on unpatched Git, and Argus clones many repos. Label: `[HUMAN][PC]` · Priority: P2 · https://github.blog/open-source/git/git-security-vulnerabilities-announced-7/ (synced to BUILD_PLAN)
 - [ ] Consider a saved, schema-bound fan-out script for per-repo gated agents — Antigravity's reviewable workflow pattern could bound Argus's per-repo agent runs with checked JSON results. Label: `[AGENT][LOCAL]` · Priority: P3 · https://antigravity.google/docs/dynamic-workflows/
+
+## 2026-11-18
+
+Catch-up for Nov 17–18 (the daily brief did not run those mornings).
+
+**News and updates**
+
+- Both `pull_request_target` brownouts (Nov 9 and Nov 16) have passed, and MultiAppShare-'s `.github/workflows/pr-title.yml` still uses `pull_request_target`. The default block becomes permanent on Dec 2. [source](https://github.blog/changelog/2026-11-02-pull_request_target-blocked-by-default-december-2/)
+- Unauthorized PyPI releases 1.26.1 and 1.26.2 of Microsoft's `agent-framework` (Nov 17, now removed) dropped a `.pth` hook that stole env secrets, credential files, and Azure/GitHub OIDC tokens on every Python start. Pin to 1.26.0 or don't install it; treat any hit as compromised. [source](https://www.wiz.io/blog/malicious-version-of-microsofts-agent-framework-published-to-pypi) · [uv 0.13.9](https://github.com/astral-sh/uv/releases/tag/0.13.9) rejects wheels advertised under a different package name.
+
+**Tasks for the planning agent**
+
+- [x] Add a fleet check for agent-framework 1.26.1/1.26.2 and unexpected .pth startup hooks — The malicious wheels ran a credential stealer on every Python start, and Argus should flag this package and stray site-packages hooks across the fleet. Label: `[AGENT][LOCAL]` · Priority: P2 · https://www.wiz.io/blog/malicious-version-of-microsofts-agent-framework-published-to-pypi (synced to BUILD_PLAN)

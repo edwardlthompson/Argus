@@ -68,12 +68,13 @@ _No template gaps; Argus is a product child (see `docs/PARENT_GAP_LIST.md`)._
 Standing queue for This Computer. Rows: `🔲 [AGENT][LOCAL] … — scope: path`. `/build` claims these only.
 
 <!-- local-agent-lane:begin -->
-- ✅ [AGENT][LOCAL] Flag repos at risk of Dependabot alert pause — scope: argus/signals/ (news P1, 2026-11-13) https://github.blog/changelog/2026-11-10-dependabot-alerts-will-pause-on-inactive-repositories
+- 🔲 [AGENT][LOCAL] Flag repos at risk of Dependabot alert pause — scope: argus/signals/ (news P1, 2026-11-13) https://github.blog/changelog/2026-11-10-dependabot-alerts-will-pause-on-inactive-repositories
 - 🔲 [AGENT][LOCAL] Add a check for unpinned MCP/agent npm packages — scope: config/fixes/ (news P2, 2026-11-13) https://github.com/advisories/GHSA-72xc-q3v8-7grp
 - 🔲 [AGENT][LOCAL] Audit the repo for wfx-loot IOCs — scope: .github/ (news P1, 2026-11-14) https://blog.gitguardian.com/wfx-loot-a-ci-secret-stealer-pushed-with-stolen-github-credentials/
 - 🔲 [AGENT][LOCAL] Add a fleet rule flagging wfx-loot IOCs and new npm lifecycle hooks — scope: config/fixes/ (news P2, 2026-11-14) https://blog.gitguardian.com/wfx-loot-a-ci-secret-stealer-pushed-with-stolen-github-credentials/
 - 🔲 [AGENT][LOCAL] Propagate a "never paste secrets into agent chats" AGENTS.md rule to child repos — scope: argus/rules_sync.py (news P2, 2026-11-15) https://cursor.com/blog/security-incident-update
 - 🔲 [AGENT][LOCAL] Add a hygiene rule that flags `on: pull_request_target` in public repo workflows — scope: config/fixes/ (news P2, 2026-11-16) https://github.blog/changelog/2026-11-02-pull_request_target-blocked-by-default-december-2/
+- 🔲 [AGENT][LOCAL] Add a fleet check for agent-framework 1.26.1/1.26.2 and unexpected .pth startup hooks — scope: config/fixes/ (news P2, 2026-11-18) https://www.wiz.io/blog/malicious-version-of-microsofts-agent-framework-published-to-pypi
 <!-- local-agent-lane:end -->
 
 ### Cloud agent (Cursor Cloud)
