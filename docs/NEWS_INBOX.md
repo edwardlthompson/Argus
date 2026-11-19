@@ -71,3 +71,17 @@ Catch-up for Nov 17–18 (the daily brief did not run those mornings).
 **Tasks for the planning agent**
 
 - [x] Add a fleet check for agent-framework 1.26.1/1.26.2 and unexpected .pth startup hooks — The malicious wheels ran a credential stealer on every Python start, and Argus should flag this package and stray site-packages hooks across the fleet. Label: `[AGENT][LOCAL]` · Priority: P2 · https://www.wiz.io/blog/malicious-version-of-microsofts-agent-framework-published-to-pypi (synced to BUILD_PLAN)
+
+## 2026-11-19
+
+**News and updates**
+
+- Update on the agent-framework PyPI compromise: Wiz ties the malicious uploads to a stolen Microsoft ESRP release-signing certificate, and a same-day PyPI account was listed on 14 Microsoft projects (including Semantic Kernel and AutoGen). The bad wheels were live 39 minutes (427 downloads); 1.26.2 also requested GitHub Actions/Azure OIDC tokens, so treat them as exposed for workflows with `id-token: write`. No repo here depends on semantic-kernel or autogen; the existing P2s still apply. [source](https://sxz.io/microsoft-agent-framework-pypi-credential-stealer-esrp-certificate-14-projects/)
+- microsoft/onnxruntime and related repos went private (404) on Nov 17 during a malicious-content investigation, a live example of a dependency's source, tags and release assets vanishing without notice. [audit write-up](https://dev.to/karmabox/microsoftonnxruntime-is-404-here-is-the-audit-we-ran-on-our-own-pipeline-1530)
+- GitHub CLI v2.105.0 adds `gh event listen` (preview, needs the Event Streams waitlist): it waits for PR events such as reviews, head changes, conflicts and completed check suites instead of polling. [source](https://github.blog/changelog/2026-11-18-wait-for-pull-request-events-with-github-cli)
+
+**Tasks for the planning agent**
+
+- [ ] When finishing the open agent-framework fleet check, also flag any Microsoft-published PyPI package (semantic-kernel, autogen-*, agent-framework-*) with a release after 2026-11-17 — the signing path was compromised, not just one package, until Microsoft closes the investigation. Label: `[AGENT][LOCAL]` · Priority: P3 · https://sxz.io/microsoft-agent-framework-pypi-credential-stealer-esrp-certificate-14-projects/
+- [ ] Add an Argus lineage signal for fleet repos whose workflows/scripts fetch GitHub repos or release URLs that now return 404 (`uses:` actions, `releases/download` URLs, submodules) — a vanished upstream breaks builds silently, and Argus already scores lineage. Label: `[AGENT][LOCAL]` · Priority: P3 · https://dev.to/karmabox/microsoftonnxruntime-is-404-here-is-the-audit-we-ran-on-our-own-pipeline-1530
+- [ ] Prototype an event-driven wait for Dependabot/YOLO merges with `gh event listen --timeout`, falling back to the check-runs poll loop — fewer API calls and less runner time, and Actions minutes run out fast. Label: `[AGENT][LOCAL]` · Priority: P3 · https://github.blog/changelog/2026-11-18-wait-for-pull-request-events-with-github-cli
