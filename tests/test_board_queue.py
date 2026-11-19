@@ -402,6 +402,63 @@ def test_legacy_only_driver_lifts_lane_rows_ahead_of_quoted_sprint():
     assert ensure_queue_visible(fixed, caps) == fixed
 
 
+def test_venue_comes_from_whichever_file_defines_the_row_regex():
+    child_old = OLD_MODEL + "\ndef parse_numbered_board(text):\n    pass\n"
+    child_new = NEW_MODEL + "\ndef parse_numbered_board(text):\n    pass\n"
+    assert caps_from_sources(model=None, child=child_old, parse=None).venue is False
+    assert caps_from_sources(model=None, child=child_new, parse=None).venue is True
+    hidden = "- 🔲 [AGENT][LOCAL] Media3 bump + signed APK release — scope: examples/android/\n"
+    caps = caps_from_sources(model=None, child=child_old, parse=SLIM_PARSE)
+    assert invisible_open_rows(hidden, caps)
+    fixed = ensure_queue_visible(hidden, caps)
+    assert "- 🔲 [AGENT] Media3 bump + signed APK release — scope: examples/android/" in fixed
+    assert any("Media3 bump" in task for task in frozen_slim(fixed, venue=False))
+
+
+def test_archive_history_is_not_revived():
+    board = """# Build Plan
+
+- 🔲 [AGENT] Live task — scope: app/
+
+## Archived Sprints
+
+- 🔲 [AGENT] Old open row that belongs in history — scope: old/
+"""
+    caps = ParserCaps(venue=False, reads_maintenance=False)
+    assert invisible_open_rows(board, caps) == []
+    out = ensure_queue_visible(board, caps)
+    live, _, archived = out.partition("## Archived Sprints")
+    assert "Live task" in live
+    assert "Old open row that belongs in history" in archived
+    assert "Old open row that belongs in history" not in live
+
+
+def test_unread_maintenance_row_moves_above_the_stop():
+    board = """# Build Plan
+
+<!-- local-agent-lane:begin -->
+_No local agent items._
+<!-- local-agent-lane:end -->
+
+## Ongoing Maintenance
+
+- 🔲 [AGENT] Weekly real task — scope: scripts/
+
+## Archive
+"""
+    blind = ParserCaps(venue=False, reads_maintenance=False)
+    out = ensure_queue_visible(board, blind)
+    assert out.index("Weekly real task") < out.index("## Ongoing Maintenance")
+    assert any("Weekly real task" in task for task in frozen_slim(out, venue=False))
+    assert invisible_open_rows(out, blind) == []
+
+    reader = ParserCaps(venue=False, reads_maintenance=True)
+    stayed = ensure_queue_visible(board, reader)
+    assert stayed.index("## Ongoing Maintenance") < stayed.index("Weekly real task")
+    assert any("Weekly real task" in task for task in child_picks(stayed, reader))
+    assert invisible_open_rows(board, reader) == []
+
+
 def test_ancient_parser_without_slim_queue_gets_a_playbook_row():
     board = """# Build Plan
 

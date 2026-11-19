@@ -34,6 +34,7 @@ class ParserCaps:
     stop_prefixes: tuple[str, ...] = _DEFAULT_STOPS
     has_slim: bool = True
     has_legacy: bool = True
+    reads_maintenance: bool = True
 
 
 def default_caps() -> ParserCaps:
@@ -56,7 +57,6 @@ def caps_from_sources(
     blobs = [blob for blob in (model, child, parse, sprint) if blob]
     if not blobs:
         return default_caps()
-    venue = _venue_supported(model) if model else True
     triggers = _legacy_triggers(blobs)
     joined = "\n".join(blobs)
     has_slim = "def parse_numbered_board" in joined or "def parse_board_queue" in joined
@@ -64,11 +64,12 @@ def caps_from_sources(
     if not has_slim and ("def parse_sprint_blocks" in joined or "parse_sprint_blocks(" in joined):
         has_legacy = True
     return ParserCaps(
-        venue=venue,
+        venue=_venue_supported(blobs),
         legacy_triggers=triggers,
         stop_prefixes=_stop_prefixes(blobs),
         has_slim=has_slim,
         has_legacy=has_legacy,
+        reads_maintenance=_reads_maintenance(blobs),
     )
 
 
@@ -87,12 +88,31 @@ def caps_from_root(root: Path) -> ParserCaps:
     )
 
 
-def _venue_supported(model: str) -> bool:
-    if re.search(r"LOCAL\|CLOUD", model):
-        return True
-    if "ROW_BULLET" in model or "ROW_NUMBERED" in model:
-        return False
-    return True
+def _venue_supported(blobs: list[str]) -> bool:
+    """True when some vendored row regex accepts ``[AGENT][LOCAL]``.
+
+    The regex is not always in ``build_sprint_model.py``. A copy that defines
+    ``ROW_BULLET`` without ``LOCAL|CLOUD`` does not accept a venue tag.
+    """
+    saw_rows = False
+    for blob in blobs:
+        if re.search(r"LOCAL\|CLOUD", blob):
+            return True
+        if "ROW_BULLET" in blob or "ROW_NUMBERED" in blob:
+            saw_rows = True
+    return not saw_rows
+
+
+def _reads_maintenance(blobs: list[str]) -> bool:
+    """True when the queue calls ``parse_maintenance_rows``, not merely defines it."""
+    for blob in blobs:
+        for line in blob.splitlines():
+            stripped = line.strip()
+            if stripped.startswith("def "):
+                continue
+            if "parse_maintenance_rows(" in stripped:
+                return True
+    return False
 
 
 def _legacy_triggers(blobs: list[str]) -> tuple[str, ...]:
@@ -188,10 +208,9 @@ def invisible_open_rows(text: str, caps: ParserCaps | None = None) -> list[str]:
     if not body:
         return []
     picked = set(child_picks(body, caps))
-    masked = re.sub(r"<details>.*?</details>", "", body, flags=re.S)
     missing: list[str] = []
-    for line in masked.splitlines():
-        if line.lstrip().startswith(">"):
+    for line, region in _regions(body):
+        if region in {"details", "archive"} or line.lstrip().startswith(">"):
             continue
         match = _CANDIDATE.match(line.strip())
         if match and match.group("task").strip() not in picked:
@@ -271,6 +290,8 @@ def _slim_tasks(text: str, caps: ParserCaps) -> list[str]:
         match = regex.match(line)
         if match and match.group("owner") in ("AGENT", "AUTO"):
             tasks.append(match.group("task").strip())
+    if not caps.reads_maintenance:
+        return tasks
     seen = set(tasks)
     for task in _maintenance_tasks(text, caps):
         if task not in seen:
@@ -490,27 +511,74 @@ def _break_stray_live_triggers(text: str, caps: ParserCaps) -> str:
     return rejoined + ("\n" if text.endswith("\n") else "")
 
 
+def _regions(text: str):
+    """Classify each line as live, lane, maint, archive, or details."""
+    in_details = False
+    in_lane = False
+    in_archive = False
+    in_maint = False
+    for line in text.splitlines():
+        if in_details:
+            region = "details"
+        elif in_lane:
+            region = "lane"
+        elif in_archive:
+            region = "archive"
+        elif in_maint:
+            region = "maint"
+        else:
+            region = "live"
+        yield line, region
+        if "<details>" in line:
+            in_details = True
+        if "local-agent-lane:begin" in line or "cloud-agent-lane:begin" in line:
+            in_lane = True
+        if "local-agent-lane:end" in line or "cloud-agent-lane:end" in line:
+            in_lane = False
+        if not in_details:
+            if line.startswith("## Archive"):
+                in_archive = True
+                in_maint = False
+            elif line.startswith("## Ongoing Maintenance"):
+                in_maint = True
+                in_archive = False
+            elif line.startswith("## ") and not line.startswith("### "):
+                in_archive = False
+                in_maint = False
+        if "</details>" in line:
+            in_details = False
+
+
 def _promote_after_stop(text: str, caps: ParserCaps) -> str:
+    """Move maintenance rows the parser will not read. Leave archive history."""
     stop = first_stop_offset(text, caps)
     if stop is None:
+        return text
+    reads = caps.reads_maintenance and caps.has_slim and not legacy_active(text, caps)
+    if reads:
         return text
     head, tail = text[:stop], text[stop:]
     kept: list[str] = []
     moved: list[str] = []
     in_details = False
     in_maint = False
-    # Slim mode reads the maintenance section on purpose. Legacy mode does not.
-    honor_maint = caps.has_slim and not legacy_active(text, caps)
+    in_archive = False
     for line in tail.splitlines():
         if "<details>" in line:
             in_details = True
-        if line.startswith("## Ongoing Maintenance"):
+        if line.startswith("## Archive"):
+            in_archive = True
+            in_maint = False
+        elif line.startswith("## Ongoing Maintenance"):
             in_maint = True
-        elif in_maint and line.startswith("## ") and not line.startswith("### "):
+            in_archive = False
+        elif line.startswith("## ") and not line.startswith("### "):
+            in_archive = False
             in_maint = False
         if (
-            not in_details
-            and not (honor_maint and in_maint)
+            in_maint
+            and not in_archive
+            and not in_details
             and not line.lstrip().startswith(">")
             and _CANDIDATE.match(line.strip())
         ):
@@ -594,9 +662,14 @@ def _adapt_unpicked(text: str, caps: ParserCaps) -> str:
     picked = set(child_picks(text, caps))
     changed = False
     lines: list[str] = []
-    for line in text.splitlines():
+    for line, region in _regions(text):
         match = _CANDIDATE.match(line.strip())
-        if match and match.group("task").strip() not in picked and not line.lstrip().startswith(">"):
+        if (
+            region != "archive"
+            and match
+            and match.group("task").strip() not in picked
+            and not line.lstrip().startswith(">")
+        ):
             rewritten = format_agent_line(line, caps)
             changed = changed or rewritten != line.strip()
             lines.append(rewritten)
