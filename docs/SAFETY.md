@@ -86,8 +86,9 @@ Portfolio boards are normalized toward agent-project-bootstrap `BUILD_PLAN_TEMPL
 
 | Fix | Class | Does |
 |-----|-------|------|
-| `BOARD-MARKERS` | `auto_safe` | Append missing marker lanes (`remaining-tally`, `local-agent-lane`, `cloud-agent-lane`, `open-prs-sync`, `template-gaps-sync`); fold `## News inbox (synced)` into lanes |
-| `BOARD-RESTRUCTURE` | `agent` | Rebuild divergent boards to APB shape; preserve every open task + completed history; root `BUILD_PLAN.md` when the board lived in `docs/` |
+| `BOARD-MARKERS` | `auto_safe` | Append missing marker lanes (`remaining-tally`, `local-agent-lane`, `cloud-agent-lane`, `open-prs-sync`, `template-gaps-sync`) before the first `## Archive` / `## Ongoing Maintenance` stop; fold `## News inbox (synced)` into lanes the child parser can read |
+| `BOARD-RESTRUCTURE` | `agent` | Rebuild divergent boards to APB shape; preserve every open task + completed history; quote the old board so it cannot trip legacy `/build`; root `BUILD_PLAN.md` when the board lived in `docs/` |
+| `BOARD-QUEUE-VISIBILITY` | `auto_safe` | Flag and repair open AGENT rows the child's vendored `/build` parser will not return (below the stop heading, venue tag the regex rejects, or a preserved board that forces legacy mode) |
 
 Locator: root `BUILD_PLAN.md`, else `docs/BUILD_PLAN.md`. Gates are executable (markers present). PRs on `chore/argus-*`. See [`YOLO.md`](YOLO.md).
 

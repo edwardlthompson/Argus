@@ -136,7 +136,7 @@ Steady state leftovers (digest / Steward only): brand artwork, park/archive judg
 | `BOARD-RESTRUCTURE` | Mechanical APB rebuild of divergent `BUILD_PLAN.md` (preserve open tasks; root board if it lived in `docs/`) |
 | `HUMAN-PARK-INACTIVE` / `HUMAN-ARCHIVE-JUDGMENT` | Digest only (never archive) |
 
-`BOARD-MARKERS` is `auto_safe` (append missing APB marker lanes + fold `## News inbox (synced)`). See [SAFETY.md](SAFETY.md) BUILD_PLAN format hygiene.
+`BOARD-MARKERS` is `auto_safe` (insert missing APB marker lanes before the parser stop heading + fold `## News inbox (synced)`). `BOARD-QUEUE-VISIBILITY` is `auto_safe` when a canonical board still has open rows that child's `/build` will not pick. See [SAFETY.md](SAFETY.md) BUILD_PLAN format hygiene.
 
 ## Prefer Argus autoload over Grok mutators
 

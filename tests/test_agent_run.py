@@ -39,4 +39,19 @@ def test_check_cursor_hooks_smoke():
 def test_build_sprint_status_prints_row(capsys):
     mod = _load_agent_run()
     assert mod.main(["build-sprint-status"]) == 0
-    assert capsys.readouterr().out.strip()
+    out = capsys.readouterr().out.strip()
+    assert "Dependabot alert pause" in out
+    assert "Standing queue" not in out
+    assert out.startswith("- 🔲 [AGENT][LOCAL]")
+
+
+def test_open_agent_task_line_skips_lane_description():
+    mod = _load_agent_run()
+    description = "Standing queue for This Computer. Rows: `🔲 [AGENT][LOCAL] … — scope: path`."
+    example = "Format: `🔲 [AGENT][LOCAL] Short task — scope: path`."
+    task = "- 🔲 [AGENT][LOCAL] Media3 bump + signed APK release — scope: examples/android/"
+    cloud = "- 🔲 [AGENT][CLOUD] Ship from a cloud lane — scope: cloud/"
+    assert not mod._open_agent_task_line(description)
+    assert not mod._open_agent_task_line(example)
+    assert mod._open_agent_task_line(task)
+    assert not mod._open_agent_task_line(cloud)
