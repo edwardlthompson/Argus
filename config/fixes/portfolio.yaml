@@ -35,13 +35,38 @@ fixes:
       Restructure BUILD_PLAN to agent-project-bootstrap BUILD_PLAN_TEMPLATE.md shape.
       1. Locate the board: root BUILD_PLAN.md, else docs/BUILD_PLAN.md.
       2. Keep every open 🔲/❌ task — never invent work. [AGENT] rows go in local-agent-lane
-         (add [LOCAL] if venue is missing). [HUMAN]/[ADB] go under Waiting on a person.
+         before the first "## Archive" / "## Ongoing Maintenance" heading. Add [LOCAL] only
+         when scripts/lib/build_sprint_model.py accepts a venue group; otherwise write
+         "[AGENT] " with a space and no venue tag. [HUMAN]/[ADB] go under Waiting on a person.
       3. Fold any "## News inbox (synced)" rows into those sections, then drop that heading.
-      4. Preserve completed history via COMPLETED_TASKS.md pointer (or quote ✅ rows). If the
-         board lived in docs/, write root BUILD_PLAN.md and leave docs/BUILD_PLAN.md as a pointer.
+      4. Preserve completed history via COMPLETED_TASKS.md pointer (or quote ✅ rows). Quote
+         the previous board so the substrings "## Child Repo Playbook" and "#### Sequential"
+         do not occur (they flip /build into legacy mode). If the board lived in docs/, write
+         root BUILD_PLAN.md and leave docs/BUILD_PLAN.md as a pointer.
       Required markers: remaining-tally, local-agent-lane, cloud-agent-lane, open-prs-sync,
       template-gaps-sync. Prefer PR on chore/argus-board-restructure. No force-push.
     gate: "test -f BUILD_PLAN.md && python -c \"from pathlib import Path; t=Path('BUILD_PLAN.md').read_text(encoding='utf-8'); assert all(m in t for m in ('remaining-tally','local-agent-lane','cloud-agent-lane','open-prs-sync','template-gaps-sync'))\""
+    profiles: [generic, edward]
+    resolution_ttl_days: 60
+
+  - id: BOARD-QUEUE-VISIBILITY
+    class: auto_safe
+    title: Make open BUILD_PLAN agent rows visible to /build
+    why: >
+      Child /build parsers stop at the first "## Archive" or "## Ongoing Maintenance"
+      heading, ignore [AGENT][LOCAL] when the vendored row regex requires "[AGENT] ",
+      and switch to legacy mode if "## Child Repo Playbook" or "#### Sequential"
+      appears anywhere — including a quoted previous board. Open rows past those
+      traps never run.
+    applies_when: >
+      board.get('queue_invisible') is True and
+      board.get('kind') == 'canonical' and
+      repo.get('status') in ('active', 'experimental', 'shipped')
+    phase: 3
+    depends_on: []
+    confidence: high
+    auto_safe: true
+    gate: "python -c \"import re; from pathlib import Path; p=Path('BUILD_PLAN.md') if Path('BUILD_PLAN.md').is_file() else Path('docs/BUILD_PLAN.md'); t=p.read_text(encoding='utf-8'); lines=t.splitlines(); stop=next((i for i,l in enumerate(lines) if l.startswith('## Archive') or l.startswith('## Ongoing Maintenance')), None); assert stop is None or all(i < stop for i,l in enumerate(lines) if 'local-agent-lane:begin' in l or 'cloud-agent-lane:begin' in l); quoted='\\n'.join(re.findall(r'<details>.*?</details>', t, flags=re.S)); assert '## Child Repo Playbook' not in quoted and '#### Sequential' not in quoted\""
     profiles: [generic, edward]
     resolution_ttl_days: 60
 

@@ -36,7 +36,7 @@ Weights, fixes, notifications, safety limits, and profiles live under `config/`.
 - **doctor** — validate token + config
 - **releases** — local REST release-freshness (`argus releases`); not part of `weekly.yml`
 
-`signals/board.py` classifies `BUILD_PLAN.md` (root, else `docs/BUILD_PLAN.md`) as canonical / partial / divergent / missing. Partial boards get `BOARD-MARKERS`; divergent boards get `BOARD-RESTRUCTURE`.
+`signals/board.py` classifies `BUILD_PLAN.md` (root, else `docs/BUILD_PLAN.md`) as canonical / partial / divergent / missing, and flags open agent rows the child's vendored `/build` parser will not return. Partial boards get `BOARD-MARKERS`; divergent boards get `BOARD-RESTRUCTURE`; canonical boards with an invisible queue get `BOARD-QUEUE-VISIBILITY`.
 
 ## Gates
 

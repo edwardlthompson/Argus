@@ -69,12 +69,27 @@ def _run_verify() -> int:
     return subprocess.call(cmd, cwd=str(ROOT))
 
 
+def _open_agent_task_line(line: str) -> bool:
+    """True for a real open local AGENT row, not a lane description or example."""
+    import re
+
+    stripped = line.strip()
+    if not re.match(r"^(?:[-*]|\d+[a-z]?[.)]|\|)\s", stripped):
+        return False
+    visible = re.sub(r"`[^`]*`", "", stripped)
+    if "🔲" not in visible or "[AGENT]" not in visible:
+        return False
+    if "[CLOUD]" in visible and "[LOCAL]" not in visible:
+        return False
+    return True
+
+
 def _next_build_plan_row() -> str:
     path = ROOT / "BUILD_PLAN.md"
     if not path.is_file():
         return "(no BUILD_PLAN.md)"
     for line in path.read_text(encoding="utf-8").splitlines():
-        if "🔲" in line and "[AGENT]" in line:
+        if _open_agent_task_line(line):
             return line.strip()
     return "(no open AGENT rows)"
 

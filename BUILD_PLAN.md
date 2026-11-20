@@ -24,7 +24,7 @@ Argus is the enforcer: multi-repo hygiene, scoring, gated apply, and (on the pri
 - Arming YOLO on public Argus
 - Requiring a GitHub payment card / paid Actions minutes
 - Inventing patches for red CI without a gate
-- Filing portfolio **findings** as BUILD_PLAN chores (product auto-clears them). Marker-lane / APB-format hygiene on target boards is a gated fix (`BOARD-MARKERS` / `BOARD-RESTRUCTURE`), not a finding punch list.
+- Filing portfolio **findings** as BUILD_PLAN chores (product auto-clears them). Marker-lane / APB-format hygiene on target boards is a gated fix (`BOARD-MARKERS` / `BOARD-RESTRUCTURE` / `BOARD-QUEUE-VISIBILITY`), not a finding punch list.
 
 ## Sequential — Continuous zero product
 
