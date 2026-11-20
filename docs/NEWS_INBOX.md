@@ -85,3 +85,13 @@ Catch-up for Nov 17–18 (the daily brief did not run those mornings).
 - [ ] When finishing the open agent-framework fleet check, also flag any Microsoft-published PyPI package (semantic-kernel, autogen-*, agent-framework-*) with a release after 2026-11-17 — the signing path was compromised, not just one package, until Microsoft closes the investigation. Label: `[AGENT][LOCAL]` · Priority: P3 · https://sxz.io/microsoft-agent-framework-pypi-credential-stealer-esrp-certificate-14-projects/
 - [ ] Add an Argus lineage signal for fleet repos whose workflows/scripts fetch GitHub repos or release URLs that now return 404 (`uses:` actions, `releases/download` URLs, submodules) — a vanished upstream breaks builds silently, and Argus already scores lineage. Label: `[AGENT][LOCAL]` · Priority: P3 · https://dev.to/karmabox/microsoftonnxruntime-is-404-here-is-the-audit-we-ran-on-our-own-pipeline-1530
 - [ ] Prototype an event-driven wait for Dependabot/YOLO merges with `gh event listen --timeout`, falling back to the check-runs poll loop — fewer API calls and less runner time, and Actions minutes run out fast. Label: `[AGENT][LOCAL]` · Priority: P3 · https://github.blog/changelog/2026-11-18-wait-for-pull-request-events-with-github-cli
+
+## 2026-11-20
+
+**News and updates**
+
+- Socket's "Hardening GitHub Actions Against Insider Threats" (part 2) covers stolen maintainer tokens rather than malicious PRs: phishing-resistant 2FA, no long-lived tokens, rulesets restricting who can change .github/workflows/**, Actions execution protections, OIDC trusted publishing, a "Restrict deletions on all branches" ruleset that blocks the cover-tracks step, and alerts on config events (deploy key added, ruleset relaxed, repo flipped public). GitGuardian's React2STEAL write-up shows hijacked accounts quietly gaining scan.yml workflows. [Socket](https://socket.dev/blog/hardening-github-actions-against-insider-threats) · [GitGuardian](https://blog.gitguardian.com/react2steal-hijacked-github-accounts-exploit-react2shell-and-publish-stolen-secrets/)
+
+**Tasks for the planning agent**
+
+- [ ] Add Argus signals for (a) default branches missing a ruleset with "Restrict deletions", (b) workflow files added or changed by anyone other than Edward/Dependabot/Release Please since the last scan, and (c) new deploy keys or visibility flips, and offer the deletion ruleset as an `auto_safe` fix — these are the cheap detections for a stolen-token takeover, and the whole fleet relies on one account. Label: `[AGENT][LOCAL]` · Priority: P3 · https://socket.dev/blog/hardening-github-actions-against-insider-threats
