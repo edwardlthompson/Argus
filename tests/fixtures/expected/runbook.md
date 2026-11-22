@@ -574,10 +574,14 @@ Custom boards cannot host News Bot lanes or venue tags. Restructure to BUILD_PLA
 Restructure BUILD_PLAN to agent-project-bootstrap BUILD_PLAN_TEMPLATE.md shape.
 1. Locate the board: root BUILD_PLAN.md, else docs/BUILD_PLAN.md.
 2. Keep every open 🔲/❌ task — never invent work. [AGENT] rows go in local-agent-lane
-   (add [LOCAL] if venue is missing). [HUMAN]/[ADB] go under Waiting on a person.
+   before the first "## Archive" / "## Ongoing Maintenance" heading. Add [LOCAL] only
+   when scripts/lib/build_sprint_model.py accepts a venue group; otherwise write
+   "[AGENT] " with a space and no venue tag. [HUMAN]/[ADB] go under Waiting on a person.
 3. Fold any "## News inbox (synced)" rows into those sections, then drop that heading.
-4. Preserve completed history via COMPLETED_TASKS.md pointer (or quote ✅ rows). If the
-   board lived in docs/, write root BUILD_PLAN.md and leave docs/BUILD_PLAN.md as a pointer.
+4. Preserve completed history via COMPLETED_TASKS.md pointer (or quote ✅ rows). Quote
+   the previous board so the substrings "## Child Repo Playbook" and "#### Sequential"
+   do not occur (they flip /build into legacy mode). If the board lived in docs/, write
+   root BUILD_PLAN.md and leave docs/BUILD_PLAN.md as a pointer.
 Required markers: remaining-tally, local-agent-lane, cloud-agent-lane, open-prs-sync,
 template-gaps-sync. Prefer PR on chore/argus-board-restructure. No force-push.
 

@@ -109,6 +109,7 @@ def _mechanical_ids_applied(workdir: Path, requested: set[str]) -> set[str]:
 def _mechanical_board_restructure(workdir: Path) -> bool:
     from argus.board_classify import locate_board_path
     from argus.board_normalize import restructure_divergent
+    from argus.board_queue import caps_from_root
 
     root = workdir / "BUILD_PLAN.md"
     docs = workdir / "docs" / "BUILD_PLAN.md"
@@ -120,6 +121,7 @@ def _mechanical_board_restructure(workdir: Path) -> bool:
         src.read_text(encoding="utf-8"),
         source_path=path,
         has_completed_tasks=(workdir / "COMPLETED_TASKS.md").is_file(),
+        caps=caps_from_root(workdir),
     )
     for rel, body in files.items():
         dest = workdir / rel

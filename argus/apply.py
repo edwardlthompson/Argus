@@ -244,13 +244,24 @@ def _locate_board(client: GitHubClient, plan: RepoPlan) -> tuple[str | None, str
     return path, (root if root is not None else docs)
 
 
+def _parser_caps(client: GitHubClient, plan: RepoPlan):
+    from argus.board_queue import caps_from_sources
+
+    return caps_from_sources(
+        model=_read_repo_text(client, plan, "scripts/lib/build_sprint_model.py"),
+        child=_read_repo_text(client, plan, "scripts/lib/build_sprint_child.py"),
+        parse=_read_repo_text(client, plan, "scripts/lib/build_sprint_parse.py"),
+        sprint=_read_repo_text(client, plan, "scripts/lib/build_sprint.py"),
+    )
+
+
 def _board_markers(client: GitHubClient, plan: RepoPlan, matched: MatchedFix) -> str:
     from argus.board_normalize import append_missing_markers
 
     path, text = _locate_board(client, plan)
     if not path or text is None:
         return f"board-missing:{plan.repo.full_name}"
-    updated = append_missing_markers(text)
+    updated = append_missing_markers(text, caps=_parser_caps(client, plan))
     if updated == text:
         return f"board-markers-ok:{plan.repo.full_name}"
     return _content_pr(
@@ -272,7 +283,12 @@ def _board_restructure(client: GitHubClient, plan: RepoPlan, matched: MatchedFix
     has_completed = _read_repo_text(client, plan, "COMPLETED_TASKS.md") is not None or (
         _read_repo_text(client, plan, "docs/COMPLETED_TASKS.md") is not None
     )
-    files = restructure_divergent(text, source_path=path, has_completed_tasks=has_completed)
+    files = restructure_divergent(
+        text,
+        source_path=path,
+        has_completed_tasks=has_completed,
+        caps=_parser_caps(client, plan),
+    )
     url = ""
     for fpath, body in files.items():
         url = _content_pr(
@@ -284,6 +300,25 @@ def _board_restructure(client: GitHubClient, plan: RepoPlan, matched: MatchedFix
             "chore(argus): normalize BUILD_PLAN to APB format",
         )
     return url or f"board-restructure:{plan.repo.full_name}"
+
+
+def _board_queue_visibility(client: GitHubClient, plan: RepoPlan, matched: MatchedFix) -> str:
+    from argus.board_queue import ensure_queue_visible
+
+    path, text = _locate_board(client, plan)
+    if not path or text is None:
+        return f"board-missing:{plan.repo.full_name}"
+    updated = ensure_queue_visible(text, _parser_caps(client, plan))
+    if updated == text:
+        return f"board-queue-ok:{plan.repo.full_name}"
+    return _content_pr(
+        client,
+        plan,
+        matched,
+        path,
+        updated,
+        "chore(argus): make BUILD_PLAN rows visible to /build",
+    )
 
 
 HANDLERS: dict[str, Handler] = {
@@ -303,6 +338,7 @@ HANDLERS: dict[str, Handler] = {
     "LINEAGE-VERSION-STALE": _lineage_version,
     "LINEAGE-MISSING-MARKERS": _lineage_markers,
     "BOARD-MARKERS": _board_markers,
+    "BOARD-QUEUE-VISIBILITY": _board_queue_visibility,
 }
 
 

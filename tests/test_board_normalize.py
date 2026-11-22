@@ -96,6 +96,33 @@ def test_restructure_preserves_open_and_writes_root():
     assert not missing_markers(root)
 
 
+def test_queue_visibility_fix_matches_canonical_invisible_board():
+    hidden = {
+        "repo": {
+            "full_name": "example/hidden-queue",
+            "status": "active",
+            "description": "Child",
+            "topics": ["python", "tool", "cli"],
+            "can_write": True,
+        },
+        "signals": _green_signals(
+            board={
+                "kind": "canonical",
+                "path": "BUILD_PLAN.md",
+                "missing_markers": [],
+                "has_news_inbox": False,
+                "docs_only": False,
+                "looks_apb": True,
+                "queue_invisible": True,
+            }
+        ),
+    }
+    plan = build_plans_from_fixtures([hidden])[0]
+    assert "BOARD-QUEUE-VISIBILITY" in {m.fix.id for m in plan.auto_fixes}
+    assert "BOARD-MARKERS" not in {m.fix.id for m in plan.auto_fixes}
+    assert "BOARD-RESTRUCTURE" not in {m.fix.id for m in plan.agent_fixes}
+
+
 def test_fixes_match_kinds():
     partial = {
         "repo": {

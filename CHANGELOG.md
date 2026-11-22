@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- **BUILD_PLAN queue visibility:** marker lanes are inserted before the first `## Archive` / `## Ongoing Maintenance` stop (so `## Archived Sprints` counts). Open agent rows are written as `[AGENT][LOCAL]` only when the child's vendored `build_sprint_model.py` accepts a venue tag; otherwise they are `[AGENT] ` rows that older parsers match. Preserved boards are quoted so `## Child Repo Playbook` / `#### Sequential` cannot flip `/build` into legacy mode. `BOARD-QUEUE-VISIBILITY` flags open rows the child parser still will not pick. Argus's own `build-sprint-status` skips the lane description line and returns a real task.
+
 ### Added
 
 - **Release freshness (local CLI):** `argus releases --dry-run` / `--open-prs` scans the portfolio over GitHub REST, flags missing/stale/incomplete releases, and can open tag-only (`v*` + `workflow_dispatch`) release-prep PRs. Not wired to `weekly.yml` or any Actions workflow. Private repos omit `macos-latest`. Report includes a minutes table of existing push/PR/schedule workflows (read-only). Config: `config/releases.yaml`. Docs: `docs/RELEASE_FRESHNESS.md`.

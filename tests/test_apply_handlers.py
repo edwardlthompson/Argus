@@ -28,5 +28,6 @@ def test_handlers_cover_core_auto_safe():
         "HYGIENE-SECURITY-MD",
         "LINEAGE-VERSION-STALE",
         "BOARD-MARKERS",
+        "BOARD-QUEUE-VISIBILITY",
     ):
         assert fid in HANDLERS
