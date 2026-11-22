@@ -7,6 +7,34 @@ from typing import Any
 from argus.github_client import GitHubClient, GitHubError
 from argus.models import RepoRecord
 
+_HOUSEKEEPING_WORKFLOWS = (
+    "release please",
+    "release",
+    "sync build_plan",
+    "auto-merge",
+    "queue release please",
+    "queue ready cursor",
+    "weekly health",
+    "weekly-health-check",
+    "pages build and deployment",
+)
+
+
+def _is_housekeeping_run(run: dict[str, Any]) -> bool:
+    name = str(run.get("name") or "").strip().lower()
+    return any(name == h or name.startswith(h) or h in name for h in _HOUSEKEEPING_WORKFLOWS)
+
+
+def _pick_ci_run(items: list[dict[str, Any]]) -> dict[str, Any] | None:
+    if not items:
+        return None
+    completed = [r for r in items if (r.get("status") or "").lower() == "completed" or r.get("conclusion")]
+    pool = completed or items
+    for run in pool:
+        if not _is_housekeeping_run(run):
+            return run
+    return pool[0]
+
 
 def collect(client: GitHubClient, repo: RepoRecord) -> dict[str, Any]:
     has_workflows = False
@@ -25,12 +53,13 @@ def collect(client: GitHubClient, repo: RepoRecord) -> dict[str, Any]:
     try:
         runs = client.get(
             f"/repos/{repo.owner}/{repo.name}/actions/runs",
-            params={"per_page": 1, "branch": repo.default_branch},
+            params={"per_page": 10, "branch": repo.default_branch},
         )
         items = runs.get("workflow_runs") or []
-        if items:
-            latest_conclusion = items[0].get("conclusion")
-            created = items[0].get("created_at")
+        picked = _pick_ci_run(items)
+        if picked:
+            latest_conclusion = picked.get("conclusion")
+            created = picked.get("created_at")
             if created:
                 from datetime import UTC, datetime
 

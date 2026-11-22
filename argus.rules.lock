@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "tree_sha256": "6b725df949d9dea6ce66acef1bbaa491146a02ebf2e922245da8076d404e05d1",
-  "synced_at": "2026-11-22T18:24:49.362733+00:00",
+  "tree_sha256": "11fb0ec462d74b009f207715c0abb1316c9322308a60a6d6f1c7f752942176a0",
+  "synced_at": "2026-11-22T20:46:24.689726+00:00",
   "parent": "edwardlthompson/agent-project-bootstrap",
   "ref": "v1.13.0",
   "mode": "pinned",
