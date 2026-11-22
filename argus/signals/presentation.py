@@ -2,21 +2,34 @@
 
 from __future__ import annotations
 
+import base64
 from typing import Any
 
 from argus.github_client import GitHubClient, GitHubError
 from argus.models import RepoRecord
 
+GENERIC_TOPICS = frozenset(
+    {"foss", "mit", "open-source", "opensource", "github", "repo", "project"}
+)
 
-def _generic_topics() -> frozenset[str]:
-    from argus.config_loader import load_yaml
-    from argus.paths import CONFIG_DIR
 
-    path = CONFIG_DIR / "topics.yaml"
-    if path.exists():
-        data = load_yaml(path) or {}
-        return frozenset(str(t).lower() for t in (data.get("generic") or []))
-    return frozenset({"foss", "mit", "open-source", "opensource", "github", "repo", "project"})
+def _readme_has_what_not(readme: Any) -> bool:
+    if not isinstance(readme, dict):
+        return False
+    if readme.get("has_what_not_section"):
+        return True
+    content = readme.get("content")
+    if isinstance(content, str) and content:
+        try:
+            text = (
+                base64.b64decode(content).decode("utf-8", errors="replace")
+                if readme.get("encoding") == "base64"
+                else content
+            )
+            return "what this is not" in text.lower()
+        except ValueError:
+            return False
+    return False
 
 
 def collect(client: GitHubClient, repo: RepoRecord) -> dict[str, Any]:
@@ -28,23 +41,16 @@ def collect(client: GitHubClient, repo: RepoRecord) -> dict[str, Any]:
             topics = list(data.get("names") or [])
         except GitHubError:
             topics = []
-    banned = _generic_topics()
-    specific = [t for t in topics if t.lower() not in banned]
+    specific = [t for t in topics if t.lower() not in GENERIC_TOPICS]
     has_readme = False
+    has_what_not = False
     try:
-        client.get(f"/repos/{repo.owner}/{repo.name}/readme")
+        readme = client.get(f"/repos/{repo.owner}/{repo.name}/readme")
         has_readme = True
+        has_what_not = _readme_has_what_not(readme)
     except GitHubError:
         has_readme = False
-    has_what_not = False
-    if has_readme:
-        try:
-            readme = client.get(f"/repos/{repo.owner}/{repo.name}/readme")
-            # GitHub returns base64 content; presence check via download_url fetch is heavy —
-            # treat missing field as unknown/false unless callers set it in fixtures.
-            has_what_not = bool(readme.get("has_what_not_section"))
-        except GitHubError:
-            has_what_not = False
+        has_what_not = False
     return {
         "description": desc,
         "description_len": len(desc),
