@@ -29,7 +29,11 @@ def collect(client: GitHubClient, repo: RepoRecord) -> dict[str, Any]:
             )
             codeql_likely = True
         except GitHubError:
-            codeql_likely = False
+            try:
+                ds = client.get(f"/repos/{repo.owner}/{repo.name}/code-scanning/default-setup")
+                codeql_likely = isinstance(ds, dict) and ds.get("state") == "configured"
+            except GitHubError:
+                codeql_likely = False
 
     return {
         "secret_scanning_enabled": secret_scanning,

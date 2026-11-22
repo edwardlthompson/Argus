@@ -16,221 +16,606 @@
       --good: #3dd68c;
       --warn: #e6b84d;
       --bad: #f07178;
-      --card: rgba(18, 28, 44, 0.72);
+      --card: rgba(18, 28, 44, 0.78);
+      --card-hover: rgba(24, 38, 60, 0.92);
       --track: #0a101a;
+      --chip: #182538;
+      --plot-fill: #4aa3f0;
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
       color: var(--ink);
-      font-family: "Source Sans 3", "Segoe UI", sans-serif;
+      font-family: "Source Sans 3", "Segoe UI", system-ui, -apple-system, sans-serif;
       background:
         radial-gradient(ellipse 80% 50% at 10% -10%, #1a3a5c 0%, transparent 55%),
         radial-gradient(ellipse 60% 40% at 90% 0%, #1e2d4a 0%, transparent 50%),
         linear-gradient(180deg, var(--bg1), var(--bg0));
       min-height: 100vh;
     }
-    .wrap { max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.25rem 3.5rem; }
+    .wrap { max-width: 1120px; margin: 0 auto; padding: 2.25rem 1.25rem 3.5rem; }
+    .hero { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 1rem; margin-bottom: 1rem; }
     .hero h1 {
-      font-family: "Fraunces", "Georgia", serif;
-      font-size: clamp(2.4rem, 6vw, 3.4rem);
+      font-family: "Fraunces", Georgia, serif;
+      font-size: clamp(2.2rem, 5vw, 3.1rem);
       letter-spacing: -0.03em;
-      margin: 0 0 0.4rem;
+      margin: 0 0 0.35rem;
       line-height: 1.05;
     }
-    .hero p { color: var(--muted); margin: 0 0 1.25rem; max-width: 36rem; }
+    .hero p { color: var(--muted); margin: 0; font-size: 0.95rem; }
+    .hero-links { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+    .hero-links a {
+      font-size: 0.82rem;
+      color: var(--muted);
+      text-decoration: none;
+      border: 1px solid var(--line);
+      background: var(--card);
+      padding: 0.38rem 0.7rem;
+      border-radius: 6px;
+    }
+    .hero-links a:hover { color: var(--ink); border-color: var(--accent); }
     .banner {
       border-left: 3px solid var(--accent);
       background: rgba(74, 163, 240, 0.08);
-      padding: 0.7rem 0.9rem;
-      margin: 0 0 1.5rem;
+      padding: 0.65rem 0.9rem;
+      margin: 0 0 1.25rem;
       color: var(--muted);
-      font-size: 0.95rem;
+      font-size: 0.9rem;
+      border-radius: 0 6px 6px 0;
     }
+
+    /* Top Operational KPI Strip */
     .stats {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
       gap: 0.75rem;
-      margin: 1.5rem 0 2rem;
+      margin: 1.25rem 0 1.75rem;
     }
     .stat {
       background: var(--card);
       border: 1px solid var(--line);
-      border-radius: 4px;
-      padding: 0.9rem 1rem;
+      border-radius: 8px;
+      padding: 0.95rem 1.05rem;
+      position: relative;
+      overflow: hidden;
     }
-    .stat .n { font-size: 1.55rem; font-weight: 700; }
-    .stat .l { color: var(--muted); font-size: 0.8rem; }
+    .stat::before {
+      content: "";
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: var(--accent);
+    }
+    .stat.tone-good::before { background: var(--good); }
+    .stat.tone-warn::before { background: var(--warn); }
+    .stat.tone-bad::before { background: var(--bad); }
+    .stat .n { font-size: 1.7rem; font-weight: 700; line-height: 1.15; font-variant-numeric: tabular-nums; }
+    .stat.tone-good .n { color: var(--good); }
+    .stat.tone-warn .n { color: var(--warn); }
+    .stat.tone-bad .n { color: var(--bad); }
+    .stat .l { color: var(--muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.25rem; }
+    .stat .sub { color: var(--muted); font-size: 0.76rem; margin-top: 0.3rem; font-variant-numeric: tabular-nums; }
+
     h2 {
       font-family: "Fraunces", Georgia, serif;
-      font-size: 1.35rem;
-      margin: 2rem 0 0.85rem;
+      font-size: 1.32rem;
+      margin: 2rem 0 0.8rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .section-note { color: var(--muted); font-size: 0.88rem; margin: -0.45rem 0 0.9rem; }
+
+    /* Scorecard Gauges */
+    .gauges {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 0.85rem;
+    }
+    .gauge-card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 1.1rem 1.15rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .ring { width: 84px; height: 84px; flex-shrink: 0; }
+    .ring svg { width: 84px; height: 84px; transform: rotate(-90deg); }
+    .ring circle.bg { fill: none; stroke: var(--track); stroke-width: 8; }
+    .ring circle.fg { fill: none; stroke-width: 8; stroke-linecap: round; }
+    .ring circle.tone-good { stroke: var(--good); }
+    .ring circle.tone-warn { stroke: var(--warn); }
+    .ring circle.tone-bad { stroke: var(--bad); }
+    .gauge-meta .pct { font-size: 1.55rem; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
+    .gauge-meta .title { font-size: 0.92rem; font-weight: 600; margin-top: 0.15rem; }
+    .gauge-meta .sub { font-size: 0.8rem; color: var(--muted); margin-top: 0.2rem; }
+
+    /* Target First Queue */
+    .targets {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+      gap: 0.85rem;
+    }
+    .target-card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 0.95rem 1.05rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+    .target-card.has-red { border-color: rgba(240, 113, 120, 0.55); }
+    .target-head { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
+    .target-rank {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 1.65rem; height: 1.65rem; border-radius: 999px;
+      background: var(--chip); color: var(--accent); font-weight: 700; font-size: 0.8rem;
+      flex-shrink: 0;
+    }
+    .target-name { font-weight: 650; font-size: 1rem; color: var(--ink); text-decoration: none; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .target-name:hover { color: var(--accent); text-decoration: underline; }
+    .pills { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+    .pill {
+      display: inline-block;
+      font-size: 0.74rem;
+      font-weight: 600;
+      padding: 0.18rem 0.52rem;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+    .pill-good { background: rgba(61, 214, 140, 0.14); color: var(--good); border-color: rgba(61, 214, 140, 0.32); }
+    .pill-warn { background: rgba(230, 184, 77, 0.14); color: var(--warn); border-color: rgba(230, 184, 77, 0.32); }
+    .pill-bad  { background: rgba(240, 113, 120, 0.16); color: var(--bad);  border-color: rgba(240, 113, 120, 0.38); }
+    .pill-info { background: rgba(74, 163, 240, 0.14); color: var(--accent); border-color: rgba(74, 163, 240, 0.32); }
+    .pill-muted { background: var(--chip); color: var(--muted); border-color: var(--line); }
+    .target-links { display: flex; gap: 0.65rem; font-size: 0.8rem; margin-top: auto; padding-top: 0.25rem; border-top: 1px solid rgba(36, 50, 71, 0.6); }
+    .target-links a { color: var(--accent); text-decoration: none; }
+    .target-links a:hover { text-decoration: underline; }
+    .all-clear {
+      background: rgba(61, 214, 140, 0.09);
+      border: 1px solid rgba(61, 214, 140, 0.35);
+      border-radius: 8px;
+      padding: 1rem 1.2rem;
+      color: var(--good);
       font-weight: 600;
     }
+
+    /* Charts & Panels */
     .charts {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
       gap: 0.85rem;
     }
     .panel {
       background: var(--card);
       border: 1px solid var(--line);
-      border-radius: 4px;
-      padding: 1rem 1.1rem;
+      border-radius: 8px;
+      padding: 1rem 1.15rem;
     }
     .panel h3 {
-      margin: 0 0 0.75rem;
+      margin: 0 0 0.8rem;
       font-size: 0.78rem;
       text-transform: uppercase;
       letter-spacing: 0.06em;
       color: var(--muted);
       font-weight: 650;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
-    .hbar { display: grid; gap: 0.4rem; }
+    .hbar { display: grid; gap: 0.48rem; }
     .hbar-row {
       display: grid;
-      grid-template-columns: minmax(4rem, 30%) 1fr auto;
-      gap: 0.45rem;
+      grid-template-columns: minmax(6.5rem, 34%) 1fr auto;
+      gap: 0.55rem;
       align-items: center;
       font-size: 0.86rem;
     }
-    .track { height: 9px; background: var(--track); border-radius: 999px; overflow: hidden; }
-    .track > i { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
-    .val { color: var(--muted); font-variant-numeric: tabular-nums; min-width: 2rem; text-align: right; }
-    .hist { display: flex; align-items: flex-end; gap: 0.4rem; height: 120px; border-bottom: 1px solid var(--line); }
-    .hist-col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; gap: 0.3rem; }
-    .hist-col .col {
-      width: 100%; max-width: 36px; min-height: 4px;
-      background: linear-gradient(180deg, #7ab8f5, var(--accent));
-      border-radius: 4px 4px 1px 1px;
+    .hbar-row a { color: var(--ink); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .hbar-row a:hover { color: var(--accent); }
+    .track { height: 10px; background: var(--track); border-radius: 999px; overflow: hidden; display: flex; }
+    .track > i { display: block; height: 100%; background: var(--accent); }
+    .seg-issues { background: var(--bad) !important; }
+    .seg-fixes  { background: var(--warn) !important; }
+    .seg-prs    { background: var(--accent) !important; }
+    .val { color: var(--muted); font-variant-numeric: tabular-nums; min-width: 2.2rem; text-align: right; font-size: 0.82rem; }
+    .legend-inline { display: flex; gap: 0.85rem; font-size: 0.74rem; color: var(--muted); margin-top: 0.75rem; flex-wrap: wrap; }
+    .swatch { width: 0.6rem; height: 0.6rem; border-radius: 2px; display: inline-block; margin-right: 0.3rem; vertical-align: middle; }
+    .swatch-issues { background: var(--bad); }
+    .swatch-fixes { background: var(--warn); }
+    .swatch-prs { background: var(--accent); }
+
+    /* Filterable Fleet Table */
+    .fleet-controls {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.85rem;
     }
-    .hist-col .lab { color: var(--muted); font-size: 0.7rem; }
-    .hist-col .cnt { font-size: 0.75rem; font-weight: 650; }
-    .donut-wrap { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; }
-    .donut {
-      width: 120px; height: 120px; border-radius: 50%; flex-shrink: 0;
-      background: conic-gradient(
-        var(--bad) 0 calc(var(--p-high) * 1%),
-        var(--warn) calc(var(--p-high) * 1%) calc((var(--p-high) + var(--p-medium)) * 1%),
-        var(--good) calc((var(--p-high) + var(--p-medium)) * 1%) 100%
-      );
-      position: relative;
+    .filter-pills { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+    .filter-btn {
+      background: var(--chip);
+      color: var(--muted);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 0.34rem 0.78rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
     }
-    .donut::after {
-      content: ""; position: absolute; inset: 28%; border-radius: 50%;
-      background: #121c2c; border: 1px solid var(--line);
+    .filter-btn:hover { color: var(--ink); border-color: var(--accent); }
+    .filter-btn.active { background: rgba(74, 163, 240, 0.18); color: var(--accent); border-color: var(--accent); }
+    .search-box {
+      background: var(--track);
+      color: var(--ink);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 0.4rem 0.75rem;
+      font-size: 0.85rem;
+      min-width: 210px;
     }
-    .legend { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.35rem; font-size: 0.88rem; }
-    .swatch { width: 0.65rem; height: 0.65rem; border-radius: 2px; display: inline-block; margin-right: 0.35rem; }
-    .swatch-high { background: var(--bad); }
-    .swatch-medium { background: var(--warn); }
-    .swatch-good { background: var(--good); }
-    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-    th, td { text-align: left; padding: 0.5rem 0.35rem; border-bottom: 1px solid var(--line); }
-    th { color: var(--muted); font-weight: 600; }
-    footer { margin-top: 2.5rem; color: var(--muted); font-size: 0.82rem; }
+    .search-box:focus { outline: none; border-color: var(--accent); }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    th, td { text-align: left; padding: 0.58rem 0.45rem; border-bottom: 1px solid var(--line); vertical-align: middle; }
+    th { color: var(--muted); font-weight: 600; font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    tbody tr:hover { background: rgba(74, 163, 240, 0.05); }
+    td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+    td a { color: var(--ink); text-decoration: none; font-weight: 600; }
+    td a:hover { color: var(--accent); text-decoration: underline; }
+    .muted-zero { color: #52627a; }
+    .ci-dot { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.8rem; font-weight: 600; }
+    .ci-dot i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .ci-passing { color: var(--good); }
+    .ci-passing i { background: var(--good); }
+    .ci-failing { color: var(--bad); }
+    .ci-failing i { background: var(--bad); }
+    .ci-none { color: var(--muted); }
+    .ci-none i { background: #52627a; }
+
+    footer { margin-top: 2.5rem; color: var(--muted); font-size: 0.82rem; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.5rem; }
     a { color: var(--accent); }
-    .empty { color: var(--muted); margin: 0; }
+    .empty { color: var(--muted); margin: 0; font-size: 0.88rem; }
   </style>
 </head>
 <body>
   <div class="wrap">
     <header class="hero">
-      <h1>Argus</h1>
-      <p>edwardlthompson portfolio health · 2026-11-12 · mode report</p>
-      <div class="banner">Public dashboard — metrics only. Per-repo security findings are never listed here.</div>
-      
+      <div>
+        <h1>Argus</h1>
+        <p>edwardlthompson portfolio health · 2026-11-22 · mode report</p>
+      </div>
+      <div class="hero-links">
+        <a href="health-infographic.svg">Infographic SVG</a>
+        <a href="health-infographic.html">Snapshot Summary</a>
+      </div>
     </header>
 
+    <div class="banner">Public dashboard — metrics only. Per-repo security findings are never listed here.</div>
+    
+
+    <!-- Top Operational KPI Strip -->
     <div class="stats">
-      <div class="stat"><div class="n">27</div><div class="l">Repos</div></div>
-      <div class="stat"><div class="n">0</div><div class="l">Open fixes</div></div>
-      <div class="stat"><div class="n">15.0</div><div class="l">Mean attention</div></div>
-      <div class="stat"><div class="n">0</div><div class="l">Human class</div></div>
-      <div class="stat"><div class="n">0</div><div class="l">Auto-safe</div></div>
-      <div class="stat"><div class="n">0</div><div class="l">Agent class</div></div>
+      <div class="stat">
+        <div class="n">31</div>
+        <div class="l">Active Repos</div>
+        <div class="sub">31 total</div>
+      </div>
+      <div class="stat tone-good">
+        <div class="n">96.8%</div>
+        <div class="l">CI Health</div>
+        <div class="sub">30/31 passing · 1 failing</div>
+      </div>
+      <div class="stat tone-warn">
+        <div class="n">2</div>
+        <div class="l">Open Issues</div>
+        <div class="sub">PRs excluded</div>
+      </div>
+      <div class="stat tone-warn">
+        <div class="n">77</div>
+        <div class="l">Open PRs</div>
+        <div class="sub">45 dep · 15 rel · 17 feat</div>
+      </div>
+      <div class="stat tone-warn">
+        <div class="n">10</div>
+        <div class="l">Open Fixes</div>
+        <div class="sub">4 auto · 3 agent · 3 human</div>
+      </div>
+      <div class="stat tone-warn">
+        <div class="n">77.4%</div>
+        <div class="l">Hygiene Clean</div>
+        <div class="sub">24/31 repos at 0 fixes</div>
+      </div>
     </div>
 
-    <h2>Measurements</h2>
+    <!-- Portfolio Health Scorecard -->
+    <h2>Portfolio Health Scorecard</h2>
+    <div class="gauges">
+      
+      <div class="gauge-card">
+        <div class="ring" aria-label="CI Pass Rate 96.8%">
+          <svg viewBox="0 0 84 84">
+            <circle class="bg" cx="42" cy="42" r="36"></circle>
+            <circle class="fg tone-good" cx="42" cy="42" r="36"
+              stroke-dasharray="226.2"
+              stroke-dashoffset="7.2"></circle>
+          </svg>
+        </div>
+        <div class="gauge-meta">
+          <div class="pct">96.8%</div>
+          <div class="title">CI Pass Rate</div>
+          <div class="sub">30/31 workflows green</div>
+        </div>
+      </div>
+      
+      <div class="gauge-card">
+        <div class="ring" aria-label="Hygiene Clean 77.4%">
+          <svg viewBox="0 0 84 84">
+            <circle class="bg" cx="42" cy="42" r="36"></circle>
+            <circle class="fg tone-warn" cx="42" cy="42" r="36"
+              stroke-dasharray="226.2"
+              stroke-dashoffset="51.1"></circle>
+          </svg>
+        </div>
+        <div class="gauge-meta">
+          <div class="pct">77.4%</div>
+          <div class="title">Hygiene Clean</div>
+          <div class="sub">24/31 repos at 0 fixes</div>
+        </div>
+      </div>
+      
+      <div class="gauge-card">
+        <div class="ring" aria-label="Zero Backlog 9.7%">
+          <svg viewBox="0 0 84 84">
+            <circle class="bg" cx="42" cy="42" r="36"></circle>
+            <circle class="fg tone-bad" cx="42" cy="42" r="36"
+              stroke-dasharray="226.2"
+              stroke-dashoffset="204.3"></circle>
+          </svg>
+        </div>
+        <div class="gauge-meta">
+          <div class="pct">9.7%</div>
+          <div class="title">Zero Backlog</div>
+          <div class="sub">3/31 repos all-clear</div>
+        </div>
+      </div>
+      
+    </div>
+
+    <!-- Fix These First -->
+    <h2>Fix These First</h2>
+    <p class="section-note">Top priority targets ranked by Red CI → Open Issues → Hygiene Fixes → Open PRs.</p>
+    
+    <div class="targets">
+      
+      <div class="target-card has-red">
+        <div class="target-head">
+          <span class="target-rank">#1</span>
+          <a class="target-name" href="https://github.com/edwardlthompson/continuum-calendar" target="_blank" rel="noopener">continuum-calendar</a>
+        </div>
+        <div class="pills">
+          
+          <span class="pill pill-bad">Red CI</span>
+          
+          <span class="pill pill-warn">1 Open Fix</span>
+          
+          <span class="pill pill-info">3 Open PRs</span>
+          
+        </div>
+        <div class="target-links">
+          <a href="https://github.com/edwardlthompson/continuum-calendar/actions" target="_blank" rel="noopener">Actions</a>
+          <a href="https://github.com/edwardlthompson/continuum-calendar/issues" target="_blank" rel="noopener">Issues (0)</a>
+          <a href="https://github.com/edwardlthompson/continuum-calendar/pulls" target="_blank" rel="noopener">PRs (3)</a>
+        </div>
+      </div>
+      
+      <div class="target-card">
+        <div class="target-head">
+          <span class="target-rank">#2</span>
+          <a class="target-name" href="https://github.com/edwardlthompson/OpenShouter" target="_blank" rel="noopener">OpenShouter</a>
+        </div>
+        <div class="pills">
+          
+          <span class="pill pill-warn">1 Open Issue</span>
+          
+          <span class="pill pill-warn">1 Open Fix</span>
+          
+          <span class="pill pill-info">4 Open PRs</span>
+          
+        </div>
+        <div class="target-links">
+          <a href="https://github.com/edwardlthompson/OpenShouter/actions" target="_blank" rel="noopener">Actions</a>
+          <a href="https://github.com/edwardlthompson/OpenShouter/issues" target="_blank" rel="noopener">Issues (1)</a>
+          <a href="https://github.com/edwardlthompson/OpenShouter/pulls" target="_blank" rel="noopener">PRs (4)</a>
+        </div>
+      </div>
+      
+      <div class="target-card">
+        <div class="target-head">
+          <span class="target-rank">#3</span>
+          <a class="target-name" href="https://github.com/edwardlthompson/3d-game-optimizer" target="_blank" rel="noopener">3d-game-optimizer</a>
+        </div>
+        <div class="pills">
+          
+          <span class="pill pill-warn">1 Open Issue</span>
+          
+          <span class="pill pill-warn">1 Open Fix</span>
+          
+          <span class="pill pill-info">3 Open PRs</span>
+          
+        </div>
+        <div class="target-links">
+          <a href="https://github.com/edwardlthompson/3d-game-optimizer/actions" target="_blank" rel="noopener">Actions</a>
+          <a href="https://github.com/edwardlthompson/3d-game-optimizer/issues" target="_blank" rel="noopener">Issues (1)</a>
+          <a href="https://github.com/edwardlthompson/3d-game-optimizer/pulls" target="_blank" rel="noopener">PRs (3)</a>
+        </div>
+      </div>
+      
+      <div class="target-card">
+        <div class="target-head">
+          <span class="target-rank">#4</span>
+          <a class="target-name" href="https://github.com/edwardlthompson/cursor-remote-app" target="_blank" rel="noopener">cursor-remote-app</a>
+        </div>
+        <div class="pills">
+          
+          <span class="pill pill-warn">3 Open Fixes</span>
+          
+        </div>
+        <div class="target-links">
+          <a href="https://github.com/edwardlthompson/cursor-remote-app/actions" target="_blank" rel="noopener">Actions</a>
+          <a href="https://github.com/edwardlthompson/cursor-remote-app/issues" target="_blank" rel="noopener">Issues (0)</a>
+          <a href="https://github.com/edwardlthompson/cursor-remote-app/pulls" target="_blank" rel="noopener">PRs (0)</a>
+        </div>
+      </div>
+      
+      <div class="target-card">
+        <div class="target-head">
+          <span class="target-rank">#5</span>
+          <a class="target-name" href="https://github.com/edwardlthompson/cursor-remote-lite" target="_blank" rel="noopener">cursor-remote-lite</a>
+        </div>
+        <div class="pills">
+          
+          <span class="pill pill-warn">2 Open Fixes</span>
+          
+        </div>
+        <div class="target-links">
+          <a href="https://github.com/edwardlthompson/cursor-remote-lite/actions" target="_blank" rel="noopener">Actions</a>
+          <a href="https://github.com/edwardlthompson/cursor-remote-lite/issues" target="_blank" rel="noopener">Issues (0)</a>
+          <a href="https://github.com/edwardlthompson/cursor-remote-lite/pulls" target="_blank" rel="noopener">PRs (0)</a>
+        </div>
+      </div>
+      
+    </div>
+    
+
+    <!-- Operational Breakdown Charts -->
+    <h2>Backlog &amp; Hygiene Breakdown</h2>
     <div class="charts">
       <div class="panel">
-        <h3>Attention distribution</h3>
-        <div class="hist" role="img" aria-label="Attention histogram">
-          
-          <div class="hist-col">
-            <span class="cnt">25</span>
-            <div class="col" style="height: 100.0%"></div>
-            <span class="lab">0–20</span>
-          </div>
-          
-          <div class="hist-col">
-            <span class="cnt">2</span>
-            <div class="col" style="height: 8.0%"></div>
-            <span class="lab">20–40</span>
-          </div>
-          
-          <div class="hist-col">
-            <span class="cnt">0</span>
-            <div class="col" style="height: 3%"></div>
-            <span class="lab">40–60</span>
-          </div>
-          
-          <div class="hist-col">
-            <span class="cnt">0</span>
-            <div class="col" style="height: 3%"></div>
-            <span class="lab">60–80</span>
-          </div>
-          
-          <div class="hist-col">
-            <span class="cnt">0</span>
-            <div class="col" style="height: 3%"></div>
-            <span class="lab">80–100</span>
-          </div>
-          
-        </div>
-      </div>
-      <div class="panel">
-        <h3>Attention bands</h3>
+        <h3>PR &amp; Issue Backlog (Top 8 Repos)</h3>
         
-        <div class="donut-wrap">
-          <div class="donut" style="--p-high: 0.0; --p-medium: 0.0;"></div>
-          <ul class="legend">
-            
-            <li><span class="swatch swatch-high"></span>high · 0 (0.0%)</li>
-            
-            <li><span class="swatch swatch-medium"></span>medium · 0 (0.0%)</li>
-            
-            <li><span class="swatch swatch-good"></span>good · 27 (100.0%)</li>
-            
-          </ul>
+        <div class="hbar">
+          
+          <div class="hbar-row">
+            <a href="https://github.com/edwardlthompson/point-and-shoot" target="_blank" rel="noopener" title="point-and-shoot">point-and-shoot</a>
+            <div class="track" title="Issues: 0, Fixes: 0, PRs: 13">
+              
+              
+              <i class="seg-prs" style="width: 100.0%"></i>
+            </div>
+            <span class="val">13</span>
+          </div>
+          
+          <div class="hbar-row">
+            <a href="https://github.com/edwardlthompson/AstroAlarm" target="_blank" rel="noopener" title="AstroAlarm">AstroAlarm</a>
+            <div class="track" title="Issues: 0, Fixes: 0, PRs: 7">
+              
+              
+              <i class="seg-prs" style="width: 53.8%"></i>
+            </div>
+            <span class="val">7</span>
+          </div>
+          
+          <div class="hbar-row">
+            <a href="https://github.com/edwardlthompson/screen-wakelock-detector" target="_blank" rel="noopener" title="screen-wakelock-detector">screen-wakelock-detector</a>
+            <div class="track" title="Issues: 0, Fixes: 0, PRs: 7">
+              
+              
+              <i class="seg-prs" style="width: 53.8%"></i>
+            </div>
+            <span class="val">7</span>
+          </div>
+          
+          <div class="hbar-row">
+            <a href="https://github.com/edwardlthompson/OpenShouter" target="_blank" rel="noopener" title="OpenShouter">OpenShouter</a>
+            <div class="track" title="Issues: 1, Fixes: 1, PRs: 4">
+              <i class="seg-issues" style="width: 7.7%"></i>
+              <i class="seg-fixes" style="width: 7.7%"></i>
+              <i class="seg-prs" style="width: 30.8%"></i>
+            </div>
+            <span class="val">6</span>
+          </div>
+          
+          <div class="hbar-row">
+            <a href="https://github.com/edwardlthompson/3d-game-optimizer" target="_blank" rel="noopener" title="3d-game-optimizer">3d-game-optimizer</a>
+            <div class="track" title="Issues: 1, Fixes: 1, PRs: 3">
+              <i class="seg-issues" style="width: 7.7%"></i>
+              <i class="seg-fixes" style="width: 7.7%"></i>
+              <i class="seg-prs" style="width: 23.1%"></i>
+            </div>
+            <span class="val">5</span>
+          </div>
+          
+          <div class="hbar-row">
+            <a href="https://github.com/edwardlthompson/chromaflow" target="_blank" rel="noopener" title="chromaflow">chromaflow</a>
+            <div class="track" title="Issues: 0, Fixes: 0, PRs: 5">
+              
+              
+              <i class="seg-prs" style="width: 38.5%"></i>
+            </div>
+            <span class="val">5</span>
+          </div>
+          
+          <div class="hbar-row">
+            <a href="https://github.com/edwardlthompson/continuum-calendar" target="_blank" rel="noopener" title="continuum-calendar">continuum-calendar</a>
+            <div class="track" title="Issues: 0, Fixes: 1, PRs: 3">
+              
+              <i class="seg-fixes" style="width: 7.7%"></i>
+              <i class="seg-prs" style="width: 23.1%"></i>
+            </div>
+            <span class="val">4</span>
+          </div>
+          
+          <div class="hbar-row">
+            <a href="https://github.com/edwardlthompson/DevPulse" target="_blank" rel="noopener" title="DevPulse">DevPulse</a>
+            <div class="track" title="Issues: 0, Fixes: 0, PRs: 4">
+              
+              
+              <i class="seg-prs" style="width: 30.8%"></i>
+            </div>
+            <span class="val">4</span>
+          </div>
+          
         </div>
+        <div class="legend-inline">
+          <span><span class="swatch swatch-issues"></span>Issues</span>
+          <span><span class="swatch swatch-fixes"></span>Open Fixes</span>
+          <span><span class="swatch swatch-prs"></span>Open PRs</span>
+        </div>
+        
       </div>
+
       <div class="panel">
-        <h3>Fixes by class</h3>
+        <h3>Fixes by Class</h3>
         <div class="hbar">
           
           <div class="hbar-row">
             <span>Auto-safe</span>
-            <div class="track"><i style="width: 0%"></i></div>
-            <span class="val">0</span>
+            <div class="track"><i style="width: 40.0%"></i></div>
+            <span class="val">4</span>
           </div>
           
           <div class="hbar-row">
             <span>Agent</span>
-            <div class="track"><i style="width: 0%"></i></div>
-            <span class="val">0</span>
+            <div class="track"><i style="width: 30.0%"></i></div>
+            <span class="val">3</span>
           </div>
           
           <div class="hbar-row">
             <span>Human</span>
-            <div class="track"><i style="width: 0%"></i></div>
-            <span class="val">0</span>
+            <div class="track"><i style="width: 30.0%"></i></div>
+            <span class="val">3</span>
           </div>
           
         </div>
-      </div>
-      <div class="panel">
-        <h3>Check families</h3>
+        <h3 style="margin-top: 1.25rem;">Check Families</h3>
         <div class="hbar">
           
           <div class="hbar-row">
@@ -241,14 +626,14 @@
           
           <div class="hbar-row">
             <span>HYGIENE</span>
-            <div class="track"><i style="width: 0.0%"></i></div>
-            <span class="val">0</span>
+            <div class="track"><i style="width: 30.0%"></i></div>
+            <span class="val">3</span>
           </div>
           
           <div class="hbar-row">
             <span>CI</span>
-            <div class="track"><i style="width: 0.0%"></i></div>
-            <span class="val">0</span>
+            <div class="track"><i style="width: 10.0%"></i></div>
+            <span class="val">1</span>
           </div>
           
           <div class="hbar-row">
@@ -265,498 +650,539 @@
           
           <div class="hbar-row">
             <span>PROF</span>
-            <div class="track"><i style="width: 0.0%"></i></div>
-            <span class="val">0</span>
-          </div>
-          
-        </div>
-      </div>
-      <div class="panel">
-        <h3>Rubric category means</h3>
-        <div class="hbar">
-          
-          <div class="hbar-row">
-            <span>deps</span>
-            <div class="track"><i style="width: 100.0%"></i></div>
-            <span class="val">30.6</span>
+            <div class="track"><i style="width: 10.0%"></i></div>
+            <span class="val">1</span>
           </div>
           
           <div class="hbar-row">
-            <span>responsiveness</span>
-            <div class="track"><i style="width: 65.4%"></i></div>
-            <span class="val">20.0</span>
+            <span>OTHER</span>
+            <div class="track"><i style="width: 50.0%"></i></div>
+            <span class="val">5</span>
           </div>
-          
-          <div class="hbar-row">
-            <span>ci</span>
-            <div class="track"><i style="width: 56.9%"></i></div>
-            <span class="val">17.4</span>
-          </div>
-          
-          <div class="hbar-row">
-            <span>momentum</span>
-            <div class="track"><i style="width: 49.0%"></i></div>
-            <span class="val">15.0</span>
-          </div>
-          
-          <div class="hbar-row">
-            <span>hygiene</span>
-            <div class="track"><i style="width: 45.1%"></i></div>
-            <span class="val">13.8</span>
-          </div>
-          
-          <div class="hbar-row">
-            <span>lineage</span>
-            <div class="track"><i style="width: 36.3%"></i></div>
-            <span class="val">11.1</span>
-          </div>
-          
-          <div class="hbar-row">
-            <span>presentation</span>
-            <div class="track"><i style="width: 32.7%"></i></div>
-            <span class="val">10.0</span>
-          </div>
-          
-          <div class="hbar-row">
-            <span>prs</span>
-            <div class="track"><i style="width: 32.7%"></i></div>
-            <span class="val">10.0</span>
-          </div>
-          
-          <div class="hbar-row">
-            <span>security</span>
-            <div class="track"><i style="width: 32.7%"></i></div>
-            <span class="val">10.0</span>
-          </div>
-          
-          <div class="hbar-row">
-            <span>releases</span>
-            <div class="track"><i style="width: 27.1%"></i></div>
-            <span class="val">8.3</span>
-          </div>
-          
-        </div>
-      </div>
-      <div class="panel">
-        <h3>Top fix ids</h3>
-        <div class="hbar">
-          
-          <p class="empty">No open fixes.</p>
           
         </div>
       </div>
     </div>
 
     
-    <h2>This run</h2>
+    <h2>This Run</h2>
     <div class="panel">
       <p class="empty" style="color:var(--ink)">
-        Open fixes
-        0
+        Open fixes:
+        <strong>10</strong>
         →
-        0
+        <strong>10</strong>
         (Δ 0)
       </p>
     </div>
     
 
-    <h2>Fleet</h2>
-    <p class="empty">Every active repo — sorted by Issues, then open PRs. Columns stay separate (GitHub’s issue count wrongly includes PRs).</p>
+    <!-- Filterable Fleet Table -->
+    <h2>Fleet (31)</h2>
+    <p class="section-note">Every active repo — sorted by Red CI, Open Issues, Open Fixes, then Open PRs. GitHub Issues and PRs are strictly separated.</p>
     <div class="panel">
       
-      <table>
-        <thead>
-          <tr><th>Repo</th><th>Issues</th><th>Open PRs</th><th>Argus fixes</th><th>Attention</th><th>Band</th></tr>
-        </thead>
-        <tbody>
-          
-          <tr>
-            <td>OpenShouter</td>
-            <td>1</td>
-            <td>4</td>
-            <td>0</td>
-            <td>
-              <span>16.6</span>
-              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
-                <i style="display:block;height:100%;width:16%;background:var(--plot-fill)"></i>
-              </span>
-            </td>
-            <td>good</td>
-          </tr>
-          
-          <tr>
-            <td>3d-game-optimizer</td>
-            <td>0</td>
-            <td>8</td>
-            <td>0</td>
-            <td>
-              <span>18.2</span>
-              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
-                <i style="display:block;height:100%;width:18%;background:var(--plot-fill)"></i>
-              </span>
-            </td>
-            <td>good</td>
-          </tr>
-          
-          <tr>
-            <td>Argus</td>
-            <td>0</td>
-            <td>7</td>
-            <td>0</td>
-            <td>
-              <span>12.2</span>
-              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
-                <i style="display:block;height:100%;width:12%;background:var(--plot-fill)"></i>
-              </span>
-            </td>
-            <td>good</td>
-          </tr>
-          
-          <tr>
-            <td>screen-wakelock-detector</td>
-            <td>0</td>
-            <td>7</td>
-            <td>0</td>
-            <td>
-              <span>13.7</span>
-              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
-                <i style="display:block;height:100%;width:13%;background:var(--plot-fill)"></i>
-              </span>
-            </td>
-            <td>good</td>
-          </tr>
-          
-          <tr>
-            <td>point-and-shoot</td>
-            <td>0</td>
-            <td>6</td>
-            <td>0</td>
-            <td>
-              <span>19.7</span>
-              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
-                <i style="display:block;height:100%;width:19%;background:var(--plot-fill)"></i>
-              </span>
-            </td>
-            <td>good</td>
-          </tr>
-          
-          <tr>
-            <td>vault-organizer</td>
-            <td>0</td>
-            <td>6</td>
-            <td>0</td>
-            <td>
-              <span>18.2</span>
-              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
-                <i style="display:block;height:100%;width:18%;background:var(--plot-fill)"></i>
-              </span>
-            </td>
-            <td>good</td>
-          </tr>
-          
-          <tr>
-            <td>continuum-calendar</td>
-            <td>0</td>
-            <td>5</td>
-            <td>0</td>
-            <td>
-              <span>13.9</span>
-              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
-                <i style="display:block;height:100%;width:13%;background:var(--plot-fill)"></i>
-              </span>
-            </td>
-            <td>good</td>
-          </tr>
-          
-          <tr>
-            <td>MultiAppShare-</td>
-            <td>0</td>
-            <td>5</td>
-            <td>0</td>
-            <td>
-              <span>12.3</span>
-              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
-                <i style="display:block;height:100%;width:12%;background:var(--plot-fill)"></i>
-              </span>
-            </td>
-            <td>good</td>
-          </tr>
-          
-          <tr>
-            <td>DevPulse</td>
-            <td>0</td>
-            <td>4</td>
-            <td>0</td>
-            <td>
-              <span>17.4</span>
-              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
-                <i style="display:block;height:100%;width:17%;background:var(--plot-fill)"></i>
-              </span>
-            </td>
-            <td>good</td>
-          </tr>
-          
-          <tr>
-            <td>trendalgo-bot</td>
-            <td>0</td>
-            <td>4</td>
-            <td>0</td>
-            <td>
-              <span>12.8</span>
-              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
-                <i style="display:block;height:100%;width:12%;background:var(--plot-fill)"></i>
-              </span>
-            </td>
-            <td>good</td>
-          </tr>
-          
-          <tr>
-            <td>HermesLauncher</td>
-            <td>0</td>
-            <td>3</td>
-            <td>0</td>
-            <td>
-              <span>11.7</span>
-              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
-                <i style="display:block;height:100%;width:11%;background:var(--plot-fill)"></i>
-              </span>
-            </td>
-            <td>good</td>
-          </tr>
-          
-          <tr>
-            <td>JanusBoot</td>
-            <td>0</td>
-            <td>3</td>
-            <td>0</td>
-            <td>
-              <span>15.7</span>
-              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
-                <i style="display:block;height:100%;width:15%;background:var(--plot-fill)"></i>
-              </span>
-            </td>
-            <td>good</td>
-          </tr>
-          
-          <tr>
-            <td>QRaft</td>
-            <td>0</td>
-            <td>3</td>
-            <td>0</td>
-            <td>
-              <span>11.7</span>
-              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
-                <i style="display:block;height:100%;width:11%;background:var(--plot-fill)"></i>
-              </span>
-            </td>
-            <td>good</td>
-          </tr>
-          
-          <tr>
-            <td>AstroAlarm</td>
-            <td>0</td>
-            <td>2</td>
-            <td>0</td>
-            <td>
-              <span>11.7</span>
-              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
-                <i style="display:block;height:100%;width:11%;background:var(--plot-fill)"></i>
-              </span>
-            </td>
-            <td>good</td>
-          </tr>
-          
-          <tr>
-            <td>bl4-forge</td>
-            <td>0</td>
-            <td>2</td>
-            <td>0</td>
-            <td>
-              <span>11.2</span>
-              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
-                <i style="display:block;height:100%;width:11%;background:var(--plot-fill)"></i>
-              </span>
-            </td>
-            <td>good</td>
-          </tr>
-          
-          <tr>
-            <td>ExpeditionGauge</td>
-            <td>0</td>
-            <td>2</td>
-            <td>0</td>
-            <td>
-              <span>13.0</span>
-              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
-                <i style="display:block;height:100%;width:13%;background:var(--plot-fill)"></i>
-              </span>
-            </td>
-            <td>good</td>
-          </tr>
-          
-          <tr>
-            <td>Google-Messages-For-Desktop</td>
-            <td>0</td>
-            <td>2</td>
-            <td>0</td>
-            <td>
-              <span>21.1</span>
-              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
-                <i style="display:block;height:100%;width:21%;background:var(--plot-fill)"></i>
-              </span>
-            </td>
-            <td>good</td>
-          </tr>
-          
-          <tr>
-            <td>lineage-lens</td>
-            <td>0</td>
-            <td>2</td>
-            <td>0</td>
-            <td>
-              <span>12.7</span>
-              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
-                <i style="display:block;height:100%;width:12%;background:var(--plot-fill)"></i>
-              </span>
-            </td>
-            <td>good</td>
-          </tr>
-          
-          <tr>
-            <td>linkslander-edwardlthompson</td>
-            <td>0</td>
-            <td>2</td>
-            <td>0</td>
-            <td>
-              <span>28.2</span>
-              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
-                <i style="display:block;height:100%;width:28%;background:var(--plot-fill)"></i>
-              </span>
-            </td>
-            <td>good</td>
-          </tr>
-          
-          <tr>
-            <td>QuickMediaIngest</td>
-            <td>0</td>
-            <td>2</td>
-            <td>0</td>
-            <td>
-              <span>12.8</span>
-              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
-                <i style="display:block;height:100%;width:12%;background:var(--plot-fill)"></i>
-              </span>
-            </td>
-            <td>good</td>
-          </tr>
-          
-          <tr>
-            <td>SyncMark</td>
-            <td>0</td>
-            <td>2</td>
-            <td>0</td>
-            <td>
-              <span>11.2</span>
-              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
-                <i style="display:block;height:100%;width:11%;background:var(--plot-fill)"></i>
-              </span>
-            </td>
-            <td>good</td>
-          </tr>
-          
-          <tr>
-            <td>aetherfeed</td>
-            <td>0</td>
-            <td>1</td>
-            <td>0</td>
-            <td>
-              <span>12.8</span>
-              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
-                <i style="display:block;height:100%;width:12%;background:var(--plot-fill)"></i>
-              </span>
-            </td>
-            <td>good</td>
-          </tr>
-          
-          <tr>
-            <td>agent-project-bootstrap</td>
-            <td>0</td>
-            <td>1</td>
-            <td>0</td>
-            <td>
-              <span>11.7</span>
-              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
-                <i style="display:block;height:100%;width:11%;background:var(--plot-fill)"></i>
-              </span>
-            </td>
-            <td>good</td>
-          </tr>
-          
-          <tr>
-            <td>chromaflow</td>
-            <td>0</td>
-            <td>1</td>
-            <td>0</td>
-            <td>
-              <span>13.9</span>
-              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
-                <i style="display:block;height:100%;width:13%;background:var(--plot-fill)"></i>
-              </span>
-            </td>
-            <td>good</td>
-          </tr>
-          
-          <tr>
-            <td>OBDForge</td>
-            <td>0</td>
-            <td>1</td>
-            <td>0</td>
-            <td>
-              <span>12.7</span>
-              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
-                <i style="display:block;height:100%;width:12%;background:var(--plot-fill)"></i>
-              </span>
-            </td>
-            <td>good</td>
-          </tr>
-          
-          <tr>
-            <td>takein-sms</td>
-            <td>0</td>
-            <td>1</td>
-            <td>0</td>
-            <td>
-              <span>19.9</span>
-              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
-                <i style="display:block;height:100%;width:19%;background:var(--plot-fill)"></i>
-              </span>
-            </td>
-            <td>good</td>
-          </tr>
-          
-          <tr>
-            <td>edwardlthompson</td>
-            <td>0</td>
-            <td>0</td>
-            <td>0</td>
-            <td>
-              <span>16.8</span>
-              <span style="display:inline-block;width:4.5rem;height:0.45rem;background:var(--chip);border-radius:999px;vertical-align:middle;margin-left:0.35rem;overflow:hidden">
-                <i style="display:block;height:100%;width:16%;background:var(--plot-fill)"></i>
-              </span>
-            </td>
-            <td>good</td>
-          </tr>
-          
-        </tbody>
-      </table>
+      <div class="fleet-controls">
+        <div class="filter-pills" role="group" aria-label="Filter repositories">
+          <button type="button" class="filter-btn active" data-filter="all">All (31)</button>
+          <button type="button" class="filter-btn" data-filter="needs_action">Needs Action (28)</button>
+          <button type="button" class="filter-btn" data-filter="red_ci">Red CI (1)</button>
+          <button type="button" class="filter-btn" data-filter="clean">Clean (3)</button>
+        </div>
+        <input id="fleet-search" class="search-box" type="search" placeholder="Search repos..." aria-label="Search repositories" />
+      </div>
+      <div class="table-wrap">
+        <table id="fleet-table">
+          <thead>
+            <tr>
+              <th>Repo</th>
+              <th>CI</th>
+              <th class="num">Issues</th>
+              <th class="num">Open PRs</th>
+              <th class="num">Open Fixes</th>
+              <th>Last Push</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+            <tr data-filter="red_ci" data-needs="1" data-name="continuum-calendar">
+              <td><a href="https://github.com/edwardlthompson/continuum-calendar" target="_blank" rel="noopener">continuum-calendar</a></td>
+              <td>
+                
+                <span class="ci-dot ci-failing"><i></i>Fail</span>
+                
+              </td>
+              <td class="num muted-zero">0</td>
+              <td class="num">3</td>
+              <td class="num">1</td>
+              <td style="color:var(--muted);font-variant-numeric:tabular-nums">2026-11-22</td>
+              <td><span class="pill pill-bad">Fix CI</span></td>
+            </tr>
+            
+            <tr data-filter="needs_action" data-needs="1" data-name="openshouter">
+              <td><a href="https://github.com/edwardlthompson/OpenShouter" target="_blank" rel="noopener">OpenShouter</a></td>
+              <td>
+                
+                <span class="ci-dot ci-passing"><i></i>Pass</span>
+                
+              </td>
+              <td class="num">1</td>
+              <td class="num">4</td>
+              <td class="num">1</td>
+              <td style="color:var(--muted);font-variant-numeric:tabular-nums">2026-11-22</td>
+              <td><span class="pill pill-warn">Open Issues</span></td>
+            </tr>
+            
+            <tr data-filter="needs_action" data-needs="1" data-name="3d-game-optimizer">
+              <td><a href="https://github.com/edwardlthompson/3d-game-optimizer" target="_blank" rel="noopener">3d-game-optimizer</a></td>
+              <td>
+                
+                <span class="ci-dot ci-passing"><i></i>Pass</span>
+                
+              </td>
+              <td class="num">1</td>
+              <td class="num">3</td>
+              <td class="num">1</td>
+              <td style="color:var(--muted);font-variant-numeric:tabular-nums">2026-11-22</td>
+              <td><span class="pill pill-warn">Open Issues</span></td>
+            </tr>
+            
+            <tr data-filter="needs_action" data-needs="1" data-name="cursor-remote-app">
+              <td><a href="https://github.com/edwardlthompson/cursor-remote-app" target="_blank" rel="noopener">cursor-remote-app</a></td>
+              <td>
+                
+                <span class="ci-dot ci-passing"><i></i>Pass</span>
+                
+              </td>
+              <td class="num muted-zero">0</td>
+              <td class="num muted-zero">0</td>
+              <td class="num">3</td>
+              <td style="color:var(--muted);font-variant-numeric:tabular-nums">2026-11-22</td>
+              <td><span class="pill pill-warn">Hygiene Fix</span></td>
+            </tr>
+            
+            <tr data-filter="needs_action" data-needs="1" data-name="cursor-remote-lite">
+              <td><a href="https://github.com/edwardlthompson/cursor-remote-lite" target="_blank" rel="noopener">cursor-remote-lite</a></td>
+              <td>
+                
+                <span class="ci-dot ci-passing"><i></i>Pass</span>
+                
+              </td>
+              <td class="num muted-zero">0</td>
+              <td class="num muted-zero">0</td>
+              <td class="num">2</td>
+              <td style="color:var(--muted);font-variant-numeric:tabular-nums">2026-11-22</td>
+              <td><span class="pill pill-warn">Hygiene Fix</span></td>
+            </tr>
+            
+            <tr data-filter="needs_action" data-needs="1" data-name="argus">
+              <td><a href="https://github.com/edwardlthompson/Argus" target="_blank" rel="noopener">Argus</a></td>
+              <td>
+                
+                <span class="ci-dot ci-passing"><i></i>Pass</span>
+                
+              </td>
+              <td class="num muted-zero">0</td>
+              <td class="num">2</td>
+              <td class="num">1</td>
+              <td style="color:var(--muted);font-variant-numeric:tabular-nums">2026-11-22</td>
+              <td><span class="pill pill-warn">Hygiene Fix</span></td>
+            </tr>
+            
+            <tr data-filter="needs_action" data-needs="1" data-name="edwardlthompson">
+              <td><a href="https://github.com/edwardlthompson/edwardlthompson" target="_blank" rel="noopener">edwardlthompson</a></td>
+              <td>
+                
+                <span class="ci-dot ci-passing"><i></i>Pass</span>
+                
+              </td>
+              <td class="num muted-zero">0</td>
+              <td class="num muted-zero">0</td>
+              <td class="num">1</td>
+              <td style="color:var(--muted);font-variant-numeric:tabular-nums">2026-11-18</td>
+              <td><span class="pill pill-warn">Hygiene Fix</span></td>
+            </tr>
+            
+            <tr data-filter="needs_action" data-needs="1" data-name="point-and-shoot">
+              <td><a href="https://github.com/edwardlthompson/point-and-shoot" target="_blank" rel="noopener">point-and-shoot</a></td>
+              <td>
+                
+                <span class="ci-dot ci-passing"><i></i>Pass</span>
+                
+              </td>
+              <td class="num muted-zero">0</td>
+              <td class="num">13</td>
+              <td class="num muted-zero">0</td>
+              <td style="color:var(--muted);font-variant-numeric:tabular-nums">2026-11-22</td>
+              <td><span class="pill pill-info">PR Backlog</span></td>
+            </tr>
+            
+            <tr data-filter="needs_action" data-needs="1" data-name="astroalarm">
+              <td><a href="https://github.com/edwardlthompson/AstroAlarm" target="_blank" rel="noopener">AstroAlarm</a></td>
+              <td>
+                
+                <span class="ci-dot ci-passing"><i></i>Pass</span>
+                
+              </td>
+              <td class="num muted-zero">0</td>
+              <td class="num">7</td>
+              <td class="num muted-zero">0</td>
+              <td style="color:var(--muted);font-variant-numeric:tabular-nums">2026-11-22</td>
+              <td><span class="pill pill-info">PR Backlog</span></td>
+            </tr>
+            
+            <tr data-filter="needs_action" data-needs="1" data-name="screen-wakelock-detector">
+              <td><a href="https://github.com/edwardlthompson/screen-wakelock-detector" target="_blank" rel="noopener">screen-wakelock-detector</a></td>
+              <td>
+                
+                <span class="ci-dot ci-passing"><i></i>Pass</span>
+                
+              </td>
+              <td class="num muted-zero">0</td>
+              <td class="num">7</td>
+              <td class="num muted-zero">0</td>
+              <td style="color:var(--muted);font-variant-numeric:tabular-nums">2026-11-22</td>
+              <td><span class="pill pill-info">PR Backlog</span></td>
+            </tr>
+            
+            <tr data-filter="needs_action" data-needs="1" data-name="chromaflow">
+              <td><a href="https://github.com/edwardlthompson/chromaflow" target="_blank" rel="noopener">chromaflow</a></td>
+              <td>
+                
+                <span class="ci-dot ci-passing"><i></i>Pass</span>
+                
+              </td>
+              <td class="num muted-zero">0</td>
+              <td class="num">5</td>
+              <td class="num muted-zero">0</td>
+              <td style="color:var(--muted);font-variant-numeric:tabular-nums">2026-11-22</td>
+              <td><span class="pill pill-info">PR Backlog</span></td>
+            </tr>
+            
+            <tr data-filter="needs_action" data-needs="1" data-name="devpulse">
+              <td><a href="https://github.com/edwardlthompson/DevPulse" target="_blank" rel="noopener">DevPulse</a></td>
+              <td>
+                
+                <span class="ci-dot ci-passing"><i></i>Pass</span>
+                
+              </td>
+              <td class="num muted-zero">0</td>
+              <td class="num">4</td>
+              <td class="num muted-zero">0</td>
+              <td style="color:var(--muted);font-variant-numeric:tabular-nums">2026-11-22</td>
+              <td><span class="pill pill-info">PR Backlog</span></td>
+            </tr>
+            
+            <tr data-filter="needs_action" data-needs="1" data-name="agent-project-bootstrap">
+              <td><a href="https://github.com/edwardlthompson/agent-project-bootstrap" target="_blank" rel="noopener">agent-project-bootstrap</a></td>
+              <td>
+                
+                <span class="ci-dot ci-passing"><i></i>Pass</span>
+                
+              </td>
+              <td class="num muted-zero">0</td>
+              <td class="num">3</td>
+              <td class="num muted-zero">0</td>
+              <td style="color:var(--muted);font-variant-numeric:tabular-nums">2026-11-21</td>
+              <td><span class="pill pill-info">PR Backlog</span></td>
+            </tr>
+            
+            <tr data-filter="needs_action" data-needs="1" data-name="expeditiongauge">
+              <td><a href="https://github.com/edwardlthompson/ExpeditionGauge" target="_blank" rel="noopener">ExpeditionGauge</a></td>
+              <td>
+                
+                <span class="ci-dot ci-passing"><i></i>Pass</span>
+                
+              </td>
+              <td class="num muted-zero">0</td>
+              <td class="num">3</td>
+              <td class="num muted-zero">0</td>
+              <td style="color:var(--muted);font-variant-numeric:tabular-nums">2026-11-22</td>
+              <td><span class="pill pill-info">PR Backlog</span></td>
+            </tr>
+            
+            <tr data-filter="needs_action" data-needs="1" data-name="vault-organizer">
+              <td><a href="https://github.com/edwardlthompson/vault-organizer" target="_blank" rel="noopener">vault-organizer</a></td>
+              <td>
+                
+                <span class="ci-dot ci-passing"><i></i>Pass</span>
+                
+              </td>
+              <td class="num muted-zero">0</td>
+              <td class="num">3</td>
+              <td class="num muted-zero">0</td>
+              <td style="color:var(--muted);font-variant-numeric:tabular-nums">2026-11-22</td>
+              <td><span class="pill pill-info">PR Backlog</span></td>
+            </tr>
+            
+            <tr data-filter="needs_action" data-needs="1" data-name="bl4-forge">
+              <td><a href="https://github.com/edwardlthompson/bl4-forge" target="_blank" rel="noopener">bl4-forge</a></td>
+              <td>
+                
+                <span class="ci-dot ci-passing"><i></i>Pass</span>
+                
+              </td>
+              <td class="num muted-zero">0</td>
+              <td class="num">2</td>
+              <td class="num muted-zero">0</td>
+              <td style="color:var(--muted);font-variant-numeric:tabular-nums">2026-11-16</td>
+              <td><span class="pill pill-info">PR Backlog</span></td>
+            </tr>
+            
+            <tr data-filter="needs_action" data-needs="1" data-name="janusboot">
+              <td><a href="https://github.com/edwardlthompson/JanusBoot" target="_blank" rel="noopener">JanusBoot</a></td>
+              <td>
+                
+                <span class="ci-dot ci-passing"><i></i>Pass</span>
+                
+              </td>
+              <td class="num muted-zero">0</td>
+              <td class="num">2</td>
+              <td class="num muted-zero">0</td>
+              <td style="color:var(--muted);font-variant-numeric:tabular-nums">2026-11-22</td>
+              <td><span class="pill pill-info">PR Backlog</span></td>
+            </tr>
+            
+            <tr data-filter="needs_action" data-needs="1" data-name="lineage-lens">
+              <td><a href="https://github.com/edwardlthompson/lineage-lens" target="_blank" rel="noopener">lineage-lens</a></td>
+              <td>
+                
+                <span class="ci-dot ci-passing"><i></i>Pass</span>
+                
+              </td>
+              <td class="num muted-zero">0</td>
+              <td class="num">2</td>
+              <td class="num muted-zero">0</td>
+              <td style="color:var(--muted);font-variant-numeric:tabular-nums">2026-11-22</td>
+              <td><span class="pill pill-info">PR Backlog</span></td>
+            </tr>
+            
+            <tr data-filter="needs_action" data-needs="1" data-name="multiappshare-">
+              <td><a href="https://github.com/edwardlthompson/MultiAppShare-" target="_blank" rel="noopener">MultiAppShare-</a></td>
+              <td>
+                
+                <span class="ci-dot ci-passing"><i></i>Pass</span>
+                
+              </td>
+              <td class="num muted-zero">0</td>
+              <td class="num">2</td>
+              <td class="num muted-zero">0</td>
+              <td style="color:var(--muted);font-variant-numeric:tabular-nums">2026-11-22</td>
+              <td><span class="pill pill-info">PR Backlog</span></td>
+            </tr>
+            
+            <tr data-filter="needs_action" data-needs="1" data-name="obdforge">
+              <td><a href="https://github.com/edwardlthompson/OBDForge" target="_blank" rel="noopener">OBDForge</a></td>
+              <td>
+                
+                <span class="ci-dot ci-passing"><i></i>Pass</span>
+                
+              </td>
+              <td class="num muted-zero">0</td>
+              <td class="num">2</td>
+              <td class="num muted-zero">0</td>
+              <td style="color:var(--muted);font-variant-numeric:tabular-nums">2026-11-22</td>
+              <td><span class="pill pill-info">PR Backlog</span></td>
+            </tr>
+            
+            <tr data-filter="needs_action" data-needs="1" data-name="qraft">
+              <td><a href="https://github.com/edwardlthompson/QRaft" target="_blank" rel="noopener">QRaft</a></td>
+              <td>
+                
+                <span class="ci-dot ci-passing"><i></i>Pass</span>
+                
+              </td>
+              <td class="num muted-zero">0</td>
+              <td class="num">2</td>
+              <td class="num muted-zero">0</td>
+              <td style="color:var(--muted);font-variant-numeric:tabular-nums">2026-11-22</td>
+              <td><span class="pill pill-info">PR Backlog</span></td>
+            </tr>
+            
+            <tr data-filter="needs_action" data-needs="1" data-name="syncmark">
+              <td><a href="https://github.com/edwardlthompson/SyncMark" target="_blank" rel="noopener">SyncMark</a></td>
+              <td>
+                
+                <span class="ci-dot ci-passing"><i></i>Pass</span>
+                
+              </td>
+              <td class="num muted-zero">0</td>
+              <td class="num">2</td>
+              <td class="num muted-zero">0</td>
+              <td style="color:var(--muted);font-variant-numeric:tabular-nums">2026-11-22</td>
+              <td><span class="pill pill-info">PR Backlog</span></td>
+            </tr>
+            
+            <tr data-filter="needs_action" data-needs="1" data-name="aetherfeed">
+              <td><a href="https://github.com/edwardlthompson/aetherfeed" target="_blank" rel="noopener">aetherfeed</a></td>
+              <td>
+                
+                <span class="ci-dot ci-passing"><i></i>Pass</span>
+                
+              </td>
+              <td class="num muted-zero">0</td>
+              <td class="num">1</td>
+              <td class="num muted-zero">0</td>
+              <td style="color:var(--muted);font-variant-numeric:tabular-nums">2026-11-22</td>
+              <td><span class="pill pill-info">PR Backlog</span></td>
+            </tr>
+            
+            <tr data-filter="needs_action" data-needs="1" data-name="linkslander-edwardlthompson">
+              <td><a href="https://github.com/edwardlthompson/linkslander-edwardlthompson" target="_blank" rel="noopener">linkslander-edwardlthompson</a></td>
+              <td>
+                
+                <span class="ci-dot ci-passing"><i></i>Pass</span>
+                
+              </td>
+              <td class="num muted-zero">0</td>
+              <td class="num">1</td>
+              <td class="num muted-zero">0</td>
+              <td style="color:var(--muted);font-variant-numeric:tabular-nums">2026-11-22</td>
+              <td><span class="pill pill-info">PR Backlog</span></td>
+            </tr>
+            
+            <tr data-filter="needs_action" data-needs="1" data-name="open-fences">
+              <td><a href="https://github.com/edwardlthompson/open-fences" target="_blank" rel="noopener">open-fences</a></td>
+              <td>
+                
+                <span class="ci-dot ci-passing"><i></i>Pass</span>
+                
+              </td>
+              <td class="num muted-zero">0</td>
+              <td class="num">1</td>
+              <td class="num muted-zero">0</td>
+              <td style="color:var(--muted);font-variant-numeric:tabular-nums">2026-11-22</td>
+              <td><span class="pill pill-info">PR Backlog</span></td>
+            </tr>
+            
+            <tr data-filter="needs_action" data-needs="1" data-name="prism-mail">
+              <td><a href="https://github.com/edwardlthompson/prism-mail" target="_blank" rel="noopener">prism-mail</a></td>
+              <td>
+                
+                <span class="ci-dot ci-passing"><i></i>Pass</span>
+                
+              </td>
+              <td class="num muted-zero">0</td>
+              <td class="num">1</td>
+              <td class="num muted-zero">0</td>
+              <td style="color:var(--muted);font-variant-numeric:tabular-nums">2026-11-22</td>
+              <td><span class="pill pill-info">PR Backlog</span></td>
+            </tr>
+            
+            <tr data-filter="needs_action" data-needs="1" data-name="quickmediaingest">
+              <td><a href="https://github.com/edwardlthompson/QuickMediaIngest" target="_blank" rel="noopener">QuickMediaIngest</a></td>
+              <td>
+                
+                <span class="ci-dot ci-passing"><i></i>Pass</span>
+                
+              </td>
+              <td class="num muted-zero">0</td>
+              <td class="num">1</td>
+              <td class="num muted-zero">0</td>
+              <td style="color:var(--muted);font-variant-numeric:tabular-nums">2026-11-22</td>
+              <td><span class="pill pill-info">PR Backlog</span></td>
+            </tr>
+            
+            <tr data-filter="needs_action" data-needs="1" data-name="trendalgo-bot">
+              <td><a href="https://github.com/edwardlthompson/trendalgo-bot" target="_blank" rel="noopener">trendalgo-bot</a></td>
+              <td>
+                
+                <span class="ci-dot ci-passing"><i></i>Pass</span>
+                
+              </td>
+              <td class="num muted-zero">0</td>
+              <td class="num">1</td>
+              <td class="num muted-zero">0</td>
+              <td style="color:var(--muted);font-variant-numeric:tabular-nums">2026-11-22</td>
+              <td><span class="pill pill-info">PR Backlog</span></td>
+            </tr>
+            
+            <tr data-filter="clean" data-needs="0" data-name="google-messages-for-desktop">
+              <td><a href="https://github.com/edwardlthompson/Google-Messages-For-Desktop" target="_blank" rel="noopener">Google-Messages-For-Desktop</a></td>
+              <td>
+                
+                <span class="ci-dot ci-passing"><i></i>Pass</span>
+                
+              </td>
+              <td class="num muted-zero">0</td>
+              <td class="num muted-zero">0</td>
+              <td class="num muted-zero">0</td>
+              <td style="color:var(--muted);font-variant-numeric:tabular-nums">2026-11-22</td>
+              <td><span class="pill pill-good">Clean</span></td>
+            </tr>
+            
+            <tr data-filter="clean" data-needs="0" data-name="hermeslauncher">
+              <td><a href="https://github.com/edwardlthompson/HermesLauncher" target="_blank" rel="noopener">HermesLauncher</a></td>
+              <td>
+                
+                <span class="ci-dot ci-passing"><i></i>Pass</span>
+                
+              </td>
+              <td class="num muted-zero">0</td>
+              <td class="num muted-zero">0</td>
+              <td class="num muted-zero">0</td>
+              <td style="color:var(--muted);font-variant-numeric:tabular-nums">2026-11-22</td>
+              <td><span class="pill pill-good">Clean</span></td>
+            </tr>
+            
+            <tr data-filter="clean" data-needs="0" data-name="takein-sms">
+              <td><a href="https://github.com/edwardlthompson/takein-sms" target="_blank" rel="noopener">takein-sms</a></td>
+              <td>
+                
+                <span class="ci-dot ci-passing"><i></i>Pass</span>
+                
+              </td>
+              <td class="num muted-zero">0</td>
+              <td class="num muted-zero">0</td>
+              <td class="num muted-zero">0</td>
+              <td style="color:var(--muted);font-variant-numeric:tabular-nums">2026-11-22</td>
+              <td><span class="pill pill-good">Clean</span></td>
+            </tr>
+            
+          </tbody>
+        </table>
+      </div>
       
     </div>
 
     <footer>
-      Public metrics only — never a weakness catalogue.
-      Full private report lives under <code>argus-history/reports/</code> on the private runner.
+      <span>Public metrics only — never a per-repo security weakness catalogue.</span>
+      <span>Full private report lives on the private runner.</span>
     </footer>
   </div>
+
+  <script>
+    (function () {
+      var btns = document.querySelectorAll('.filter-btn');
+      var search = document.getElementById('fleet-search');
+      var rows = document.querySelectorAll('#fleet-table tbody tr');
+      if (!rows.length) return;
+      var activeFilter = 'all';
+      function apply() {
+        var q = (search ? search.value : '').trim().toLowerCase();
+        rows.forEach(function (tr) {
+          var fk = tr.getAttribute('data-filter');
+          var needs = tr.getAttribute('data-needs') === '1';
+          var name = tr.getAttribute('data-name') || '';
+          var matchFilter =
+            activeFilter === 'all' ||
+            (activeFilter === 'needs_action' && needs) ||
+            fk === activeFilter;
+          var matchQuery = !q || name.indexOf(q) !== -1;
+          tr.style.display = (matchFilter && matchQuery) ? '' : 'none';
+        });
+      }
+      btns.forEach(function (b) {
+        b.addEventListener('click', function () {
+          btns.forEach(function (x) { x.classList.remove('active'); });
+          b.classList.add('active');
+          activeFilter = b.getAttribute('data-filter') || 'all';
+          apply();
+        });
+      });
+      if (search) search.addEventListener('input', apply);
+    })();
+  </script>
 </body>
 </html>
