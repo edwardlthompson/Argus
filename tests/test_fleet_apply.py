@@ -11,7 +11,7 @@ def test_exclude_hard_floors():
 
 
 def test_expected_version_pinned():
-    assert expected_version() == "1.13.0"
+    assert expected_version() == "1.13.1"
 
 
 def test_wave_canary_first():
