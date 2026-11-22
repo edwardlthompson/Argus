@@ -41,7 +41,7 @@ from argus.profile_apply import ProfileApplyResult, sync_profile_readme
 from argus.quiet_log import emit_run_line
 from argus.rate_limit import CoreQuota
 from argus.score import score_repo
-from argus.signals import collect_signals, fixture_bundle
+from argus.signals import collect_signals, fixture_bundle, stamp_repo_raw
 from argus.state import StateStore
 from argus.triage import fleet_rollup, summarize_triage
 from argus.yolo import (
@@ -106,6 +106,7 @@ def build_plans_from_fixtures(
             html_url=meta.get("html_url", ""),
         )
         signals = fixture_bundle(item.get("signals") or {})
+        stamp_repo_raw(repo, signals)
         score = score_repo(signals, rubric, status)
         matched = match_fixes(fixes, repo, signals, store=None, profile=profile)
         plan = RepoPlan(repo=repo, score=score, report_only=report_only)
