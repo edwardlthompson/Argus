@@ -44,7 +44,34 @@ def project_plans_after_apply(
 
 def snapshot_plans(plans: list[RepoPlan]) -> dict[str, Any]:
     repos: list[dict[str, Any]] = []
+    open_issues_total = 0
+    open_prs_total = 0
+    ci_passing = 0
+    ci_failing = 0
     for plan in sorted(plans, key=lambda p: p.repo.full_name.lower()):
+        raw = plan.repo.raw or {}
+        if "open_issues_only" in raw:
+            gh_issues = int(raw.get("open_issues_only") or 0)
+        else:
+            gh_issues = int(raw.get("open_issues_count") or 0)
+            if "open_prs_count" in raw:
+                gh_issues = max(0, gh_issues - int(raw.get("open_prs_count") or 0))
+        gh_prs = int(raw.get("open_prs_count") or 0)
+        open_issues_total += gh_issues
+        open_prs_total += gh_prs
+
+        ci_concl = str(raw.get("ci_latest_conclusion") or "").lower()
+        ci_fail = bool(raw.get("ci_latest_failed")) or ci_concl in {"failure", "timed_out"} or any(
+            m.fix.id == "CI-LATEST-FAILED"
+            for m in (*plan.human_fixes, *plan.agent_fixes, *plan.auto_fixes)
+        )
+        if ci_fail:
+            ci_failing += 1
+        elif ci_concl in {"success", "neutral", "skipped"} or (
+            raw.get("ci_has_workflows") and ci_concl not in {"failure", "timed_out", "cancelled"}
+        ):
+            ci_passing += 1
+
         repos.append(
             {
                 "repo": plan.repo.full_name,
@@ -53,12 +80,17 @@ def snapshot_plans(plans: list[RepoPlan]) -> dict[str, Any]:
                 "auto": [m.fix.id for m in plan.auto_fixes],
                 "agent": [m.fix.id for m in plan.agent_fixes],
                 "human": [m.fix.id for m in plan.human_fixes],
+                "open_issues": gh_issues,
+                "open_prs": gh_prs,
+                "ci_failed": ci_fail,
             }
         )
     auto_n = sum(len(r["auto"]) for r in repos)
     agent_n = sum(len(r["agent"]) for r in repos)
     human_n = sum(len(r["human"]) for r in repos)
     att = [float(r["attention"]) for r in repos]
+    ci_total = ci_passing + ci_failing
+    ci_pass_pct = round(100.0 * ci_passing / ci_total, 1) if ci_total else 100.0
     return {
         "generated_at": datetime.now(UTC).isoformat(),
         "repo_count": len(repos),
@@ -67,6 +99,12 @@ def snapshot_plans(plans: list[RepoPlan]) -> dict[str, Any]:
             "agent_fixes": agent_n,
             "human_fixes": human_n,
             "open_fixes": auto_n + agent_n + human_n,
+            "open_issues": open_issues_total,
+            "open_prs": open_prs_total,
+            "ci_passing": ci_passing,
+            "ci_failing": ci_failing,
+            "ci_total": ci_total,
+            "ci_pass_pct": ci_pass_pct,
             "mean_attention": round(sum(att) / len(att), 2) if att else 0.0,
             "max_attention": max(att) if att else 0.0,
         },

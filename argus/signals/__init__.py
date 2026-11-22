@@ -24,6 +24,37 @@ from argus.signals import (
 )
 
 
+def stamp_repo_raw(repo: RepoRecord, bundle: SignalBundle) -> None:
+    """Stamp derived PR, issue, and CI metrics onto repo.raw for report views."""
+    raw = dict(repo.raw or {})
+    mom = bundle.momentum if isinstance(bundle.momentum, dict) else None
+    prs_sig = bundle.prs if isinstance(bundle.prs, dict) else None
+    ci_sig = bundle.ci if isinstance(bundle.ci, dict) else None
+
+    if prs_sig is not None:
+        pr_n = int(prs_sig.get("open_prs") or 0)
+        raw["open_prs_count"] = pr_n
+        if "dependabot_prs" in prs_sig or "release_prs" in prs_sig or "feature_prs" in prs_sig:
+            raw["pr_dependabot"] = int(prs_sig.get("dependabot_prs") or 0)
+            raw["pr_release"] = int(prs_sig.get("release_prs") or 0)
+            raw["pr_feature"] = int(prs_sig.get("feature_prs") or 0)
+
+    if mom is not None:
+        total = int(mom.get("open_issues") or raw.get("open_issues_count") or 0)
+        pr_n = int((prs_sig or {}).get("open_prs") or raw.get("open_prs_count") or 0)
+        mom["open_issues_including_prs"] = total
+        mom["open_issues"] = max(0, total - pr_n)
+        raw["open_prs_count"] = pr_n
+        raw["open_issues_only"] = mom["open_issues"]
+
+    if ci_sig is not None:
+        raw["ci_has_workflows"] = bool(ci_sig.get("has_workflows"))
+        raw["ci_latest_conclusion"] = ci_sig.get("latest_conclusion")
+        raw["ci_latest_failed"] = bool(ci_sig.get("latest_failed"))
+
+    repo.raw = raw
+
+
 def collect_signals(client: GitHubClient, repo: RepoRecord) -> SignalBundle:
     """Collect all signal categories; missing categories remain None on failure."""
     bundle = SignalBundle()
@@ -48,18 +79,7 @@ def collect_signals(client: GitHubClient, repo: RepoRecord) -> SignalBundle:
             setattr(bundle, name, fn(client, repo))
         except (GitHubError, KeyError, TypeError, ValueError):
             setattr(bundle, name, None)
-    # GitHub open_issues_count includes PRs — stamp Issues-only for reports/fixes.
-    mom = bundle.momentum if isinstance(bundle.momentum, dict) else None
-    prs_sig = bundle.prs if isinstance(bundle.prs, dict) else None
-    if mom is not None:
-        total = int(mom.get("open_issues") or (repo.raw or {}).get("open_issues_count") or 0)
-        pr_n = int((prs_sig or {}).get("open_prs") or 0)
-        mom["open_issues_including_prs"] = total
-        mom["open_issues"] = max(0, total - pr_n)
-        raw = dict(repo.raw or {})
-        raw["open_prs_count"] = pr_n
-        raw["open_issues_only"] = mom["open_issues"]
-        repo.raw = raw
+    stamp_repo_raw(repo, bundle)
     return bundle
 
 

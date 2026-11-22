@@ -67,19 +67,90 @@ def _argus_open_count(plan: RepoPlan) -> int:
     return len(plan.auto_fixes) + len(plan.agent_fixes) + len(plan.human_fixes)
 
 
+def _ci_failed(plan: RepoPlan) -> bool:
+    raw = _raw(plan)
+    if bool(raw.get("ci_latest_failed")):
+        return True
+    conclusion = str(raw.get("ci_latest_conclusion") or "").lower()
+    if conclusion in {"failure", "timed_out"}:
+        return True
+    for m in (*plan.human_fixes, *plan.agent_fixes, *plan.auto_fixes):
+        if m.fix.id == "CI-LATEST-FAILED":
+            return True
+    return False
+
+
+def _ci_status(plan: RepoPlan) -> str:
+    if _ci_failed(plan):
+        return "failing"
+    raw = _raw(plan)
+    conclusion = str(raw.get("ci_latest_conclusion") or "").lower()
+    if conclusion in {"success", "neutral", "skipped"}:
+        return "passing"
+    if raw.get("ci_has_workflows") and conclusion not in {"failure", "timed_out", "cancelled"}:
+        return "passing"
+    return "none"
+
+
+def _pr_breakdown(plans: list[RepoPlan]) -> tuple[int, int, int]:
+    dep = 0
+    rel = 0
+    feat = 0
+    for p in plans:
+        raw = _raw(p)
+        total = _gh_open_prs(p)
+        if any(k in raw for k in ("pr_dependabot", "pr_release", "pr_feature")):
+            d = int(raw.get("pr_dependabot") or 0)
+            r = int(raw.get("pr_release") or 0)
+            f = int(raw.get("pr_feature") or 0)
+            dep += d
+            rel += r
+            feat += f
+        elif total > 0:
+            feat += total
+    return dep, rel, feat
+
+
+def _pct_tone(pct: float) -> str:
+    if pct >= 85.0:
+        return "good"
+    if pct >= 60.0:
+        return "warn"
+    return "bad"
+
+
+def _gauge(label: str, count: int, total: int, subtitle: str) -> dict[str, Any]:
+    pct = round(100.0 * count / total, 1) if total else 100.0
+    circumference = 226.2  # 2 * pi * 36
+    offset = round(circumference * (1.0 - min(100.0, max(0.0, pct)) / 100.0), 1)
+    return {
+        "label": label,
+        "count": count,
+        "total": total,
+        "pct": pct,
+        "tone": _pct_tone(pct),
+        "subtitle": subtitle,
+        "circumference": circumference,
+        "offset": offset,
+    }
+
+
 def _needs_attention_listing(plan: RepoPlan) -> bool:
-    """List repos with Argus fixes, Issues, or open PRs (PRs are not Issues)."""
+    """List repos with failing CI, Argus fixes, Issues, or open PRs."""
     return (
-        _argus_open_count(plan) > 0
+        _ci_failed(plan)
+        or _argus_open_count(plan) > 0
         or _gh_open_issues(plan) > 0
         or _gh_open_prs(plan) > 0
     )
 
 
-def _urgency_key(plan: RepoPlan) -> tuple[int, int, str]:
-    """Most Issues first, then most open PRs (name tiebreak)."""
+def _urgency_key(plan: RepoPlan) -> tuple[int, int, int, int, str]:
+    """Red CI first, then Issues, then open Argus fixes, then open PRs (name tiebreak)."""
     return (
+        0 if _ci_failed(plan) else 1,
         -_gh_open_issues(plan),
+        -_argus_open_count(plan),
         -_gh_open_prs(plan),
         plan.repo.full_name.lower(),
     )
@@ -208,22 +279,61 @@ def build_report_view(
     top_fixes = sorted(fix_counts.items(), key=lambda kv: (-kv[1], kv[0]))[:8]
     hist_max = max(hist) if hist else 1
 
-    # Full active fleet, Issues → PRs → attention. No Priority / omit split.
+    # Full active fleet, Red CI → Issues → Argus fixes → PRs.
     fleet_plans = sorted(active, key=_urgency_key)
     healthy_omitted = 0
     priority = fleet_plans  # grandma + spark helpers over full fleet
     fleet_rows: list[dict[str, Any]] = []
+    ci_passing = 0
+    ci_failing = 0
+    hygiene_clean = 0
+    zero_backlog = 0
     for p in fleet_plans:
         open_any = bool(p.human_fixes or p.agent_fixes or p.auto_fixes)
         band = _band(p.score.attention, open_any)
         open_n = _argus_open_count(p)
         gh_issues = _gh_open_issues(p)
         gh_prs = _gh_open_prs(p)
+        ci_stat = _ci_status(p)
+        ci_fail = ci_stat == "failing"
+        if ci_stat == "passing":
+            ci_passing += 1
+        elif ci_fail:
+            ci_failing += 1
+        if open_n == 0:
+            hygiene_clean += 1
+        backlog = gh_issues + gh_prs + open_n
+        if backlog == 0 and not ci_fail:
+            zero_backlog += 1
+
+        if ci_fail:
+            status_pill = "Fix CI"
+            status_tone = "bad"
+            filter_key = "red_ci"
+        elif gh_issues > 0:
+            status_pill = "Open Issues"
+            status_tone = "warn"
+            filter_key = "needs_action"
+        elif open_n > 0:
+            status_pill = "Hygiene Fix"
+            status_tone = "warn"
+            filter_key = "needs_action"
+        elif gh_prs > 0:
+            status_pill = "PR Backlog"
+            status_tone = "info"
+            filter_key = "needs_action"
+        else:
+            status_pill = "Clean"
+            status_tone = "good"
+            filter_key = "clean"
+
+        pushed_at = str(_raw(p).get("pushed_at") or "")[:10] or "—"
+        url = p.repo.html_url or f"https://github.com/{p.repo.full_name}"
         fleet_rows.append(
             {
                 "full_name": p.repo.full_name,
                 "name": p.repo.name,
-                "url": p.repo.html_url or f"https://github.com/{p.repo.full_name}",
+                "url": url,
                 "status": p.repo.status.value,
                 "band": band,
                 "lang": str(_raw(p).get("language") or "—"),
@@ -234,9 +344,89 @@ def build_report_view(
                 "prs": gh_prs,
                 "gh_issues": gh_issues,
                 "gh_prs": gh_prs,
+                "ci_status": ci_stat,
+                "ci_failed": ci_fail,
+                "pushed_at": pushed_at,
+                "backlog": backlog,
+                "status_pill": status_pill,
+                "status_tone": status_tone,
+                "filter_key": filter_key,
             }
         )
     cards = fleet_rows[:12]  # sparkline sample; fleet table uses all rows
+
+    active_n = len(active)
+    ci_total = ci_passing + ci_failing
+    ci_pass_pct = round(100.0 * ci_passing / ci_total, 1) if ci_total else 100.0
+    hygiene_clean_pct = round(100.0 * hygiene_clean / active_n, 1) if active_n else 100.0
+    zero_backlog_pct = round(100.0 * zero_backlog / active_n, 1) if active_n else 100.0
+    pr_dep, pr_rel, pr_feat = _pr_breakdown(active)
+
+    # Top-5 "Fix These First" public-safe priority cards (no security fix titles).
+    target_first: list[dict[str, Any]] = []
+    for row in fleet_rows:
+        if not (row["ci_failed"] or row["issues"] or row["open_fixes"] or row["prs"]):
+            continue
+        reasons: list[dict[str, str]] = []
+        if row["ci_failed"]:
+            reasons.append({"text": "Red CI", "tone": "bad"})
+        if row["issues"]:
+            n = row["issues"]
+            reasons.append({"text": f"{n} Open Issue{'s' if n != 1 else ''}", "tone": "warn"})
+        if row["open_fixes"]:
+            n = row["open_fixes"]
+            reasons.append({"text": f"{n} Open Fix{'es' if n != 1 else ''}", "tone": "warn"})
+        if row["prs"]:
+            n = row["prs"]
+            reasons.append({"text": f"{n} Open PR{'s' if n != 1 else ''}", "tone": "info"})
+        base_url = row["url"].rstrip("/")
+        target_first.append(
+            {
+                "rank": len(target_first) + 1,
+                "name": row["name"],
+                "full_name": row["full_name"],
+                "url": base_url,
+                "prs_url": f"{base_url}/pulls",
+                "issues_url": f"{base_url}/issues",
+                "actions_url": f"{base_url}/actions",
+                "ci_status": row["ci_status"],
+                "ci_failed": row["ci_failed"],
+                "issues": row["issues"],
+                "prs": row["prs"],
+                "open_fixes": row["open_fixes"],
+                "reasons": reasons,
+            }
+        )
+        if len(target_first) >= 5:
+            break
+
+    # Top-8 PR & Issue Backlog stacked bar data.
+    backlog_candidates = [r for r in fleet_rows if r["backlog"] > 0]
+    backlog_candidates.sort(key=lambda r: (-r["backlog"], -r["issues"], -r["open_fixes"], r["name"].lower()))
+    backlog_top = backlog_candidates[:8]
+    peak_backlog = max((r["backlog"] for r in backlog_top), default=1) or 1
+    backlog_top8: list[dict[str, Any]] = []
+    for r in backlog_top:
+        total = r["backlog"]
+        backlog_top8.append(
+            {
+                "name": r["name"],
+                "url": r["url"],
+                "issues": r["issues"],
+                "prs": r["prs"],
+                "open_fixes": r["open_fixes"],
+                "total": total,
+                "issues_w": round(100.0 * r["issues"] / peak_backlog, 1),
+                "fixes_w": round(100.0 * r["open_fixes"] / peak_backlog, 1),
+                "prs_w": round(100.0 * r["prs"] / peak_backlog, 1),
+            }
+        )
+
+    health_gauges = [
+        _gauge("CI Pass Rate", ci_passing, ci_total, f"{ci_passing}/{ci_total} workflows green"),
+        _gauge("Hygiene Clean", hygiene_clean, active_n, f"{hygiene_clean}/{active_n} repos at 0 fixes"),
+        _gauge("Zero Backlog", zero_backlog, active_n, f"{zero_backlog}/{active_n} repos all-clear"),
+    ]
 
     assessment = [
         f"Portfolio size: {len(plans)} repositories "
@@ -314,8 +504,23 @@ def build_report_view(
             "agent_fixes": agent_n,
             "mean_attention": mean_att,
             "max_attention": max_att,
+            "open_issues": issue_total,
+            "open_prs": pr_total,
+            "pr_dependabot": pr_dep,
+            "pr_release": pr_rel,
+            "pr_feature": pr_feat,
+            "ci_passing": ci_passing,
+            "ci_failing": ci_failing,
+            "ci_total": ci_total,
+            "ci_pass_pct": ci_pass_pct,
+            "hygiene_clean": hygiene_clean,
+            "hygiene_clean_pct": hygiene_clean_pct,
+            "zero_backlog": zero_backlog,
+            "zero_backlog_pct": zero_backlog_pct,
         },
         "charts": {
+            "health_gauges": health_gauges,
+            "backlog_top8": backlog_top8,
             "attention_hist": [
                 {
                     "label": lab,
@@ -363,6 +568,7 @@ def build_report_view(
         },
         "assessment_bullets": assessment,
         "healthy_omitted": healthy_omitted,
+        "target_first": target_first,
         "priority_cards": cards,  # compat alias = first 12 fleet rows
         "fleet": fleet_rows,
         "archived_cards": [

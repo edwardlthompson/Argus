@@ -69,12 +69,15 @@ def write_portfolio_pages(
         "pages_safe": True,
         "stats": view.get("stats"),
         "charts": {
+            "health_gauges": (view.get("charts") or {}).get("health_gauges"),
+            "backlog_top8": (view.get("charts") or {}).get("backlog_top8"),
             "bands": (view.get("charts") or {}).get("bands"),
             "fix_classes": (view.get("charts") or {}).get("fix_classes"),
             "prefix_groups": (view.get("charts") or {}).get("prefix_groups"),
             "top_fixes": (view.get("charts") or {}).get("top_fixes"),
             "rubric_means": (view.get("charts") or {}).get("rubric_means"),
         },
+        "target_first": view.get("target_first"),
         "actions_unavailable": view.get("actions_unavailable"),
     }
     json_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
