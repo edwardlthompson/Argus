@@ -6,6 +6,7 @@ from typing import Any
 
 from argus.github_client import GitHubClient, GitHubError
 from argus.models import RepoRecord
+from argus.signals.ioc_probe import workflow_pull_request_target
 
 _HOUSEKEEPING_WORKFLOWS = (
     "release please",
@@ -17,6 +18,7 @@ _HOUSEKEEPING_WORKFLOWS = (
     "weekly health",
     "weekly-health-check",
     "pages build and deployment",
+    "deploy github pages",
 )
 
 
@@ -30,9 +32,15 @@ def _pick_ci_run(items: list[dict[str, Any]]) -> dict[str, Any] | None:
         return None
     completed = [r for r in items if (r.get("status") or "").lower() == "completed" or r.get("conclusion")]
     pool = completed or items
-    for run in pool:
-        if not _is_housekeeping_run(run):
-            return run
+    non_hk = [run for run in pool if not _is_housekeeping_run(run)]
+    if non_hk:
+        top = non_hk[0]
+        top_sha = top.get("head_sha")
+        if top_sha and top.get("conclusion") == "failure":
+            for run in non_hk:
+                if run.get("head_sha") == top_sha and run.get("conclusion") == "success":
+                    return run
+        return top
     return pool[0]
 
 
@@ -68,9 +76,13 @@ def collect(client: GitHubClient, repo: RepoRecord) -> dict[str, Any]:
     except GitHubError:
         pass
 
+    prt = workflow_pull_request_target(client, repo)
+
     return {
         "has_workflows": has_workflows,
         "latest_conclusion": latest_conclusion,
         "latest_failed": latest_conclusion == "failure",
         "days_since_run": days_since_run,
+        "uses_pull_request_target": prt.get("uses_pull_request_target", False),
+        "pull_request_target_workflows": prt.get("pull_request_target_workflows") or [],
     }
