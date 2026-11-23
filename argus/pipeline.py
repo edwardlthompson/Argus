@@ -243,7 +243,7 @@ def run_pipeline(
     # CLI: None = defaults; True = --skip-profile; False = --with-profile.
     cli_skip_profile = skip_profile
     if skip_profile is None:
-        skip_profile = bool(yolo_on and yolo_cfg.get("skip_profile", True))
+        skip_profile = bool(bool(target) or (yolo_on and yolo_cfg.get("skip_profile", True)))
     # Overview sync (stats/icons/membership) is separate from skip_profile mutations.
     plane_cfg = yolo_cfg if yolo_on else normal_cfg
     if cli_skip_profile is True:
@@ -298,7 +298,8 @@ def run_pipeline(
                     profile_login = str((client.whoami() or {}).get("login") or "")
                 except Exception:  # noqa: BLE001
                     profile_login = ""
-                profile_repo = f"{profile_login}/{profile_login}" if profile_login else ""
+                profile_owner = profile_login or (target if target and "/" not in target else "")
+                profile_repo = f"{profile_owner}/{profile_owner}" if profile_owner else ""
                 if skip_profile and profile_repo:
                     clear_auto_fixes_for_repos(plans, {profile_repo})
 
