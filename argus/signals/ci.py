@@ -6,7 +6,6 @@ from typing import Any
 
 from argus.github_client import GitHubClient, GitHubError
 from argus.models import RepoRecord
-from argus.signals.ioc_probe import workflow_pull_request_target
 
 _HOUSEKEEPING_WORKFLOWS = (
     "release please",
@@ -76,13 +75,9 @@ def collect(client: GitHubClient, repo: RepoRecord) -> dict[str, Any]:
     except GitHubError:
         pass
 
-    prt = workflow_pull_request_target(client, repo)
-
     return {
         "has_workflows": has_workflows,
         "latest_conclusion": latest_conclusion,
         "latest_failed": latest_conclusion == "failure",
         "days_since_run": days_since_run,
-        "uses_pull_request_target": prt.get("uses_pull_request_target", False),
-        "pull_request_target_workflows": prt.get("pull_request_target_workflows") or [],
     }
