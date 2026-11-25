@@ -95,3 +95,13 @@ Catch-up for Nov 17–18 (the daily brief did not run those mornings).
 **Tasks for the planning agent**
 
 - [ ] Add Argus signals for (a) default branches missing a ruleset with "Restrict deletions", (b) workflow files added or changed by anyone other than Edward/Dependabot/Release Please since the last scan, and (c) new deploy keys or visibility flips, and offer the deletion ruleset as an `auto_safe` fix — these are the cheap detections for a stolen-token takeover, and the whole fleet relies on one account. Label: `[AGENT][LOCAL]` · Priority: P3 · https://socket.dev/blog/hardening-github-actions-against-insider-threats
+
+## 2026-11-25
+
+**News and updates**
+
+- GitGuardian planted AWS keys in Docker Hub images and saw bots use them in 7.86 seconds; they also argue that provider Zero Data Retention is not a control, because bait prompts leaked keys from three AI providers and those keys were tested within hours. The practical fixes are .dockerignore (so `.gitignore` secrets do not land in image layers), agent-config hygiene, and redaction before a prompt leaves the laptop. [Docker Hub write-up](https://blog.gitguardian.com/docker-hub-secrets-ai-agentsuntitled/) · [ZDR write-up](https://blog.gitguardian.com/zero-data-retention-ai-prompts/)
+
+**Tasks for the planning agent**
+
+- - [ ] Add an Argus check that flags Dockerfiles / image-publish workflows whose build context is likely to include `.env`, credential files, or agent config (missing or weak `.dockerignore`) — public images are being scraped for keys within seconds of a push. Label: `[AGENT][LOCAL]` · Priority: P3 · https://blog.gitguardian.com/docker-hub-secrets-ai-agentsuntitled/
