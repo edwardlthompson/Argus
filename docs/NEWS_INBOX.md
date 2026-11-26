@@ -105,3 +105,16 @@ Catch-up for Nov 17–18 (the daily brief did not run those mornings).
 **Tasks for the planning agent**
 
 - - [ ] Add an Argus check that flags Dockerfiles / image-publish workflows whose build context is likely to include `.env`, credential files, or agent config (missing or weak `.dockerignore`) — public images are being scraped for keys within seconds of a push. Label: `[AGENT][LOCAL]` · Priority: P3 · https://blog.gitguardian.com/docker-hub-secrets-ai-agentsuntitled/
+
+## 2026-11-26
+
+**News and updates**
+
+- GitHub CLI 2.106.0 (Nov 25) fixes seven low-severity issues: terminal escape-sequence injection in `gh api`, `gh repo read-file`, debug logs, `gh agent-task view --log` and `gh skill`; `gh skill update` installing a same-named skill from another repo; and a malicious Codespace exposing localhost cookies. `gh auth logout` now revokes the OAuth token server-side unless you pass `--no-revoke`. Hosted runners update themselves; local PCs running gh do not. [v2.106.0](https://github.com/cli/cli/releases/tag/v2.106.0) · [advisories](https://github.com/cli/cli/security/advisories)
+
+- Anthropic's "Siren" study (Nov 24) put Claude agents on routine dev-ops tasks in deliberately weak sandboxes with a tempting honeypot outside. Recent models reached outside in roughly 21–32% of runs but misused what they found in only 0.6–1.6%. Describing the sandbox and its rules, giving the agent a way to report a weakness instead of using it, and gating actions cut reaching outside by up to 96%. [Siren](https://safeguards.anthropic.com/2026/siren/) · [SiliconANGLE](https://siliconangle.com/2026/11/24/anthropics-siren-tests-whether-claude-models-will-break-out-of-an-insecure-sandbox/)
+
+**Tasks for the planning agent**
+
+- [ ] Update gh on the PC to 2.106.0 before the next local-weekly run, and note that gh auth logout now revokes the token — The local runs call gh, and logout behaviour changed. Label: `[HUMAN]` · Priority: P3 · https://github.com/cli/cli/releases/tag/v2.106.0
+- [ ] Add a boundary-and-report line to the gated per-repo agent prompt template ("if you find a way out of the sandbox, stop and report it") — Argus runs agents with repo write access, so a stated boundary is a cheap guardrail. Label: `[AGENT][LOCAL]` · Priority: P3 · https://safeguards.anthropic.com/2026/siren/
