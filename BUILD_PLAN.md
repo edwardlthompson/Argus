@@ -1,7 +1,7 @@
 # BUILD_PLAN — Argus
 
 <!-- remaining-tally -->
-**Remaining:** AGENT 0 · LOCAL 0 · CLOUD 0 · AUTO 1 · HUMAN 1 · **2 open**
+**Remaining:** AGENT 2 · LOCAL 2 · CLOUD 0 · AUTO 1 · HUMAN 10 · **13 open**
 <!-- /remaining-tally -->
 
 Status legend: 🔲 todo · ✅ done · ❌ blocked
@@ -39,6 +39,24 @@ Argus is the enforcer: multi-repo hygiene, scoring, gated apply, and (on the pri
 | ✅ | `[AGENT][LOCAL]` — scope: `argus/board_*.py,config/fixes/portfolio.yaml` | **B1 BUILD_PLAN normalize** — `BOARD-MARKERS` auto_safe + `BOARD-RESTRUCTURE` gated agent; fold News inbox. |
 | ✅ | `[AGENT][LOCAL]` — scope: `argus/dependabot_policy.py,config/safety.yaml` | **D1 Dependabot merge policy** — mode-aware levels; CI-green via `evaluate_pre_merge`; no Actions-unavailable skip. |
 | ✅ | `[AGENT][LOCAL]` — scope: `argus/release_*.py,config/releases.yaml` | **RF1 Release freshness** — local `argus releases` CLI (REST); tag-only prep PRs; not on Actions. |
+
+## Sequential — argus-runner weekly diagnostics (found by Tuesday Steward 2026-11-27)
+
+Private `edwardlthompson/argus-runner` workflow `argus-weekly` failed all 4 runs (2026-11-09, 11-11, 11-17, 11-24). Job `run` lasted ~1s each time, uploaded 0 artifacts, and job logs returned 404 via the API. Latest: https://github.com/edwardlthompson/argus-runner/actions/runs/45509728786. No `health-delta.md`, `health-hotspots.json`, or health-infographic since 2026-11-12 (`argus-history/reports/latest.md` is stale). Runner `argus-report` has never run; runner `argus-scan` last failed 2026-11-10. Public Argus `argus-weekly` run #2 (https://github.com/edwardlthompson/Argus/actions/runs/42897596779) failed 403 on `GET /user` because `ARGUS_GITHUB_TOKEN` was empty. Repair PR #14 (W1–W4) was closed unmerged. W4 Dependabot majors were finished later and stay closed. Still open from that repair: the runner token must be non-empty (W1), a re-run must actually upload artifacts and ping Steward (W2), and hosted jobs still never start (archived W5).
+
+| Status | Venue | Task |
+|--------|-------|------|
+| 🔲 | `[HUMAN][PC]` — scope: Actions UI | **D1 Read the 1s failure** — Open https://github.com/edwardlthompson/argus-runner/actions/runs/45509728786 and the 2026-11-09, 11-11, and 11-17 runs. Job `run` ~1s, 0 artifacts, API logs 404. Read the first failing step and any **Set up job** annotations. Startup causes to match: invalid workflow YAML; missing or unauthorized `uses:` (`actions/checkout@v7`, `actions/setup-python@v7`, `actions/upload-artifact@v7`; no reusable workflow); `runs-on` label unavailable; Actions disabled or minutes/spending limit exhausted; private-repo permission. |
+| 🔲 | `[HUMAN][PC]` — scope: Actions billing | **D2 Actions enabled + minutes** — On `edwardlthompson/argus-runner`, confirm Actions is enabled and the account is inside its minutes and spending limit. If the block is billing, do not add a payment card (board non-goal). Record it and keep the Tuesday pass on `scripts/local-weekly.ps1` / `.sh` until hosted jobs start. |
+| 🔲 | `[AGENT][LOCAL]` — scope: `argus-runner:.github/workflows/weekly.yml` | **D3 actionlint on default branch** — `actionlint` runner `weekly.yml` on default branch `main`. Expect name `argus-weekly`, cron `0 14 * * 2` plus `workflow_dispatch`, concurrency group `weekly-${{ github.workflow }}` with `cancel-in-progress: false`, job `run`, `runs-on: ubuntu-latest`. |
+| 🔲 | `[HUMAN][PC]` — scope: runner label | **D4 runs-on** — Job `run` asks for GitHub-hosted `ubuntu-latest`. Confirm that label is allowed on this private repo. This workflow does not use a self-hosted runner label. |
+| 🔲 | `[HUMAN][PC]` — scope: Actions secrets | **D5 ARGUS_GITHUB_TOKEN** — On **argus-runner** (the public repo secret was empty), confirm `ARGUS_GITHUB_TOKEN`: PAT with `repo` and `workflow` scope for every allowlisted repo. Weekly step **Run** also reads `GITHUB_TOKEN`, `ARGUS_DISCORD_WEBHOOK`, `ARGUS_TELEGRAM_BOT_TOKEN`, `ARGUS_TELEGRAM_CHAT_ID`, `ARGUS_WEBHOOK_URL`, and var `ARGUS_REPORT_URL`. Step **Ping Tuesday Steward** reads `GROK_STEWARD_WEBHOOK_URL` and `GROK_STEWARD_WEBHOOK_KEY`. Carry-forward of PR #14 W1. |
+| 🔲 | `[HUMAN][PC]` — scope: token expiry | **D6 Token expiry** — Check `ARGUS_GITHUB_TOKEN` expiration and that Contents plus workflow scopes still cover the allowlist. A ~1s job dies before step **Run**, so expiry is the check once startup succeeds. |
+| 🔲 | `[HUMAN][PC]` — scope: workflow_dispatch | **D7 Dispatch weekly** — `workflow_dispatch` `argus-weekly` on the runner (leave `apply` empty). Confirm **Upload private artifacts** publishes `argus-dist` containing `dist/health-delta.md`, `dist/health-hotspots.json`, `dist/health-infographic.svg`, and `dist/health-infographic.html`, and **Ping Tuesday Steward (optional Grok webhook)** posts when `GROK_STEWARD_WEBHOOK_URL` is set. Carry-forward of PR #14 W2. |
+| 🔲 | `[HUMAN][PC]` — scope: argus-report | **D8 Run argus-report once** — Never run. Dispatch job `report` with required `target` (for example `edwardlthompson`) and `public_only=true`. Confirm **Upload artifacts** (`name: argus-report`, `path: dist/`). Step **Report** receives only `secrets.GITHUB_TOKEN`. Weekly and scan also pass `ARGUS_GITHUB_TOKEN` and prefer it when set; a 403 on other repos means the report workflow needs that same swap. |
+| 🔲 | `[HUMAN][PC]` — scope: argus-scan | **D9 Open the scan failure** — `argus-scan` last failed 2026-11-10. Open that run (job `scan`, `runs-on: ubuntu-latest`, artifact `argus-scan-dist`). The same ~1s / 0-artifact startup closes with D1–D2. Otherwise record the first failing step (`Install` or `Scan`). After the cause is fixed, dispatch `apply=false` and confirm `argus-scan-dist`. |
+| 🔲 | `[AGENT][LOCAL]` — scope: `.github/workflows/scan.yml` | **D10 Fix argus-scan** — When D9 is a workflow or **Scan** step defect (billing stays D2), patch runner `scan.yml` and the public Argus copy: job `scan`, `ARGUS_GITHUB_TOKEN` overriding `GITHUB_TOKEN`, upload `argus-scan-dist`. |
+| 🔲 | `[HUMAN][PC]` — scope: public weekly | **D11 Public weekly** — Decide whether to disable public Argus `argus-weekly`. It is already `workflow_dispatch` only; cron `0 14 * * 2` stays on the runner. Run #2 returned 403 because public `ARGUS_GITHUB_TOKEN` was empty (PR #14 W3). Leave dispatch, or disable the workflow in the UI. Leave `schedule` off the public workflow. |
 
 ## Parallel (operator cadence — not chores)
 
